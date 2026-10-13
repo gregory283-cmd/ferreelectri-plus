@@ -2145,6 +2145,16 @@ class SeguridadTest(TestCase):
 
         self.assertRedirects(response, reverse('login_cliente'))
 
+    def test_login_cliente_seguro_muestra_google_one_tap(self):
+        response = self.client.get(reverse('login_cliente'), secure=True)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'https://accounts.google.com/gsi/client')
+        self.assertContains(response, 'data-auto_prompt="true"')
+        self.assertContains(response, 'data-callback="handleCustomerGoogleCredential"')
+        self.assertContains(response, reverse('google_auth_api'))
+        self.assertNotContains(response, 'next: <script')
+
     @override_settings(DEBUG=False)
     def test_login_admin_directo_en_produccion(self):
         admin_user = User.objects.create_user(

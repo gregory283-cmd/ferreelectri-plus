@@ -344,10 +344,15 @@ if not GOOGLE_CLIENT_SECRET:
 # OAuth 2.0 solo permite HTTP local; jamás habilitar esta opción en producción.
 OAUTHLIB_INSECURE_TRANSPORT = '1' if DEBUG else '0'
 
-# Callback local autorizado por Google Cloud; cambia a la URI 127.0.0.1 por entorno si aplica.
+# Usa el callback HTTPS de Render por defecto cuando el servicio expone su hostname.
+DEFAULT_GOOGLE_REDIRECT_URI = (
+    f'https://{RENDER_EXTERNAL_HOSTNAME}/oauth/complete/google-oauth2/'
+    if RENDER_EXTERNAL_HOSTNAME
+    else 'http://localhost:8000/oauth/complete/google-oauth2/'
+)
 GOOGLE_REDIRECT_URI = os.environ.get(
     'GOOGLE_REDIRECT_URI',
-    'http://localhost:8000/oauth/complete/google-oauth2/',
+    DEFAULT_GOOGLE_REDIRECT_URI,
 )
 # Documenta ambas callbacks locales aprobadas para evitar desajustes de client_id/redirect_uri.
 GOOGLE_REDIRECT_URIS = [
