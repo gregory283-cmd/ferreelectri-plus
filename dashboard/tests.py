@@ -2163,6 +2163,7 @@ class SeguridadTest(TestCase):
         self.assertContains(home, 'https://accounts.google.com/gsi/client')
         self.assertContains(home, 'data-auto_prompt="true"')
         self.assertContains(home, 'data-callback="handleCustomerGoogleCredential"')
+        self.assertNotContains(home, 'class="g_id_signin"')
         self.assertContains(home, 'google-login-feedback')
         self.assertContains(home, 'Esta cuenta tiene acceso administrativo.')
         self.assertContains(home, reverse('google_auth_api'))
