@@ -39,6 +39,18 @@ class InventarioTestCase(TestCase):
             self.assertEqual(b''.join(response.streaming_content), b'public-image')
             self.assertEqual(traversal_response.status_code, 404)
 
+    def test_imagen_versionada_se_sirve_si_no_hay_disco_montado(self):
+        with TemporaryDirectory() as media_root, TemporaryDirectory() as base_dir:
+            product_directory = Path(base_dir) / 'media' / 'productos'
+            product_directory.mkdir(parents=True)
+            (product_directory / 'tracked-image.jfif').write_bytes(b'tracked-image')
+
+            with override_settings(MEDIA_ROOT=media_root, BASE_DIR=Path(base_dir)):
+                response = self.client.get('/media/productos/tracked-image.jfif')
+
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(b''.join(response.streaming_content), b'tracked-image')
+
     def test_lista_productos_renderiza_busqueda_y_resumen(self):
         response = self.client.get(reverse('listar_productos'))
 

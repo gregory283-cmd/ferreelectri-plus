@@ -30,18 +30,23 @@ from decimal import Decimal, InvalidOperation
 
 @require_GET
 def servir_imagen_producto(request, filename):
-    product_media_root = (Path(settings.MEDIA_ROOT) / 'productos').resolve()
-    image_path = (product_media_root / filename).resolve()
-    try:
-        image_path.relative_to(product_media_root)
-    except ValueError:
-        raise Http404
-    if not image_path.is_file():
-        raise Http404
-    return FileResponse(
-        image_path.open('rb'),
-        content_type=guess_type(image_path.name)[0] or 'application/octet-stream',
+    product_media_roots = (
+        Path(settings.MEDIA_ROOT) / 'productos',
+        Path(settings.BASE_DIR) / 'media' / 'productos',
     )
+    for root in product_media_roots:
+        product_media_root = root.resolve()
+        image_path = (product_media_root / filename).resolve()
+        try:
+            image_path.relative_to(product_media_root)
+        except ValueError:
+            continue
+        if image_path.is_file():
+            return FileResponse(
+                image_path.open('rb'),
+                content_type=guess_type(image_path.name)[0] or 'application/octet-stream',
+            )
+    raise Http404
 
 
 def parse_presentations_from_request(request):
