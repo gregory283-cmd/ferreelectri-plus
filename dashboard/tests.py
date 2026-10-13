@@ -2170,6 +2170,17 @@ class SeguridadTest(TestCase):
         self.assertEqual(catalog.status_code, 200)
         self.assertNotContains(catalog, 'g_id_onload')
 
+    def test_google_one_tap_rate_limit_devuelve_json(self):
+        with patch('django_ratelimit.decorators.is_ratelimited', return_value=True):
+            response = self.client.post(
+                reverse('google_auth_api'),
+                data='{}',
+                content_type='application/json',
+            )
+
+        self.assertEqual(response.status_code, 429)
+        self.assertEqual(response.json()['error'], 'rate_limited')
+
     @override_settings(DEBUG=False)
     def test_login_admin_directo_en_produccion(self):
         admin_user = User.objects.create_user(

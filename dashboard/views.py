@@ -4167,7 +4167,7 @@ def google_one_tap(request):
     return response
 
 @csrf_exempt
-@ratelimit(key='ip', rate='30/m', method='POST', block=True)
+@ratelimit(key='ip', rate='30/m', method='POST', block=False)
 def google_identity_login(request):
     """Endpoint receptor de Google One Tap / Identity Services.
 
@@ -4176,6 +4176,11 @@ def google_identity_login(request):
     """
     if request.method != 'POST':
         return JsonResponse({'ok': False, 'error': 'method_not_allowed'}, status=405)
+    if getattr(request, 'limited', False):
+        return JsonResponse(
+            {'ok': False, 'status': 'error', 'error': 'rate_limited'},
+            status=429,
+        )
 
     if request.content_type and 'application/json' in request.content_type:
         try:
