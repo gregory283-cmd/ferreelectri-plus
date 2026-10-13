@@ -1,0 +1,29 @@
+{% extends 'base/pan_con_queso.html' %}
+{% block content %}
+<div class="card" style="max-width:900px;margin:40px auto;padding:20px;">
+    <h2>Pagos del pedido #{{ pedido.id }}</h2>
+    <table class="table">
+        <tr><th>ID</th><th>Método</th><th>Monto</th><th>Estado</th><th>Comprobante</th></tr>
+        {% for p in pagos %}
+        <tr>
+            <td>{{ p.id }}</td>
+            <td>{{ p.get_metodo_display }}</td>
+            <td>${{ p.monto|floatformat:2 }}</td>
+            <td>{{ p.estado }}</td>
+            <td>{% if p.comprobante and perms.dashboard.view_payment_evidence %}<a href="{% url 'admin_comprobante_pago' p.id %}">Descargar</a>{% elif p.comprobante %}Recibido{% else %}-{% endif %}</td>
+            {% if perms.dashboard.verify_order_payments %}
+            <td>
+                {% if p.estado != 'confirmado' %}
+                <form method="post" action="{% url 'confirmar_pago_admin' p.id %}">{% csrf_token %}<button type="submit" class="btn btn-sm">Confirmar</button></form>
+                {% else %}
+                Confirmado
+                {% endif %}
+            </td>
+            {% endif %}
+        </tr>
+        {% empty %}
+        <tr><td colspan="5">No hay pagos.</td></tr>
+        {% endfor %}
+    </table>
+</div>
+{% endblock %}

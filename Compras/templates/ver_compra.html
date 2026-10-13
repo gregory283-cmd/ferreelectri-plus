@@ -1,0 +1,392 @@
+<!-- filepath: c:\Users\Dell\Desktop\FERREELECTRI_PLUS\Compras\templates\ver_compra.html -->
+{% extends 'base/pan_con_queso.html' %}
+{% load static %}
+
+{% block arroz_con_pollo %}
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+
+<div class="detalle-compra-page w-full max-w-full">
+    <div class="formato-compras-card w-full max-w-full">
+        <div class="invoice-header flex justify-between items-start border-b-2 border-gray-100 pb-6 mb-6">
+            <div class="invoice-company">
+                <img src="{% static 'img/logo.png' %}" alt="FERREELECTRI PLUS" class="logo-img">
+                <p>Comprobante de compra</p>
+            </div>
+            <div class="invoice-document text-right">
+                <h1>COMPRA #{{ compra.id }}</h1>
+                <p>Detalle de operación</p>
+            </div>
+        </div>
+        <div class="formato-compras-proveedor grid grid-cols-2 md:grid-cols-5 gap-6 mb-8 bg-gray-50 p-6 rounded-xl border border-gray-100">
+            <div class="metadata-item">
+                <p class="metadata-label">Proveedor</p>
+                <p class="metadata-value">{{ compra.proveedor.nombre }}</p>
+            </div>
+            <div class="metadata-item">
+                <p class="metadata-label">Cédula</p>
+                <p class="metadata-value">{{ compra.proveedor.cedula }}</p>
+            </div>
+            <div class="metadata-item">
+                <p class="metadata-label">Fecha</p>
+                <p class="metadata-value">{{ compra.fecha_emision|date:'d/m/Y' }}</p>
+            </div>
+            <div class="metadata-item">
+                <p class="metadata-label">Usuario</p>
+                <p class="metadata-value">{{ request.user.username|default:'Usuario' }}</p>
+            </div>
+            <div class="metadata-item">
+                <p class="metadata-label">N° Control Fiscal</p>
+                <p class="metadata-value">{{ compra.control_fiscal }}</p>
+            </div>
+        </div>
+
+    <div class="formato-compras-articulos rounded-xl overflow-hidden border border-gray-200 mb-8">
+        <div class="formato-compras-articulos-header">
+            <span class="material-symbols-outlined">inventory_2</span>
+            <span>Artículos de la compra</span>
+        </div>
+        <div class="tabla-articulos-responsive">
+            <table class="formato-compras-tabla">
+                <thead class="bg-blue-950 text-white border-b-4 border-orange-500">
+                    <tr>
+                        <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-widest">Código</th>
+                        <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-widest">Descripción</th>
+                        <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-widest">Precio Unitario</th>
+                        <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-widest">Cantidad</th>
+                        <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-widest">Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if compra.detallecompra_set.exists %}
+                        {% for detalle in compra.detallecompra_set.all %}
+                        <tr>
+                            <td>{{ detalle.producto.Codigo }}</td>
+                            <td>{{ detalle.producto.Descripcion }}</td>
+                            <td>${{ detalle.precio|floatformat:2 }}</td>
+                            <td>{{ detalle.cantidad }}</td>
+                            <td>${{ detalle.subtotal|floatformat:2 }}</td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr class="empty-row">
+                            <td colspan="5">No se encontraron artículos para esta compra.</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="text-right mb-8">
+        <span class="text-gray-500 mr-4">Total de Compra:</span>
+        <span class="formato-compras-total-valor text-4xl font-black text-blue-950">${{ compra.total|floatformat:2 }}</span>
+    </div>
+    <div class="formato-compras-acciones no-print">
+        <a href="{% url 'listar_compras' %}" class="bg-white text-blue-950 border border-blue-950 hover:bg-blue-50 font-bold rounded-xl px-8 py-3 transition-all">
+            <span class="material-symbols-outlined">arrow_back</span>
+            Volver
+        </a>
+        <button onclick="window.print()" class="bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl px-8 py-3 shadow-lg hover:-translate-y-0.5 transition-all" title="Imprimir">
+            <span class="material-symbols-outlined">print</span>
+            Imprimir
+        </button>
+    </div>
+</div>
+</div>
+
+<style>
+/* Diseño renovado para ficha de compra - pantalla y PDF */
+.detalle-compra-page {
+    margin: 100px 0 2rem 0;
+    padding-left: 18px;
+    padding-right: 18px;
+}
+
+.formato-compras-card {
+    background: var(--surface);
+    border-radius: 14px;
+    box-shadow: 0 8px 30px rgba(16,40,78,0.06);
+    padding: 28px 40px;
+    margin: 32px 0 0 0;
+    max-width: min(1000px, calc(100vw - 64px));
+    color: var(--text-primary);
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* Encabezado: logo a la izquierda, título y metadatos a la derecha */
+.formato-compras-header {
+    display: grid;
+    grid-template-columns: 160px 1fr;
+    gap: 20px;
+    align-items: center;
+    margin-bottom: 18px;
+}
+.logo-fondo {
+    background: #172554;
+    border-radius: 10px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.logo-img { height: 86px; width: auto; display:block }
+.formato-compras-header-title {
+    font-size: 1.35rem;
+    color:#172554;
+    font-weight:800;
+    display:block;
+}
+.formato-compras-meta {
+    display:flex;flex-direction:row;justify-content:flex-end;gap:18px;align-items:flex-start;
+}
+.meta-item { text-align:right }
+.meta-item span { display:block }
+.meta-item .meta-label { color:#2563eb; font-weight:700; font-size:0.86rem }
+.meta-item .meta-value { color:#21343a; font-size:1.02rem; font-weight:700 }
+
+/* Bloque proveedor: tarjetas compactas */
+.formato-compras-proveedor { display:flex; gap:14px; flex-wrap:wrap; margin: 12px 0 20px 0 }
+.prov-card { background: rgba(248,251,255,0.95); border-left:4px solid #2563eb; padding:10px 14px; border-radius:8px; min-width:200px; display:flex; gap:10px; align-items:center }
+.prov-card .icon { font-size:20px; color:#2563eb }
+.prov-card .info { display:block }
+.prov-card .info .label { color:#2563eb; font-weight:700; font-size:0.82rem }
+.prov-card .info .value { font-weight:700; color:#14364a; font-size:1rem }
+
+/* Tabla de artículos: más aire, líneas suaves y alineación de números */
+.tabla-articulos-responsive { width:100%; max-width:100%; overflow-x:auto; overscroll-behavior-inline:contain; margin-top:6px }
+.formato-compras-tabla { width:100%; min-width:680px; border-collapse:collapse; font-size:0.98rem; background: rgba(255,255,255,0.92); }
+.formato-compras-tabla thead th { background:#172554; color:#fff; font-weight:800; padding:12px 14px; text-align:left; border-bottom:4px solid #f97316 }
+.formato-compras-tabla tbody td { padding:12px 14px; border-bottom:1px solid #f1f5f9; color:#21343a }
+.formato-compras-tabla tbody tr:nth-child(even) { background: #fbfeff }
+.formato-compras-tabla td.number, .formato-compras-tabla th.number { text-align:right }
+.formato-compras-tabla td.code { font-weight:700; color:#0d3a66 }
+.formato-compras-tabla td.desc { color:#14364a }.empty-row td { padding: 18px 14px; text-align: center; color: #617d98; }
+/* Total: badge destacado */
+.formato-compras-totales { display:flex; justify-content:flex-end; margin-top:18px }
+.total-box { background:#f8fafc; border:1px solid #e2e8f0; padding:14px 22px; border-radius:10px; display:flex; gap:18px; align-items:center }
+.total-box .label { color:#2563eb; font-weight:800 }
+.total-box .amount { color:#172554; font-weight:900; font-size:1.6rem }
+
+/* Botones (ocultos en impresión) */
+.formato-compras-acciones { display:flex; gap:12px; justify-content:flex-end; margin-top:20px }
+.btn-cancelar-compra, .btn-accion { background:#172554; color:#fff; padding:10px 16px; border-radius:8px; text-decoration:none; border:none; font-weight:700 }
+.btn-verde { background:#f97316 }
+
+html[data-theme="dark"] .formato-compras-card {
+    background: rgba(10,18,34,0.94);
+    border: 1px solid rgba(255,255,255,0.12);
+    box-shadow: 0 22px 70px rgba(0,0,0,0.38);
+    color:#eef4ff;
+}
+html[data-theme="dark"] .formato-compras-proveedor,
+html[data-theme="dark"] .prov-card,
+html[data-theme="dark"] .formato-compras-totales,
+html[data-theme="dark"] .total-box,
+html[data-theme="dark"] .formato-compras-acciones .btn-cancelar-compra,
+html[data-theme="dark"] .formato-compras-acciones .btn-accion {
+    background: rgba(255,255,255,0.06);
+    color:#e8f1ff;
+    border-color: rgba(255,255,255,0.12);
+}
+html[data-theme="dark"] .logo-fondo { background:#172554; }
+html[data-theme="dark"] .formato-compras-tabla { background: rgba(255,255,255,0.04); }
+html[data-theme="dark"] .formato-compras-tabla thead th { background:#172554; color:#fff; border-bottom-color:#f97316; }
+html[data-theme="dark"] .formato-compras-tabla tbody td { color:#dce8ff; border-bottom-color: rgba(255,255,255,0.08); }
+html[data-theme="dark"] .formato-compras-tabla tbody tr:nth-child(even) { background: rgba(255,255,255,0.03); }
+html[data-theme="dark"] .formato-compras-tabla td.code { color:#aacfff; }
+html[data-theme="dark"] .formato-compras-tabla td.desc { color:#d0e1ff; }
+html[data-theme="dark"] .total-box { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.12); }
+html[data-theme="dark"] .total-box .label,
+html[data-theme="dark"] .total-box .amount { color:#e8f1ff; }
+html[data-theme="dark"] .btn-cancelar-compra,
+html[data-theme="dark"] .btn-accion,
+html[data-theme="dark"] .btn-verde { background: rgba(255,255,255,0.08); color:#eef4ff; }
+html[data-theme="dark"] .btn-verde { background: rgba(67,161,82,0.9); }
+
+/* Ajustes para impresión: centrar y quitar sombras, mantener colores corporativos suaves */
+@media print {
+    body, html { background: #fff }
+    .formato-compras-card { box-shadow:none; margin:0; padding:18px; max-width:100%; border-radius:0 }
+    .formato-compras-acciones, .no-print { display:none !important }
+    .logo-fondo { background:#172554 !important }
+    .formato-compras-tabla thead th { background:#172554 !important; color:#fff !important; border-bottom:4px solid #f97316 !important }
+    .formato-compras-tabla tbody td { color:#000 !important }
+}
+
+@media (max-width:720px) {
+    .detalle-compra-page { padding:10px; }
+    .formato-compras-card { padding:16px 12px; }
+    .invoice-header { flex-wrap:wrap; gap:14px; }
+    .invoice-document { text-align:left; }
+    .formato-compras-proveedor { grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; padding:14px; }
+    .formato-compras-acciones { flex-wrap:wrap; }
+    .formato-compras-acciones > * { flex:1 1 140px; justify-content:center; }
+    .formato-compras-articulos { overflow:visible!important; }
+    .tabla-articulos-responsive { overflow:visible; }
+    .formato-compras-tabla { display:block; min-width:0; }
+    .formato-compras-tabla thead { display:none; }
+    .formato-compras-tabla tbody { display:grid; gap:10px; padding:10px; }
+    .formato-compras-tabla tbody tr { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0 12px; padding:8px; border:1px solid var(--panel-border); border-radius:8px; }
+    .formato-compras-tabla tbody td { min-width:0; padding:8px 4px; overflow-wrap:anywhere; }
+    .formato-compras-tabla tbody td:nth-child(2) { grid-column:1/-1; }
+    .formato-compras-tabla tbody td::before { display:block; margin-bottom:3px; color:#64748b; font-size:.66rem; font-weight:800; text-transform:uppercase; }
+    .formato-compras-tabla tbody td:nth-child(1)::before { content:'Código'; }
+    .formato-compras-tabla tbody td:nth-child(2)::before { content:'Descripción'; }
+    .formato-compras-tabla tbody td:nth-child(3)::before { content:'Precio unitario'; }
+    .formato-compras-tabla tbody td:nth-child(4)::before { content:'Cantidad'; }
+    .formato-compras-tabla tbody td:nth-child(5)::before { content:'Subtotal'; }
+    .formato-compras-tabla tbody .empty-row td::before { content:none; }
+}
+
+/* Vista premium de detalle y reglas de impresión */
+.detalle-compra-page {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin: 0;
+    padding: 24px;
+    box-sizing: border-box;
+}
+.formato-compras-card {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin: 0;
+    padding: 32px;
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: 0 12px 32px rgba(15,23,42,0.08);
+    box-sizing: border-box;
+}
+.detalle-compra-page,
+.detalle-compra-page * { box-sizing: border-box; }
+.invoice-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+.logo-fondo { display: none; }
+.logo-img { height: 20px; width: auto; display: block; }
+.invoice-company p,
+.invoice-document p { margin: 8px 0 0; color: #64748b; font-size: .875rem; }
+.invoice-document h1 { margin: 0; color: #172554; font-size: 1.875rem; font-weight: 900; }
+.formato-compras-proveedor { margin: 0 0 2rem; }
+.metadata-label { margin: 0 0 4px; color: #6b7280; font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
+.metadata-value { margin: 0; color: #111827; font-size: .875rem; font-weight: 600; }
+.formato-compras-tabla { width: 100%; border-collapse: collapse; }
+.formato-compras-tabla thead,
+.formato-compras-tabla thead th { background: #172554 !important; color: #fff !important; border-bottom: 4px solid #f97316 !important; }
+.formato-compras-tabla thead th { padding: 1rem 1.5rem; text-align: left; font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .12em; }
+.formato-compras-tabla tbody td { padding: .9rem 1.5rem; color: #1f2937; }
+.formato-compras-total-valor { color: #172554 !important; }
+.formato-compras-acciones { display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px; }
+
+html[data-theme="dark"] .formato-compras-card { background: #0f172a; }
+html[data-theme="dark"] .formato-compras-proveedor { background: #111827; border-color: #334155; }
+html[data-theme="dark"] .metadata-label { color: #94a3b8; }
+html[data-theme="dark"] .metadata-value { color: #f8fafc; }
+html[data-theme="dark"] .invoice-document h1 { color: #dbeafe; }
+
+</style>
+
+<style media="print">
+    @page { margin: 12mm; }
+    html, body { width: 100% !important; background: #fff !important; }
+    .sidebar,
+    .navbar,
+    .admin-top-actions,
+    nav,
+    header,
+    #help-floating-btn,
+    #help-help-modal,
+    #offline-banner,
+    #help-content-template,
+    .no-print { display: none !important; }
+    .main-content { width: 100% !important; margin: 0 !important; padding: 0 !important; }
+    .detalle-compra-page,
+    .formato-compras-card {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #fff !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+    }
+    .formato-compras-tabla thead,
+    .formato-compras-tabla thead th {
+        background: #172554 !important;
+        color: #fff !important;
+        border-bottom: 4px solid #f97316 !important;
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+    }
+    .formato-compras-articulos { border: 1px solid #d1d5db !important; box-shadow: none !important; }
+</style>
+
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+    // Ejemplo de uso de SweetAlert2 para advertencias, errores y confirmaciones
+    function mostrarAdvertencia() {
+        Swal.fire({
+            icon: 'warning',
+            title: '¡Atención!',
+            text: 'Debes completar todos los campos.',
+            confirmButtonColor: '#1976d2'
+        });
+    }
+
+    function mostrarError() {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Ocurrió un error inesperado.',
+            confirmButtonColor: '#1976d2'
+        });
+    }
+
+    function mostrarConfirmacion() {
+        Swal.fire({
+            icon: 'success',
+            title: '¡Guardado!',
+            text: 'Los cambios se guardaron correctamente.',
+            showConfirmButton: false,
+            timer: 2000
+        });
+    }
+
+    function quitarArticulo(btn) {
+        Swal.fire({
+            title: '¿Estás seguro que quieres eliminar?',
+            text: "Este artículo será eliminado de la compra.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#1976d2',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                btn.closest('tr').remove();
+                recalcularTotales();
+            }
+        });
+    }
+
+</script>
+{% endblock %}
+{% block help_content %}
+<div>
+    <h4>Ayuda: Ver Compra</h4>
+    <p>En esta vista puedes revisar el detalle de una compra ya registrada y generar una impresión limpia.</p>
+    <ul>
+        <li><strong>Imprimir:</strong> Usa el botón <em>Imprimir</em> para obtener la versión para papel/PDF sin controles.</li>
+        <li><strong>Volver:</strong> El botón <em>Volver</em> regresa al listado de compras.</li>
+        <li><strong>Revisar totales:</strong> Confirma que los subtotales y total coincidan con la factura/proveedor.</li>
+    </ul>
+    <p>Si detectas discrepancias en precios o cantidades, utiliza la opción <em>Modificar</em> en el listado para ajustar la compra.</p>
+</div>
+{% endblock %}

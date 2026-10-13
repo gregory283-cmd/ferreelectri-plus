@@ -1,0 +1,536 @@
+{% extends 'base/pan_con_queso.html' %}
+
+{% block arroz_con_pollo %}
+<section id="agregar-cliente" class="section-panel form-card">
+    <div class="section-header">
+        <div>
+            <h2>Agregar cliente</h2>
+            <p>Registra un cliente nuevo con datos seguros y validación en tiempo real.</p>
+        </div>
+    </div>
+
+    <div class="form-layout">
+        <aside class="summary-card">
+            <div class="summary-badge">
+                <span class="material-symbols-outlined">person_add</span>
+            </div>
+            <h3>Diseño moderno para tu base de clientes</h3>
+            <p>Llena el formulario con los datos del cliente y guarda su perfil de inmediato para llevar un control preciso.</p>
+            <ul class="summary-list">
+                <li><span class="material-symbols-outlined">verified_user</span> Validación segura</li>
+                <li><span class="material-symbols-outlined">speed</span> Flujo rápido</li>
+                <li><span class="material-symbols-outlined">inventory_2</span> Gestión centralizada</li>
+            </ul>
+        </aside>
+
+        <div class="form-panel">
+            <form id="form-cliente" action="" method="POST" autocomplete="off">
+                {% csrf_token %}
+                <div id="form-error" class="alert-banner alert-error" style="display:none;"></div>
+                {% if form.errors %}
+                <div class="alert-banner alert-error">
+                    {{ form.errors }}
+                </div>
+                {% endif %}
+
+                <div class="form-grid grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="form-field">
+                        <label for="tipo_cedula" class="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white mb-2"><span class="field-icon material-symbols-outlined">badge</span> Tipo de cédula</label>
+                        <select id="tipo_cedula" name="tipo_cedula" required class="provider-control w-full px-4 py-3 bg-gray-50 dark:bg-slate-900/50 border border-gray-200 dark:border-slate-700 rounded-xl text-sm outline-none transition-all duration-200 focus:bg-white focus:border-blue-600 focus:ring-2 focus:ring-blue-600/50 focus:shadow-md dark:bg-slate-900/50 dark:border-slate-700 dark:focus:bg-slate-800">
+                            <option value="V">V</option>
+                            <option value="E">E</option>
+                            <option value="J">J</option>
+                            <option value="P">P</option>
+                            <option value="G">G</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label for="id_cedula" class="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white mb-2"><span class="field-icon material-symbols-outlined">perm_identity</span> Cédula</label>
+                        <input type="text" name="cedula" id="id_cedula" pattern="^[0-9]{6,12}$" required maxlength="12" minlength="6" title="Solo números, mínimo 6 dígitos" class="provider-control w-full px-4 py-3 bg-gray-50 dark:bg-slate-900/50 border border-gray-200 dark:border-slate-700 rounded-xl text-sm outline-none transition-all duration-200 focus:bg-white focus:border-blue-600 focus:ring-2 focus:ring-blue-600/50 focus:shadow-md dark:bg-slate-900/50 dark:border-slate-700 dark:focus:bg-slate-800">
+                    </div>
+                    <div class="form-field">
+                        <label for="nombre" class="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white mb-2"><span class="field-icon material-symbols-outlined">person</span> Nombre</label>
+                        <input type="text" name="nombre" id="nombre" required maxlength="50" pattern="^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$" title="Solo letras y espacios" class="provider-control w-full px-4 py-3 bg-gray-50 dark:bg-slate-900/50 border border-gray-200 dark:border-slate-700 rounded-xl text-sm outline-none transition-all duration-200 focus:bg-white focus:border-blue-600 focus:ring-2 focus:ring-blue-600/50 focus:shadow-md dark:bg-slate-900/50 dark:border-slate-700 dark:focus:bg-slate-800">
+                    </div>
+                    <div class="form-field">
+                        <label for="apellido" class="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white mb-2"><span class="field-icon material-symbols-outlined">person</span> Apellido</label>
+                        <input type="text" name="apellido" id="apellido" required maxlength="50" pattern="^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$" title="Solo letras y espacios" class="provider-control w-full px-4 py-3 bg-gray-50 dark:bg-slate-900/50 border border-gray-200 dark:border-slate-700 rounded-xl text-sm outline-none transition-all duration-200 focus:bg-white focus:border-blue-600 focus:ring-2 focus:ring-blue-600/50 focus:shadow-md dark:bg-slate-900/50 dark:border-slate-700 dark:focus:bg-slate-800">
+                    </div>
+                    <div class="form-field">
+                        <label for="telefono" class="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white mb-2"><span class="field-icon material-symbols-outlined">phone</span> Teléfono</label>
+                        <input type="text" name="telefono" id="telefono" maxlength="15" required inputmode="numeric" placeholder="(0412) 1234567" title="Ejemplo: (0412) 1234567" class="provider-control w-full px-4 py-3 bg-gray-50 dark:bg-slate-900/50 border border-gray-200 dark:border-slate-700 rounded-xl text-sm outline-none transition-all duration-200 focus:bg-white focus:border-blue-600 focus:ring-2 focus:ring-blue-600/50 focus:shadow-md dark:bg-slate-900/50 dark:border-slate-700 dark:focus:bg-slate-800">
+                    </div>
+                    <div class="form-field">
+                        <label for="fecha_nacimiento" class="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white mb-2"><span class="field-icon material-symbols-outlined">calendar_month</span> Fecha de nacimiento</label>
+                        <input type="text" name="fecha_nacimiento" id="fecha_nacimiento" maxlength="10" required pattern="^\d{2}/\d{2}/\d{4}$" placeholder="DD/MM/AAAA" title="Ejemplo: 25/12/2000" class="provider-control w-full px-4 py-3 bg-gray-50 dark:bg-slate-900/50 border border-gray-200 dark:border-slate-700 rounded-xl text-sm outline-none transition-all duration-200 focus:bg-white focus:border-blue-600 focus:ring-2 focus:ring-blue-600/50 focus:shadow-md dark:bg-slate-900/50 dark:border-slate-700 dark:focus:bg-slate-800">
+                    </div>
+                    <div class="form-field md:col-span-2">
+                        <label for="email" class="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white mb-2"><span class="field-icon material-symbols-outlined">email</span> Email</label>
+                        <input type="email" name="email" id="email" required maxlength="80" title="Debe ser un correo válido" class="provider-control w-full px-4 py-3 bg-gray-50 dark:bg-slate-900/50 border border-gray-200 dark:border-slate-700 rounded-xl text-sm outline-none transition-all duration-200 focus:bg-white focus:border-blue-600 focus:ring-2 focus:ring-blue-600/50 focus:shadow-md dark:bg-slate-900/50 dark:border-slate-700 dark:focus:bg-slate-800">
+                    </div>
+                    <div class="form-field md:col-span-2 full-width">
+                        <label for="id_direccion" class="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white mb-2"><span class="field-icon material-symbols-outlined">location_on</span> Dirección</label>
+                        {{ form.direccion }}
+                    </div>
+                </div>
+
+                <input type="hidden" name="cedula_completa" id="cedula_completa" class="provider-control w-full px-4 py-3 bg-gray-50 dark:bg-slate-900/50 border border-gray-200 dark:border-slate-700 rounded-xl text-sm outline-none transition-all duration-200 focus:bg-white focus:border-blue-600 focus:ring-2 focus:ring-blue-600/50 focus:shadow-md dark:bg-slate-900/50 dark:border-slate-700 dark:focus:bg-slate-800">
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary bg-blue-950 hover:bg-blue-900 text-white font-bold rounded-xl px-8 py-3 shadow-lg hover:shadow-blue-900/30 transition-all duration-300 w-full md:w-auto flex items-center justify-center gap-2"><span class="material-symbols-outlined">save</span> Guardar cliente</button>
+                    <a href="{% url 'usuarios' %}" class="btn btn-secondary"><span class="material-symbols-outlined">arrow_back</span> Volver a clientes</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <style>
+    #agregar-cliente {
+        padding: 32px;
+        background: #ffffff;
+        border-radius: 28px;
+        box-shadow: 0 30px 80px rgba(15, 23, 42, 0.12);
+        border: 1px solid rgba(148, 163, 184, 0.2);
+    }
+    .section-header h2 {
+        margin: 0 0 10px;
+        color: #0f172a;
+        font-size: clamp(2rem, 2.3vw, 2.5rem);
+    }
+    .section-header p {
+        margin: 0;
+        max-width: 720px;
+        color: #475569;
+        line-height: 1.75;
+    }
+    .form-layout {
+        display: grid;
+        grid-template-columns: 300px minmax(360px, 1fr);
+        gap: 24px;
+        margin-top: 28px;
+    }
+    .summary-card,
+    .form-panel {
+        background: #f8fafc;
+        border: 1px solid rgba(148, 163, 184, 0.35);
+        border-radius: 24px;
+        padding: 24px;
+    }
+    .summary-card {
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+    }
+    .summary-badge {
+        width: 64px;
+        height: 64px;
+        display: grid;
+        place-items: center;
+        border-radius: 20px;
+        background: rgba(59, 130, 246, 0.12);
+        color: #2563eb;
+    }
+    .summary-card h3 {
+        margin: 0;
+        color: #0f172a;
+        font-size: 1.25rem;
+    }
+    .summary-card p {
+        margin: 0;
+        color: #475569;
+    }
+    .summary-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: grid;
+        gap: 12px;
+    }
+    .summary-list li {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: #334155;
+        font-weight: 600;
+    }
+    .summary-list .material-symbols-outlined {
+        color: #1d4ed8;
+        font-size: 1.15rem;
+    }
+    .alert-banner {
+        margin-bottom: 18px;
+        padding: 14px 16px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 600;
+        color: #0f172a;
+        background: #fef3c7;
+        border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+    .alert-error {
+        background: #fee2e2;
+        border: 1px solid rgba(239, 68, 68, 0.2);
+        color: #991b1b;
+    }
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 24px;
+    }
+    .form-field {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+    }
+    .form-field.full-width {
+        grid-column: 1 / -1;
+    }
+    .form-field.md\:col-span-2 {
+        grid-column: 1 / -1;
+    }
+    .form-field label {
+        margin-bottom: 8px;
+        color: #334155;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.96rem;
+    }
+    .field-icon {
+        color: #2563eb;
+        font-size: 1.15rem;
+        min-width: 1.5rem;
+    }
+    .form-field input,
+    .form-field select,
+    .form-field textarea {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        outline: none;
+        color: #0f172a;
+        font-size: 0.875rem;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+        transition: background-color 300ms, border-color 300ms, box-shadow 300ms;
+    }
+    .form-field input:focus,
+    .form-field select:focus,
+    .form-field textarea:focus {
+        background: #ffffff;
+        border-color: transparent;
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2), 0 0 0 2px #2563eb;
+    }
+    .form-field input::placeholder,
+    .form-field textarea::placeholder {
+        color: #94a3b8;
+    }
+    .form-field textarea {
+        min-height: 110px;
+        resize: vertical;
+        line-height: 1.6;
+    }
+    select {
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+    }
+    .btn {
+        transition: transform 300ms ease, box-shadow 300ms ease, background-color 300ms ease;
+    }
+    .btn-primary {
+        background: #172554;
+        color: #ffffff;
+        box-shadow: 0 10px 20px rgba(23, 37, 84, 0.25);
+    }
+    .btn-primary:hover {
+        background: #1e3a8a;
+        transform: translateY(-2px);
+        box-shadow: 0 12px 24px rgba(30, 58, 138, 0.3);
+    }
+    .btn-secondary {
+        background: #ffffff;
+        color: #334155;
+        border: 1px solid #e5e7eb;
+    }
+    .btn-secondary:hover {
+        background: #f9fafb;
+    }
+    .form-actions {
+        margin-top: 22px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        justify-content: flex-start;
+    }
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 14px 22px;
+        border-radius: 999px;
+        border: none;
+        font-weight: 700;
+        text-decoration: none;
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .btn-primary {
+        background: #172554;
+        color: #ffffff;
+        box-shadow: 0 18px 40px rgba(23, 37, 84, 0.22);
+    }
+    .btn-primary:hover {
+        background: #1e3a8a;
+        transform: translateY(-2px);
+        box-shadow: 0 24px 48px rgba(30, 58, 138, 0.28);
+    }
+    .btn-secondary {
+        background: #eef2ff;
+        color: #1e293b;
+        border: 1px solid rgba(148, 163, 184, 0.35);
+    }
+    .btn-secondary:hover {
+        background: #e2e8f0;
+    }
+    @media (max-width: 1100px) {
+        .form-layout {
+            grid-template-columns: 1fr;
+        }
+    }
+    @media (max-width: 920px) {
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+        .summary-card,
+        .form-panel {
+            padding: 20px;
+        }
+    }
+    @media (max-width: 720px) {
+        #agregar-cliente {
+            padding: 18px;
+        }
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+        .form-actions {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .summary-card {
+            order: 2;
+        }
+    }
+    body.light-mode #agregar-cliente {
+        background: #ffffff;
+        border-color: rgba(148, 163, 184, 0.15);
+        box-shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
+    }
+    body.light-mode .summary-card,
+    body.light-mode .form-panel {
+        background: #ffffff;
+        border-color: rgba(148, 163, 184, 0.2);
+        color: #0f172a;
+    }
+    body.light-mode .section-header h2 {
+        color: #0f172a;
+    }
+    body.light-mode .section-header p,
+    body.light-mode .summary-card p,
+    body.light-mode .summary-list li,
+    body.light-mode .form-field label {
+        color: #475569;
+    }
+    body.light-mode .summary-card h3 {
+        color: #0f172a;
+    }
+    body.light-mode .form-field input,
+    body.light-mode .form-field select,
+    body.light-mode .form-field textarea {
+        color: #0f172a;
+    }
+
+    /* =========================
+       MODO OSCURO (toggle global)
+       ========================= */
+    :root[data-theme="dark"] #agregar-cliente {
+        background: rgba(10,18,34,0.92) !important;
+        border-color: rgba(255,255,255,0.14) !important;
+        box-shadow: 0 24px 90px rgba(0,0,0,0.30) !important;
+    }
+    :root[data-theme="dark"] .summary-card,
+    :root[data-theme="dark"] .form-panel {
+        background: rgba(10,18,34,0.65) !important;
+        border-color: rgba(255,255,255,0.14) !important;
+        color: rgba(255,255,255,0.94) !important;
+    }
+    :root[data-theme="dark"] .section-header h2 {
+        color: rgba(255,255,255,0.96) !important;
+    }
+    :root[data-theme="dark"] .section-header p,
+    :root[data-theme="dark"] .summary-card p,
+    :root[data-theme="dark"] .summary-list li,
+    :root[data-theme="dark"] .form-field label {
+        color: rgba(255,255,255,0.86) !important;
+    }
+    :root[data-theme="dark"] .summary-card h3 {
+        color: rgba(255,255,255,0.98) !important;
+    }
+    :root[data-theme="dark"] .alert-banner {
+        background: rgba(255,255,255,0.06) !important;
+        border-color: rgba(255,255,255,0.18) !important;
+        color: rgba(255,255,255,0.92) !important;
+    }
+    :root[data-theme="dark"] .alert-error {
+        background: rgba(239,68,68,0.14) !important;
+        border-color: rgba(239,68,68,0.28) !important;
+        color: rgba(255,255,255,0.95) !important;
+    }
+
+    :root[data-theme="dark"] .form-field input,
+    :root[data-theme="dark"] .form-field select,
+    :root[data-theme="dark"] .form-field textarea {
+        background: rgba(15,23,42,0.5) !important;
+        border-color: rgba(148,163,184,0.35) !important;
+        color: rgba(255,255,255,0.96) !important;
+    }
+    :root[data-theme="dark"] .form-field input:focus,
+    :root[data-theme="dark"] .form-field select:focus,
+    :root[data-theme="dark"] .form-field textarea:focus {
+        background: rgba(30,41,59,0.95) !important;
+        border-color: transparent !important;
+        box-shadow: 0 4px 12px rgba(37,99,235,0.2), 0 0 0 2px #2563eb !important;
+    }
+    :root[data-theme="dark"] .form-field input::placeholder,
+    :root[data-theme="dark"] .form-field textarea::placeholder {
+        color: rgba(148,163,184,0.8) !important;
+    }
+    :root[data-theme="dark"] .btn-secondary {
+        background: rgba(255,255,255,0.08) !important;
+        color: rgba(255,255,255,0.95) !important;
+        border-color: rgba(255,255,255,0.16) !important;
+    }
+    :root[data-theme="dark"] .btn-secondary:hover {
+        background: rgba(255,255,255,0.12) !important;
+    }
+    </style>
+
+<script>
+window.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('form-cliente');
+    const cedulaInput = document.getElementById('id_cedula');
+    const nombreInput = document.getElementById('nombre');
+    const apellidoInput = document.getElementById('apellido');
+    const telefonoInput = document.getElementById('telefono');
+    const emailInput = document.getElementById('email');
+    const fechaInput = document.getElementById('fecha_nacimiento');
+    const tipoSelect = document.getElementById('tipo_cedula');
+    const alertBox = document.getElementById('form-error');
+
+    const showError = message => {
+        alertBox.textContent = message;
+        alertBox.style.display = 'flex';
+        setTimeout(() => { alertBox.style.display = 'none'; }, 5000);
+    };
+
+    cedulaInput.addEventListener('input', () => {
+        cedulaInput.value = cedulaInput.value.replace(/\D/g, '');
+    });
+
+    telefonoInput.addEventListener('input', () => {
+        let valor = telefonoInput.value.replace(/\D/g, '');
+        if (valor.length > 11) valor = valor.slice(0, 11);
+        if (valor.length >= 4) {
+            telefonoInput.value = '(' + valor.slice(0, 4) + ') ' + valor.slice(4);
+        } else {
+            telefonoInput.value = valor;
+        }
+    });
+
+    fechaInput.addEventListener('input', () => {
+        let valor = fechaInput.value.replace(/\D/g, '');
+        if (valor.length > 8) valor = valor.slice(0, 8);
+        if (valor.length > 4) {
+            fechaInput.value = valor.slice(0,2) + '/' + valor.slice(2,4) + '/' + valor.slice(4,8);
+        } else if (valor.length > 2) {
+            fechaInput.value = valor.slice(0,2) + '/' + valor.slice(2,4);
+        } else {
+            fechaInput.value = valor;
+        }
+    });
+
+    form.addEventListener('submit', function(e) {
+        const nombre = nombreInput.value.trim();
+        const apellido = apellidoInput.value.trim();
+        const email = emailInput.value.trim().toLowerCase();
+        const fecha = fechaInput.value.trim();
+        const cedula = cedulaInput.value.trim();
+        const cedulaCompleta = tipoSelect.value + cedula;
+        document.getElementById('cedula_completa').value = cedulaCompleta;
+
+        const soloLetras = /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/;
+        if (!nombre || !soloLetras.test(nombre)) {
+            e.preventDefault();
+            showError('El nombre solo puede tener letras y espacios.');
+            nombreInput.focus();
+            return;
+        }
+        if (!apellido || !soloLetras.test(apellido)) {
+            e.preventDefault();
+            showError('El apellido solo puede tener letras y espacios.');
+            apellidoInput.focus();
+            return;
+        }
+        if (!/^\d{6,12}$/.test(cedula)) {
+            e.preventDefault();
+            showError('La cédula debe tener entre 6 y 12 dígitos.');
+            cedulaInput.focus();
+            return;
+        }
+        if (!/^\(\d{4}\)\s\d{7}$/.test(telefonoInput.value)) {
+            e.preventDefault();
+            showError('El teléfono debe tener formato (0412) 1234567.');
+            telefonoInput.focus();
+            return;
+        }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            e.preventDefault();
+            showError('Por favor ingresa un correo válido.');
+            emailInput.focus();
+            return;
+        }
+        if (!/^\d{2}\/\d{2}\/\d{4}$/.test(fecha)) {
+            e.preventDefault();
+            showError('La fecha debe usar el formato DD/MM/AAAA.');
+            fechaInput.focus();
+            return;
+        }
+        const partes = fecha.split('/').map(Number);
+        const fechaObj = new Date(partes[2], partes[1] - 1, partes[0]);
+        if (fechaObj.getFullYear() !== partes[2] || fechaObj.getMonth() !== partes[1] - 1 || fechaObj.getDate() !== partes[0]) {
+            e.preventDefault();
+            showError('Ingresa una fecha de nacimiento válida.');
+            fechaInput.focus();
+        }
+    });
+});
+</script>
+{% endblock %}
+
+{% block help_content %}
+<div>
+    <h4>Ayuda: Agregar cliente</h4>
+    <p>Completa el formulario con los datos del nuevo cliente para registrar su perfil en el sistema.</p>
+    <ul>
+        <li>Selecciona el tipo de cédula y usa solo números en el campo de cédula.</li>
+        <li>El teléfono debe ingresarse en formato <code>(0412) 1234567</code>.</li>
+        <li>Verifica que la fecha de nacimiento tenga formato <code>DD/MM/AAAA</code> antes de guardar.</li>
+    </ul>
+</div>
+{% endblock %}

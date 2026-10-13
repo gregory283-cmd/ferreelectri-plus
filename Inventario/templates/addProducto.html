@@ -1,0 +1,723 @@
+{% extends 'base/pan_con_queso.html' %}
+{% load static %}
+
+{% block arroz_con_pollo %}
+<section class="section-panel form-card add-product-page">
+    <div class="section-header">
+        <div>
+            <div class="brand-top">
+                <img src="{% static 'img/logo.png' %}" alt="FERREELECTRI PLUS" class="brand-icon">
+                <div>
+                    <h2>Agregar producto</h2>
+                    <p>Registra un nuevo artículo con un flujo limpio y fácil de completar.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-layout">
+        <aside class="summary-card">
+            <div class="summary-badge">
+                <span class="material-symbols-outlined">inventory_2</span>
+            </div>
+            <h3>Productos listos para venta</h3>
+            <p>Completa los datos clave del producto para mantener inventario actualizado y precios claros.</p>
+            <ul class="summary-list">
+                <li><span class="material-symbols-outlined">add_shopping_cart</span> Costos y existencias en un solo registro</li>
+                <li><span class="material-symbols-outlined">photo_camera</span> Agrega imagen para recuperar más rápido</li>
+                <li><span class="material-symbols-outlined">price_check</span> Precios y categoría en un diseño ordenado</li>
+            </ul>
+        </aside>
+
+        <div class="form-panel">
+            <form id="productoForm" action="" method="POST" enctype="multipart/form-data" autocomplete="off">
+                {% csrf_token %}
+                <div id="form-error" class="alert-banner alert-error" style="display:none;"></div>
+                <div class="form-grid grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="form-field">
+                        <label for="id_Descripcion" class="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white mb-2"><span class="field-icon material-symbols-outlined">description</span> Descripción</label>
+                        {{ productos.Descripcion }}
+                        {{ productos.Descripcion.errors }}
+                    </div>
+                    <div class="form-field">
+                        <label for="id_Precio" class="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white mb-2"><span class="field-icon material-symbols-outlined">sell</span> Precio</label>
+                        {{ productos.Precio }}
+                        {{ productos.Precio.errors }}
+                    </div>
+                    <div class="form-field">
+                        <label for="id_iva" class="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white mb-2"><span class="field-icon material-symbols-outlined">receipt_long</span> Tratamiento de IVA</label>
+                        {{ productos.iva }}
+                        {{ productos.iva.errors }}
+                    </div>
+                    <div class="form-field">
+                        <label for="id_Costo" class="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white mb-2"><span class="field-icon material-symbols-outlined">payments</span> Costo</label>
+                        {{ productos.Costo }}
+                        {{ productos.Costo.errors }}
+                    </div>
+                    <div class="form-field">
+                        <label for="id_Cantidad" class="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white mb-2"><span class="field-icon material-symbols-outlined">inventory</span> Cantidad</label>
+                        {{ productos.Cantidad }}
+                        {{ productos.Cantidad.errors }}
+                    </div>
+                    <div class="form-field">
+                        <label for="id_Categoria" class="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white mb-2"><span class="field-icon material-symbols-outlined">category</span> Categoría</label>
+                        {{ productos.Categoria }}
+                        {{ productos.Categoria.errors }}
+                    </div>
+                    <div class="form-field">
+                        <label for="id_Imagen" class="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white mb-2"><span class="field-icon material-symbols-outlined">image</span> Imagen</label>
+                        {{ productos.Imagen }}
+                        {{ productos.Imagen.errors }}
+                    </div>
+                </div>
+                <!-- Presentaciones de Venta y Equivalencias -->
+                <div class="mt-6">
+                    <div class="presentaciones-panel rounded-2xl p-6" role="region" aria-labelledby="presentaciones-title">
+                        <div class="mb-4">
+                            <h3 id="presentaciones-title" class="text-lg font-semibold text-slate-100">Presentaciones de Venta y Equivalencias</h3>
+                                <p class="text-sm text-slate-400 mt-1">Define las distintas presentaciones del producto (caja, paquete, unidad) y su factor de conversión respecto a la unidad base.</p>
+                        </div>
+
+                        <div class="overflow-x-auto">
+                            <table id="presentacionesTable" class="w-full text-sm text-left divide-y divide-slate-800">
+                                <thead class="bg-slate-800/80 text-slate-400 text-xs font-semibold uppercase tracking-wider">
+                                    <tr>
+                                        <th class="px-3 py-2">Presentación</th>
+                                        <th class="px-3 py-2">Cantidad / Factor</th>
+                                        <th class="px-3 py-2">Unidad de Medida</th>
+                                        <th class="px-3 py-2">Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-transparent" id="presentacionesBody">
+                                    <!-- Filas existentes (si las hubiera) pueden renderizarse aquí desde el servidor -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <button id="addPresentacionBtn" type="button" class="mt-4 flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-medium rounded-xl border border-slate-700 transition-all">
+                            + Agregar otra presentación
+                        </button>
+
+                        <!-- Plantilla de fila (oculta) -->
+                        <template id="presentacionRowTemplate">
+                            <tr class="odd:bg-transparent">
+                                <td class="px-3 py-2">
+                                    <select name="presentacion_nombre[]" class="w-full px-4 py-3 bg-gray-50 dark:bg-slate-900/50 border border-gray-200 dark:border-slate-700 rounded-xl text-sm outline-none transition-all duration-200 focus:bg-white focus:border-blue-600 focus:ring-2 focus:ring-blue-600/50 focus:shadow-md dark:bg-slate-900/50 dark:border-slate-700 dark:focus:bg-slate-800">
+                                        <option value="">Selecciona una presentación</option>
+                                        <option value="Unidad">Unidad</option>
+                                        <option value="Caja">Caja</option>
+                                        <option value="Paquete">Paquete</option>
+                                        <option value="Bulto">Bulto</option>
+                                        <option value="Docena">Docena</option>
+                                        <option value="Rollo">Rollo</option>
+                                    </select>
+                                </td>
+                                <td class="px-3 py-2 w-48">
+                                    <input type="number" step="any" min="0" name="presentacion_factor[]" class="w-full px-4 py-3 bg-gray-50 dark:bg-slate-900/50 border border-gray-200 dark:border-slate-700 rounded-xl text-sm outline-none transition-all duration-200 focus:bg-white focus:border-blue-600 focus:ring-2 focus:ring-blue-600/50 focus:shadow-md dark:bg-slate-900/50 dark:border-slate-700 dark:focus:bg-slate-800" placeholder="Ej: 12">
+                                </td>
+                                <td class="px-3 py-2">
+                                    <select name="presentacion_unidad[]" class="w-full px-4 py-3 bg-gray-50 dark:bg-slate-900/50 border border-gray-200 dark:border-slate-700 rounded-xl text-sm outline-none transition-all duration-200 focus:bg-white focus:border-blue-600 focus:ring-2 focus:ring-blue-600/50 focus:shadow-md dark:bg-slate-900/50 dark:border-slate-700 dark:focus:bg-slate-800">
+                                        <option value="Piezas">Piezas</option>
+                                        <option value="Kilogramos">Kilogramos</option>
+                                        <option value="Litros">Litros</option>
+                                        <option value="Metros">Metros</option>
+                                        <option value="Unidades">Unidades</option>
+                                    </select>
+                                </td>
+                                <td class="px-3 py-2 text-center">
+                                    <button type="button" class="delete-row-btn text-slate-400 hover:text-red-400" title="Eliminar presentación">
+                                        <span class="material-symbols-outlined">delete</span>
+                                    </button>
+                                </td>
+                            </tr>
+                        </template>
+
+                        <!-- Contador oculto para indexar inputs correctamente -->
+                        <input type="hidden" id="presentacionesCount" name="presentaciones_count" value="0" class="w-full px-4 py-3 bg-gray-50 dark:bg-slate-900/50 border border-gray-200 dark:border-slate-700 rounded-xl text-sm outline-none transition-all duration-200 focus:bg-white focus:border-blue-600 focus:ring-2 focus:ring-blue-600/50 focus:shadow-md dark:bg-slate-900/50 dark:border-slate-700 dark:focus:bg-slate-800">
+                        <input type="hidden" id="presentacionesJson" name="presentations_json" value="[]" class="w-full px-4 py-3 bg-gray-50 dark:bg-slate-900/50 border border-gray-200 dark:border-slate-700 rounded-xl text-sm outline-none transition-all duration-200 focus:bg-white focus:border-blue-600 focus:ring-2 focus:ring-blue-600/50 focus:shadow-md dark:bg-slate-900/50 dark:border-slate-700 dark:focus:bg-slate-800">
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary bg-blue-950 hover:bg-blue-900 text-white font-bold rounded-xl px-8 py-3 shadow-lg hover:shadow-blue-900/30 transition-all duration-300 w-full md:w-auto flex items-center justify-center gap-2"><span class="material-symbols-outlined">save</span> Guardar producto</button>
+                    <a href="{% url 'listar_productos' %}" class="btn btn-secondary"><span class="material-symbols-outlined">arrow_back</span> Volver al inventario</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <style>
+    .add-product-page {
+        padding: 32px;
+        background: rgba(255,255,255,0.98);
+        border-radius: 28px;
+        box-shadow: 0 30px 90px rgba(15, 23, 42, 0.12);
+        border: 1px solid rgba(148, 163, 184, 0.2);
+    }
+    .brand-top {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+    }
+    .brand-icon {
+        width: 72px;
+        height: 72px;
+        object-fit: contain;
+        border-radius: 18px;
+        background: rgba(59,130,246,0.08);
+        padding: 12px;
+    }
+    .section-header h2 {
+        margin: 0 0 10px;
+        color: #0f172a;
+        font-size: clamp(2rem, 2.2vw, 2.6rem);
+    }
+    .section-header p {
+        margin: 0;
+        max-width: 780px;
+        color: #475569;
+        line-height: 1.75;
+    }
+    .form-layout {
+        display: grid;
+        grid-template-columns: 320px minmax(360px, 1fr);
+        gap: 26px;
+        margin-top: 30px;
+    }
+    .summary-card,
+    .form-panel {
+        background: #f8fafc;
+        border: 1px solid rgba(148, 163, 184, 0.35);
+        border-radius: 24px;
+        padding: 26px;
+    }
+    .summary-card {
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+    }
+    .summary-badge {
+        width: 64px;
+        height: 64px;
+        display: grid;
+        place-items: center;
+        border-radius: 20px;
+        background: rgba(59,130,246,0.12);
+        color: #2563eb;
+    }
+    .summary-card h3 {
+        margin: 0;
+        color: #0f172a;
+        font-size: 1.25rem;
+    }
+    .summary-card p {
+        margin: 0;
+        color: #475569;
+    }
+    .summary-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: grid;
+        gap: 12px;
+    }
+    .summary-list li {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: #334155;
+        font-weight: 600;
+    }
+    .summary-list .material-symbols-outlined {
+        color: #1d4ed8;
+        font-size: 1.15rem;
+    }
+    .alert-banner {
+        margin-bottom: 18px;
+        padding: 14px 16px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 600;
+        color: #0f172a;
+        background: #fef3c7;
+        border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+    .alert-error {
+        background: #fee2e2;
+        border: 1px solid rgba(239, 68, 68, 0.2);
+        color: #991b1b;
+    }
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 24px;
+    }
+    .form-grid p {
+        margin: 0 0 16px;
+        padding: 0;
+    }
+    .form-grid .form-row {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    .form-grid label {
+        width: 100%;
+        margin-bottom: 8px;
+        color: #334155;
+        font-weight: 700;
+        font-size: 0.95rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .field-icon {
+        color: #2563eb;
+        font-size: 1.15rem;
+        min-width: 1.5rem;
+    }
+    .form-grid input,
+    .form-grid select,
+    .form-grid textarea {
+        width: 100%;
+        margin: 0;
+        padding: 14px 16px;
+        border-radius: 12px;
+        border: 1px solid #e5e7eb;
+        background: #f9fafb;
+        color: #0f172a;
+        font-size: 0.98rem;
+        transition: background-color 300ms, border-color 300ms, box-shadow 300ms;
+    }
+    .form-grid input::placeholder,
+    .form-grid textarea::placeholder {
+        color: #94a3b8;
+        opacity: 1;
+    }
+    .form-grid input:focus,
+    .form-grid select:focus,
+    .form-grid textarea:focus {
+        border-color: transparent;
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2), 0 0 0 2px #2563eb;
+        outline: none;
+        background: #ffffff;
+    }
+    .presentaciones-panel {
+        background: #ffffff;
+        border: 1px solid rgba(148, 163, 184, 0.22);
+        border-radius: 20px;
+        box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+    }
+    .presentaciones-panel h3 {
+        color: #0f172a !important;
+    }
+    .presentaciones-panel p {
+        color: #64748b !important;
+    }
+    .presentaciones-panel .overflow-x-auto {
+        border: 0 !important;
+    }
+    .presentaciones-panel table {
+        border-collapse: collapse;
+        border-spacing: 0;
+        width: 100%;
+        background: transparent;
+    }
+    .presentaciones-panel th,
+    .presentaciones-panel td {
+        border: none;
+        background: transparent;
+    }
+    .presentaciones-panel thead {
+        background: #f8fafc;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    .presentaciones-panel th {
+        color: #475569 !important;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+    }
+    .presentaciones-panel tbody {
+        background: #ffffff !important;
+    }
+    .presentaciones-panel tbody tr {
+        border-bottom: 1px solid #f1f5f9;
+    }
+    .presentaciones-panel tbody tr:hover {
+        background: #f8fafc;
+    }
+    .presentaciones-panel input,
+    .presentaciones-panel select {
+        background: #ffffff !important;
+        border: 1px solid #cbd5e1 !important;
+        color: #0f172a !important;
+        box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04);
+    }
+    .presentaciones-panel input::placeholder {
+        color: #94a3b8 !important;
+    }
+    .presentaciones-panel input:focus,
+    .presentaciones-panel select:focus {
+        border-color: #2563eb !important;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14) !important;
+        outline: none;
+    }
+    .presentaciones-panel #addPresentacionBtn {
+        background: #eff6ff !important;
+        border: 1px solid #bfdbfe !important;
+        color: #1d4ed8 !important;
+    }
+    .presentaciones-panel #addPresentacionBtn:hover {
+        background: #dbeafe !important;
+    }
+    .presentaciones-panel .delete-row-btn {
+        color: #64748b !important;
+    }
+    .presentaciones-panel .delete-row-btn:hover {
+        color: #dc2626 !important;
+    }
+    .form-grid input[type="file"] {
+        width: 100%;
+        padding: 14px 16px;
+        border-radius: 18px;
+        border: 1px solid rgba(148, 163, 184, 0.24);
+        background: rgba(248, 250, 252, 0.98);
+        color: #0f172a;
+        box-shadow: inset 0 1px 4px rgba(15, 23, 42, 0.08);
+    }
+    .form-grid input[type="file"]::-webkit-file-upload-button,
+    .form-grid input[type="file"]::file-selector-button {
+        border-radius: 14px;
+        padding: 10px 14px;
+        border: none;
+        background: #2563eb;
+        color: #fff;
+        font-weight: 700;
+        cursor: pointer;
+    }
+    .form-grid input[type="file"]::-webkit-file-upload-button:hover,
+    .form-grid input[type="file"]::file-selector-button:hover {
+        background: #1d4ed8;
+    }
+    .form-grid .clearablefileinput span,
+    .form-grid .clearablefileinput a {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.8rem 1rem;
+        border-radius: 16px;
+        background: #f8fafc;
+        color: #0f172a;
+        border: 1px solid rgba(148, 163, 184, 0.22);
+        text-decoration: none;
+    }
+    .form-grid .clearablefileinput a {
+        background: #2563eb;
+        color: #fff;
+    }
+    .form-actions {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 14px;
+        margin-top: 24px;
+        flex-wrap: wrap;
+    }
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        border-radius: 14px;
+        padding: 14px 22px;
+        font-weight: 700;
+        text-decoration: none;
+        border: 1px solid transparent;
+        transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    }
+    .btn-primary {
+        background: #172554;
+        color: #fff;
+        border-color: transparent;
+        box-shadow: 0 14px 36px rgba(23,37,84,0.22);
+    }
+    .btn-primary:hover {
+        background: #1e3a8a;
+        transform: translateY(-2px);
+        box-shadow: 0 24px 48px rgba(30, 58, 138, 0.28);
+    }
+    .btn-secondary {
+        background: #ffffff;
+        color: #0d6efd;
+        border-color: rgba(13,110,253,0.18);
+    }
+    .btn-secondary:hover {
+        background: #f8fbff;
+    }
+
+    html[data-theme="dark"] .add-product-page {
+        background: rgba(8, 12, 26, 0.92);
+        border-color: rgba(255,255,255,0.14);
+        box-shadow: 0 30px 90px rgba(0,0,0,0.55);
+        color: #e8f4ff;
+    }
+    html[data-theme="dark"] .summary-card,
+    html[data-theme="dark"] .form-panel {
+        background: rgba(12, 18, 34, 0.94);
+        border-color: rgba(255,255,255,0.12);
+    }
+    html[data-theme="dark"] .section-header h2,
+    html[data-theme="dark"] .section-header p,
+    html[data-theme="dark"] .summary-card h3,
+    html[data-theme="dark"] .summary-card p,
+    html[data-theme="dark"] .summary-list li,
+    html[data-theme="dark"] .btn-secondary {
+        color: #e8f4ff;
+    }
+    html[data-theme="dark"] .summary-badge {
+        background: rgba(0,118,212,0.16);
+        color: #8ccaff;
+    }
+    html[data-theme="dark"] .brand-icon {
+        background: rgba(0,118,212,0.16);
+    }
+    html[data-theme="dark"] .alert-banner {
+        background: rgba(245, 158, 11, 0.12);
+        color: #fff9db;
+        border-color: rgba(245, 158, 11, 0.24);
+    }
+    html[data-theme="dark"] .alert-error {
+        background: rgba(185,28,28,0.18);
+        color: #ffd6d6;
+        border-color: rgba(255,255,255,0.14);
+    }
+    html[data-theme="dark"] .form-grid p {
+        background: transparent;
+        border: none;
+        box-shadow: none;
+    }
+    html[data-theme="dark"] .form-grid label {
+        color: #cbd5e1;
+    }
+    html[data-theme="dark"] .form-panel input,
+    html[data-theme="dark"] .form-panel select,
+    html[data-theme="dark"] .form-panel textarea {
+        background: rgba(255,255,255,0.06);
+        color: #e8f4ff;
+        border-color: rgba(255,255,255,0.12);
+    }
+    html[data-theme="dark"] .form-panel input::placeholder,
+    html[data-theme="dark"] .form-panel textarea::placeholder {
+        color: rgba(226, 232, 240, 0.55);
+    }
+    html[data-theme="dark"] .form-panel input:focus,
+    html[data-theme="dark"] .form-panel select:focus,
+    html[data-theme="dark"] .form-panel textarea:focus {
+        border-color: transparent;
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2), 0 0 0 2px #2563eb;
+        background: rgba(255,255,255,0.08);
+    }
+    html[data-theme="dark"] .presentaciones-panel {
+        background: rgba(11, 18, 32, 0.96);
+        border-color: rgba(255,255,255,0.1);
+        box-shadow: none;
+    }
+    html[data-theme="dark"] .presentaciones-panel h3 {
+        color: #f1f5f9 !important;
+    }
+    html[data-theme="dark"] .presentaciones-panel p {
+        color: #94a3b8 !important;
+    }
+    html[data-theme="dark"] .presentaciones-panel thead {
+        background: rgba(30, 41, 59, 0.82);
+        border-bottom-color: rgba(148, 163, 184, 0.16);
+    }
+    html[data-theme="dark"] .presentaciones-panel th {
+        color: #cbd5e1 !important;
+    }
+    html[data-theme="dark"] .presentaciones-panel tbody {
+        background: transparent !important;
+    }
+    html[data-theme="dark"] .presentaciones-panel tbody tr {
+        border-bottom-color: rgba(148, 163, 184, 0.12);
+    }
+    html[data-theme="dark"] .presentaciones-panel tbody tr:hover {
+        background: rgba(148, 163, 184, 0.06);
+    }
+    html[data-theme="dark"] .presentaciones-panel input,
+    html[data-theme="dark"] .presentaciones-panel select {
+        background: rgba(255,255,255,0.06) !important;
+        border-color: rgba(255,255,255,0.12) !important;
+        color: #e8f4ff !important;
+    }
+    html[data-theme="dark"] .presentaciones-panel input::placeholder {
+        color: rgba(226, 232, 240, 0.55) !important;
+    }
+    html[data-theme="dark"] .presentaciones-panel #addPresentacionBtn {
+        background: rgba(30, 41, 59, 0.9) !important;
+        border-color: rgba(148, 163, 184, 0.35) !important;
+        color: #e2e8f0 !important;
+    }
+    html[data-theme="dark"] .presentaciones-panel #addPresentacionBtn:hover {
+        background: rgba(51, 65, 85, 0.95) !important;
+    }
+    html[data-theme="dark"] .presentaciones-panel .delete-row-btn {
+        color: #94a3b8 !important;
+    }
+    html[data-theme="dark"] .presentaciones-panel .delete-row-btn:hover {
+        color: #f87171 !important;
+    }
+    html[data-theme="dark"] .btn-secondary:hover {
+        background: rgba(255,255,255,0.08);
+    }
+    @media (max-width: 960px) {
+        .form-layout {
+            grid-template-columns: minmax(0, 1fr);
+            width: 100%;
+            min-width: 0;
+        }
+        .add-product-page .summary-card,
+        .add-product-page .form-panel,
+        .add-product-page .form-panel form,
+        .add-product-page .form-grid {
+            width: 100%;
+            min-width: 0;
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+    }
+    @media (max-width: 680px) {
+        .add-product-page {
+            padding: 24px 18px;
+        }
+        .add-product-page .form-grid {
+            grid-template-columns: minmax(0, 1fr);
+        }
+        .add-product-page .presentaciones-panel table {
+            min-width: 640px;
+        }
+    }
+    </style>
+    <script>
+    // Estilizar selects nativos para apariencia premium y añadir pequeña mejora accesible
+    document.addEventListener('DOMContentLoaded', function(){
+        document.querySelectorAll('select.enhanced-select').forEach(function(sel){
+            sel.style.appearance = 'none';
+            sel.style.WebkitAppearance = 'none';
+            sel.style.background = 'linear-gradient(90deg, rgba(37,99,235,0.06), rgba(37,99,235,0.03))';
+            sel.style.borderRadius = '12px';
+            sel.style.padding = '10px 38px 10px 12px';
+            sel.style.border = '1px solid rgba(148,163,184,0.16)';
+            sel.style.color = '#e6eef8';
+            sel.style.backgroundImage = 'url("data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 20 20\'><path fill=\'%23cbd5e1\' d=\'M5.5 7.5l4.5 4.5 4.5-4.5\'/></svg>")';
+            sel.style.backgroundRepeat = 'no-repeat';
+            sel.style.backgroundPosition = 'right 10px center';
+        });
+    });
+    </script>
+    <script>
+    (function(){
+        function $(sel, ctx){ return (ctx||document).querySelector(sel); }
+        function $all(sel, ctx){ return Array.from((ctx||document).querySelectorAll(sel)); }
+
+        document.addEventListener('DOMContentLoaded', function(){
+            var addBtn = $('#addPresentacionBtn');
+            var tbody = $('#presentacionesBody');
+            var template = $('#presentacionRowTemplate');
+            var counterInput = $('#presentacionesCount');
+
+            function getCount(){ return parseInt(counterInput.value||'0',10); }
+            function setCount(v){ counterInput.value = String(v); }
+
+            function reindexRows(){
+                var rows = $all('#presentacionesBody tr');
+                rows.forEach(function(row, idx){
+                    var inpPresent = row.querySelector('input[type="text"]');
+                    var inpFactor = row.querySelector('input[type="number"]');
+                    var selUnidad = row.querySelector('select');
+                    if(inpPresent) inpPresent.name = 'presentacion_nombre[]';
+                    if(inpFactor) inpFactor.name = 'presentacion_factor[]';
+                    if(selUnidad) selUnidad.name = 'presentacion_unidad[]';
+                });
+                setCount(rows.length);
+            }
+
+            function addRow(prefill){
+                var idx = getCount();
+                var tpl = template.content.cloneNode(true);
+                // replace placeholder names
+                $all('input, select', tpl).forEach(function(el){
+                    if(el.name) el.name = el.name.replace('__IDX__', idx);
+                });
+                // if prefill provided, set values
+                if(prefill){
+                    var text = tpl.querySelector('input[type="text"]');
+                    var num = tpl.querySelector('input[type="number"]');
+                    var sel = tpl.querySelector('select');
+                    if(text && prefill.presentacion) text.value = prefill.presentacion;
+                    if(num && prefill.factor) num.value = prefill.factor;
+                    if(sel && prefill.unidad) sel.value = prefill.unidad;
+                }
+                tbody.appendChild(tpl);
+                reindexRows();
+            }
+
+            // Delegate delete
+            tbody.addEventListener('click', function(e){
+                var btn = e.target.closest && e.target.closest('.delete-row-btn');
+                if(!btn) return;
+                var row = btn.closest('tr');
+                if(row){ row.remove(); reindexRows(); }
+            });
+
+            addBtn.addEventListener('click', function(){ addRow(); });
+
+            // If there are no rows, add one empty row to guide the user
+            if(getCount() === 0 && tbody.children.length === 0){ addRow(); }
+
+            function serializePresentations(){
+                var rows = $all('#presentacionesBody tr');
+                var items = rows.map(function(row){
+                    var type = row.querySelector('[name="presentacion_nombre[]"]');
+                    var factor = row.querySelector('input[type="number"]');
+                    var unit = row.querySelector('select');
+                    return {
+                        type: type ? (type.value || '').trim() : '',
+                        factor: factor ? parseInt(factor.value || '0', 10) : 0,
+                        unit: unit ? (unit.value || '').trim() : ''
+                    };
+                }).filter(function(item){
+                    return item.type && item.unit && item.factor > 0;
+                });
+                var hidden = $('#presentacionesJson');
+                if(hidden) hidden.value = JSON.stringify(items);
+            }
+
+            // On form submit ensure counter is accurate and serialize to JSON
+            var form = $('#productoForm');
+            if(form){
+                form.addEventListener('submit', function(){
+                    reindexRows();
+                    serializePresentations();
+                });
+            }
+        });
+    })();
+    </script>
+</section>
+{% endblock %}
+
+{% block help_content %}
+<div>
+    <h4>Ayuda: Agregar producto</h4>
+    <p>Registra un producto nuevo con descripción completa, código e imagen opcional.</p>
+    <ul>
+        <li>Si el producto tiene promoción, verifica que el precio de oferta sea coherente con el stock.</li>
+        <li>Usa el botón de volver para regresar al inventario completo sin perder tu progreso.</li>
+        <li>El formulario está optimizado para modo claro y oscuro.</li>
+    </ul>
+</div>
+{% endblock %}
+

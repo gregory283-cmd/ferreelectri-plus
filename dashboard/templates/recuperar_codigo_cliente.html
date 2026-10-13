@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Restablecer contraseña | FerreElectri PLUS{% endblock %}
+{% block body_class %}theme-dark auth-page{% endblock %}
+
+{% block content %}
+<main class="auth-viewport recovery-viewport">
+  <div class="auth-layout auth-layout-recovery">
+    <section class="auth-panel auth-form-panel recovery-form-panel" aria-labelledby="reset-title">
+      <div class="auth-heading">
+        <span class="eyebrow">Seguridad de tu cuenta cliente</span>
+        <h1 id="reset-title">Crea una nueva contraseña</h1>
+        <p>Introduce el código de 8 caracteres enviado a tu correo y define una contraseña nueva para continuar con tus compras.</p>
+      </div>
+
+      <div class="recovery-delivery-note" role="status"><span class="recovery-delivery-icon"><i class="fa-regular fa-envelope" aria-hidden="true"></i></span><span>Código enviado. Revisa también correo no deseado.</span></div>
+
+      {% if messages %}
+        {% for message in messages %}
+          <div class="auth-alert{% if 'error' in message.tags %} auth-alert-error{% elif 'success' in message.tags %} auth-alert-success{% endif %}" role="status">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+      {% if error %}<div class="auth-alert auth-alert-error" role="alert">{{ error }}</div>{% endif %}
+      {% if clave_cambiada %}<div class="auth-alert auth-alert-success" role="status">Tu contraseña fue actualizada correctamente.</div>{% endif %}
+      {% if clave_repetida %}<div class="auth-alert auth-alert-error" role="alert">La nueva contraseña debe ser diferente.</div>{% endif %}
+
+      <form method="post" class="auth-form" autocomplete="off">
+        {% csrf_token %}
+        <div class="auth-grid">
+          <div class="auth-field full">
+            <label for="recovery-code">Código de verificación</label>
+            <div class="auth-input-wrap"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i><input id="recovery-code" name="codigo" type="text" maxlength="12" required placeholder="Código de 8 caracteres" autocomplete="one-time-code"></div>
+          </div>
+          <div class="auth-field full">
+            <label for="new-password-1">Nueva contraseña</label>
+            <div class="auth-input-wrap"><i class="fa-solid fa-lock" aria-hidden="true"></i><input id="new-password-1" name="new_password1" type="password" minlength="8" autocomplete="new-password" required placeholder="Mínimo 8 caracteres"></div>
+          </div>
+          <div class="auth-field full">
+            <label for="new-password-2">Repite la contraseña</label>
+            <div class="auth-input-wrap"><i class="fa-solid fa-lock" aria-hidden="true"></i><input id="new-password-2" name="new_password2" type="password" minlength="8" autocomplete="new-password" required placeholder="Repite tu contraseña"></div>
+          </div>
+        </div>
+        <div class="auth-actions auth-actions-wide"><button type="submit" class="auth-btn auth-btn-primary"><i class="fa-solid fa-key" aria-hidden="true"></i> Restablecer contraseña</button></div>
+      </form>
+
+      <div class="recovery-back-links">
+        <a href="{% url 'login_cliente' %}" class="auth-back-link"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Volver al acceso cliente</a>
+      </div>
+    </section>
+
+    <aside class="auth-side recovery-side">
+      <a class="auth-side-brand" href="{% url 'index' %}" aria-label="FerreElectri PLUS, inicio">
+        <img src="{% static 'img/logo.png' %}" alt="FerreElectri PLUS">
+        <span>ACCESO DE CLIENTES</span>
+      </a>
+      <div class="auth-side-copy">
+        <p class="auth-side-kicker">UN PASO MÁS Y LISTO</p>
+        <h2>Tu cuenta.<br>De nuevo contigo.</h2>
+        <p>Usa el código temporal para crear una clave nueva y volver a tus pedidos.</p>
+      </div>
+      <div class="auth-side-footer"><span>COLONCITO, TÁCHIRA</span><span>FERREELECTRI PLUS</span></div>
+    </aside>
+  </div>
+</main>
+{% if clave_cambiada %}
+<script>
+  window.setTimeout(function () {
+    window.location.assign("{% url 'login_cliente' %}");
+  }, 1800);
+</script>
+{% endif %}
+{% endblock %}

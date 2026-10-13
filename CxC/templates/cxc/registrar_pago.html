@@ -1,0 +1,141 @@
+{% extends "base/pan_con_queso.html" %}
+{% load static %}
+
+{% block help_content %}
+Registrar un pago manual para una factura dentro de CxC.
+{% endblock %}
+
+{% block arroz_con_pollo %}
+<div></div>
+
+<div class="glass-panel">
+  <div class="header" style="display:flex; justify-content:space-between; gap:14px; align-items:flex-start; margin-bottom:16px;">
+    <div>
+      <h2 style="margin:0; color:#01243f; font-weight:900; display:flex; align-items:center; gap:10px;">
+        <i class="fa-solid fa-money-bill-wave"></i> Registrar pago
+      </h2>
+      <p style="margin:6px 0 0 0; color:#1976d2; font-weight:800;">
+        Factura #{{ cuenta.factura.numero }} • Cliente {{ cuenta.cliente.cedula }}
+      </p>
+    </div>
+
+    <a class="btn-modern" style="background:#fff; color:#01243f; border:1px solid rgba(0,178,255,.25); box-shadow:none;"
+       href="{% url 'pagos_factura' cuenta.factura.numero %}">
+      <i class="fa-solid fa-arrow-left"></i> Volver
+    </a>
+  </div>
+
+  <div class="summary-modern-row" style="margin-top:8px; margin-bottom:22px;">
+    <div class="summary-card-modern" style="cursor:default; min-width:unset;">
+      <span class="icon material-symbols-outlined ani-scale-in" style="background:#e6f7ff;">receipt_long</span>
+      <div class="info">
+        <h5 style="margin:0;">{{ total }}</h5>
+        <small><span class="material-symbols-outlined ani-rotate-in">receipt</span> Total</small>
+      </div>
+    </div>
+    <div class="summary-card-modern" style="cursor:default; min-width:unset;">
+      <span class="icon material-symbols-outlined ani-scale-in" style="background:#e6f7ff;">paid</span>
+      <div class="info">
+        <h5 style="margin:0;">{{ pagado }}</h5>
+        <small><span class="material-symbols-outlined ani-rotate-in">payments</span> Pagado</small>
+      </div>
+    </div>
+    <div class="summary-card-modern" style="cursor:default; min-width:unset;">
+      <span class="icon material-symbols-outlined ani-scale-in" style="background:#e6f7ff; color:#1976d2;">money_off</span>
+      <div class="info">
+        <h5 style="margin:0; color:#1976d2;">{{ pendiente }}</h5>
+        <small><span class="material-symbols-outlined ani-rotate-in">schedule</span> Pendiente</small>
+      </div>
+    </div>
+  </div>
+
+  <div class="glass-panel" style="padding:18px; border-radius:18px; margin-bottom:0;">
+    <form method="post" action="{% url 'registrar_pago' cuenta.factura.numero %}">
+      {% csrf_token %}
+
+      <div class="grid" style="display:grid; grid-template-columns: 1fr 1fr; gap:14px;">
+        <div class="field" style="display:flex; flex-direction:column; gap:6px;">
+          <label style="font-weight:900; font-size:13px; color:#01243f;">Método de pago</label>
+          <select name="metodo" required style="padding:12px 12px; border-radius:12px; border:1px solid rgba(0,178,255,.25); background:#fff;">
+            <option value="efectivo">Efectivo</option>
+            <option value="pago_movil">Pago móvil</option>
+            <option value="transferencia">Transferencia</option>
+            <option value="otro">Otro</option>
+          </select>
+        </div>
+
+        <div class="field" style="display:flex; flex-direction:column; gap:6px;">
+          <label style="font-weight:900; font-size:13px; color:#01243f;">Monto</label>
+          <input name="monto" type="number" step="0.01" min="0.01" value="{{ pendiente|floatformat:2 }}" required
+                 style="padding:12px 12px; border-radius:12px; border:1px solid rgba(0,178,255,.25); background:#fff;" />
+        </div>
+
+        <div class="field" style="display:flex; flex-direction:column; gap:6px;">
+          <label style="font-weight:900; font-size:13px; color:#01243f;">Referencia (opcional)</label>
+          <input name="referencia" type="text" placeholder="Ej: #transacción / código"
+                 style="padding:12px 12px; border-radius:12px; border:1px solid rgba(0,178,255,.25); background:#fff;" />
+        </div>
+
+        <div class="field" style="display:flex; flex-direction:column; gap:6px;">
+          <label style="font-weight:900; font-size:13px; color:#01243f;">Banco (opcional)</label>
+          <input name="banco" type="text" placeholder="Ej: Banco / Institución"
+                 style="padding:12px 12px; border-radius:12px; border:1px solid rgba(0,178,255,.25); background:#fff;" />
+        </div>
+
+        <div class="field" style="display:flex; flex-direction:column; gap:6px; grid-column: 1 / -1;">
+          <label style="font-weight:900; font-size:13px; color:#01243f;">Nota (opcional)</label>
+          <textarea name="nota" placeholder="Observaciones"
+                    style="padding:12px 12px; border-radius:12px; border:1px solid rgba(0,178,255,.25); background:#fff; min-height:92px; resize:vertical;"></textarea>
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:12px; flex-wrap:wrap; margin-top:16px;">
+        <button class="btn-modern" type="submit">
+          <i class="fa-solid fa-floppy-disk"></i> Guardar pago
+        </button>
+      </div>
+    </form>
+
+    <script>
+      (function () {
+        const form = document.querySelector('form[action="{% url "registrar_pago" cuenta.factura.numero %}"]');
+        if (!form) return;
+
+        const montoInput = form.querySelector('input[name="monto"]');
+        const metodoSelect = form.querySelector('select[name="metodo"]');
+
+        // Pendiente llega desde backend (en el input hoy usas pendiente|floatformat:2)
+        const pendienteStr = "{{ pendiente }}";
+        const pendiente = Number(pendienteStr);
+
+        form.addEventListener('submit', function (e) {
+          const montoStr = (montoInput && montoInput.value) ? montoInput.value : '';
+          const monto = Number(montoStr);
+
+          if (!metodoSelect || !metodoSelect.value) {
+            e.preventDefault();
+            Swal.fire({ icon: 'error', title: 'Selecciona el método de pago' });
+            return;
+          }
+
+          if (Number.isNaN(monto) || monto < 0.01) {
+            e.preventDefault();
+            Swal.fire({ icon: 'error', title: 'El monto debe ser mayor o igual a 0.01' });
+            return;
+          }
+
+          if (!Number.isNaN(pendiente) && monto > pendiente) {
+            e.preventDefault();
+            Swal.fire({
+              icon: 'error',
+              title: 'El monto no puede ser mayor al pendiente',
+              html: 'Pendiente actual: <b>' + pendiente.toFixed(2) + '</b>'
+            });
+            return;
+          }
+        });
+      })();
+    </script>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,134 @@
+{% extends "base/pan_con_queso.html" %}
+{% load static %}
+
+{% block help_content %}
+CxC anuladas: Facturas canceladas o anuladas. Reactiva ventas y revisa pagos.
+{% endblock %}
+
+{% block arroz_con_pollo %}
+<div class="glass-panel" style="margin-bottom:0;">
+  <style>
+    .row-actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: flex-start;
+      flex-wrap: nowrap;
+      white-space: nowrap;
+      overflow-x: auto;
+    }
+    .row-action-btn {
+      padding: 10px 16px !important;
+      font-size: 0.98rem !important;
+      min-width: fit-content !important;
+      background: #ffffff !important;
+      color: #02497f !important;
+      border: 1px solid rgba(0,98,155,.2) !important;
+      box-shadow: none !important;
+      transition: background 180ms ease, border-color 180ms ease, color 180ms ease, transform 180ms ease;
+    }
+    .row-action-btn:hover,
+    .row-action-btn:focus {
+      background: rgba(0,178,255,.12) !important;
+      color: #01243f !important;
+      border-color: rgba(0,129,189,.35) !important;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(0,113,180,0.08) !important;
+    }
+    .row-action-btn i { margin-right: 8px; }
+  </style>
+
+  <div class="summary-modern-row" style="margin-bottom:18px;">
+    <div class="summary-card-modern" style="cursor:default;">
+      <span class="icon material-symbols-outlined">receipt_long</span>
+      <div class="info">
+        <h5>Ventas canceladas o anuladas</h5>
+        <small><span class="material-symbols-outlined ani-rotate-in">block</span> Facturas canceladas y anuladas</small>
+      </div>
+    </div>
+
+    <div style="flex: 1 1 0; display:flex; gap:14px; align-items:center; justify-content:flex-end; flex-wrap:wrap;">
+      <a class="btn-modern" href="{% url 'listar_cxc' %}" style="text-decoration:none; background: linear-gradient(90deg, #1976d2 0%, #00b2ff 100%);">
+        <i class="fa-solid fa-arrow-left"></i> Regresar a CxC activas
+      </a>
+    </div>
+  </div>
+
+  <div class="table-glass" style="margin-bottom:0;">
+    <table style="margin:0;">
+      <thead>
+        <tr>
+          <th>Factura</th>
+          <th>Cliente</th>
+          <th>Fecha</th>
+          <th class="right">Total</th>
+          <th class="right">Pagado</th>
+          <th class="right">Pendiente</th>
+          <th>Estado</th>
+          <th style="width: 340px;">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+        <tr>
+          <td>#{{ r.numero }}</td>
+          <td>{{ r.cliente }}</td>
+          <td class="right" style="text-align:left;">{{ r.fecha|date:"d/m/Y" }}</td>
+          <td class="right mini">{{ r.total }}</td>
+          <td class="right mini">{{ r.pagado }}</td>
+          <td class="right mini" style="color:#1976d2;">{{ r.pendiente }}</td>
+          <td>
+            {% if r.factura_estado == 'anulada' %}
+              <span class="badge" style="background: rgba(211,47,47,.12); color:#b71c1c; border:1px solid rgba(211,47,47,.22); padding:6px 12px; border-radius:999px; font-weight:900;">
+                anulada
+              </span>
+            {% else %}
+              <span class="badge" style="background: rgba(245,158,11,.12); color:#b45309; border:1px solid rgba(245,158,11,.22); padding:6px 12px; border-radius:999px; font-weight:900;">
+                cancelada
+              </span>
+            {% endif %}
+          </td>
+          <td>
+            <div class="row-actions">
+              <a class="btn-modern row-action-btn" href="{% url 'pagos_factura' r.numero %}"
+                 title="Ver pagos" aria-label="Ver pagos">
+                <i class="fa-solid fa-receipt"></i> Ver pagos
+              </a>
+
+              <form method="post" action="{% url 'reactivar_factura_cxc' r.numero %}" style="margin:0;">
+                {% csrf_token %}
+                <button class="btn-modern row-action-btn" type="submit" title="Reactivar venta" aria-label="Reactivar venta">
+                  <i class="fa-solid fa-rotate-right"></i> Reactivar venta
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="8" class="muted" style="padding:18px 14px;">No hay facturas canceladas o anuladas en CxC.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    {% if rows.has_other_pages %}
+    <div class="pagination" style="margin: 18px 18px 8px; justify-content: center;">
+      <div>
+        {% if rows.has_previous %}
+          <a href="?page=1">&laquo; Primera</a>
+          <a href="?page={{ rows.previous_page_number }}">Anterior</a>
+        {% endif %}
+      </div>
+      <span class="page-label">Página {{ rows.number }} de {{ rows.paginator.num_pages }}</span>
+      <div>
+        {% if rows.has_next %}
+          <a href="?page={{ rows.next_page_number }}">Siguiente</a>
+          <a href="?page={{ rows.paginator.num_pages }}">Última &raquo;</a>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

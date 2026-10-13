@@ -1,0 +1,44 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Recuperación de acceso</title>
+</head>
+<body style="background:#f5fafd;padding:0;margin:0;">
+<div style="max-width:420px;margin:40px auto;background:#fff;border-radius:18px;box-shadow:0 8px 32px #00b2ff22;padding:38px 32px 32px 32px;font-family:'Segoe UI',Arial,sans-serif;">
+    <div style="text-align:center;">
+        <img src="{{ logo_url }}" alt="FerreElectri PLUS" style="width:110px;margin-bottom:18px;">
+        <div style="margin-bottom:10px;">
+            <span style="display:inline-block;background:linear-gradient(135deg,#00b2ff 60%,#1976d2 100%);color:#fff;border-radius:50%;width:54px;height:54px;line-height:54px;font-size:2em;box-shadow:0 2px 12px #00b2ff33;">🔐</span>
+        </div>
+        <h2 style="color:#1976d2;margin:0 0 8px 0;font-size:1.6em;letter-spacing:1px;">Recupera tu acceso</h2>
+    </div>
+    <p style="color:#222;font-size:1.13em;margin-bottom:22px;text-align:center;">
+        ¡Hola <b>{{ usuario.username }}</b>!<br>
+        Recibimos una solicitud para restablecer tu contraseña en <b>FerreElectri PLUS</b>.
+    </p>
+    <div style="background:#e3f5ff;border-radius:12px;padding:20px 0 14px 0;margin-bottom:18px;text-align:center;box-shadow:0 2px 12px #00b2ff11;">
+        <span style="color:#1976d2;font-size:1.08em;">Tu código de recuperación es:</span>
+        <div style="font-size:2.1em;font-weight:700;letter-spacing:4px;color:#009de0;margin-top:10px;">
+            {{ codigo }}
+        </div>
+    </div>
+    {% if reset_url %}
+    <div style="text-align:center;margin-bottom:18px;">
+        <a href="{{ reset_url }}" style="display:inline-block;background:linear-gradient(90deg,#00b2ff,#009de0);color:#fff !important;font-weight:700;padding:13px 32px;border-radius:12px;font-size:1.08em;text-decoration:none;box-shadow:0 2px 16px #00b2ff22;transition:background .3s;">
+            Restablecer contraseña
+        </a>
+    </div>
+    {% endif %}
+    <p style="color:#555;font-size:1em;margin-bottom:18px;text-align:center;">
+        Copia este código en el formulario de recuperación.<br>
+        Si no solicitaste este cambio, ignora este mensaje.
+    </p>
+    <div style="margin-top:24px;color:#aaa;font-size:.97em;text-align:center;">
+        <span style="font-size:1.2em;">⚡</span> FerreElectri PLUS<br>
+        <span style="font-size:1.08em;">Soporte: <a href="mailto:FerreElectriPlus@gmail.com" style="color:#009de0;text-decoration:none;">FerreElectriPlus@gmail.com</a></span>
+    </div>
+</div>
+</body>
+</html>

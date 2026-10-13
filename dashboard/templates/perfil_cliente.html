@@ -1,0 +1,79 @@
+﻿{% extends 'dashboard_base.html' %}
+{% block content %}
+<div class="w-full max-w-[95%] 2xl:max-w-screen-2xl mx-auto px-4 sm:px-6 py-8 md:py-10">
+    {% if messages %}
+        {% for message in messages %}<div role="status" class="mb-5 rounded-xl border px-4 py-3 text-sm font-semibold {% if 'error' in message.tags %}border-red-400/20 bg-red-500/10 text-red-800{% else %}border-emerald-400/20 bg-emerald-500/10 text-emerald-800{% endif %}">{{ message }}</div>{% endfor %}
+    {% endif %}
+    <div class="mb-8">
+        <p class="text-[11px] uppercase tracking-[0.15em] text-emerald-600 font-bold">Perfil</p>
+        <h1 class="mt-2 text-3xl md:text-4xl font-black tracking-tight text-slate-900">Mi perfil</h1>
+        <p class="mt-2 text-sm md:text-base text-slate-500 font-medium">Administra tu información personal y mantén tu cuenta segura.</p>
+    </div>
+
+    <form method="POST" action="" class="space-y-6">
+        {% csrf_token %}
+
+        <div class="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100/60 backdrop-blur-sm p-6 sm:p-8">
+            <div class="mb-6 flex items-center gap-3 border-b border-slate-100 pb-4">
+                <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zm-8 9a4 4 0 014-4h4a4 4 0 014 4v1H8v-1z"/></svg>
+                </span>
+                <h2 class="text-xl font-black tracking-tight text-slate-900">Información Personal</h2>
+            </div>
+            <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                <div>
+                    <label class="mb-2 block text-sm font-medium text-slate-700">Nombre</label>
+                    <input type="text" name="nombre" value="{{ user.first_name|default:'' }}" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-700 shadow-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100">
+                </div>
+                <div>
+                    <label class="mb-2 block text-sm font-medium text-slate-700">Apellido</label>
+                    <input type="text" name="apellido" value="{{ user.last_name|default:'' }}" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-700 shadow-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100">
+                </div>
+                <div>
+                    <label class="mb-2 block text-sm font-medium text-slate-700">Cédula</label>
+                    <input type="text" name="cedula_rif" value="{{ perfil.cedula_rif|default:'' }}" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-700 shadow-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100">
+                </div>
+                <div>
+                    <label class="mb-2 block text-sm font-medium text-slate-700">Teléfono</label>
+                    <input type="text" name="telefono" value="{{ perfil.telefono|default:'' }}" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-700 shadow-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100">
+                </div>
+                <div class="sm:col-span-2">
+                    <label class="mb-2 block text-sm font-medium text-slate-700">Dirección</label>
+                    <input type="text" name="direccion" value="{{ perfil.direccion|default:'' }}" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-700 shadow-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100">
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100/60 backdrop-blur-sm p-6 sm:p-8">
+            <div class="mb-6 flex items-center gap-3 border-b border-slate-100 pb-4">
+                <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M7 9V7a5 5 0 0110 0v2M6 10h12v9H6v-9z"/></svg>
+                </span>
+                <h2 class="text-xl font-black tracking-tight text-slate-900">Credenciales y Seguridad</h2>
+            </div>
+            <div class="grid grid-cols-1 gap-6">
+                <div>
+                    <label class="mb-2 block text-sm font-medium text-slate-700">Correo electrónico</label>
+                    <input type="email" name="email" value="{{ user.email|default:'' }}" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-700 shadow-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100">
+                </div>
+                <div>
+                    <label class="mb-2 block text-sm font-medium text-slate-700">Contraseña actual</label>
+                    <input type="password" name="password_current" autocomplete="current-password" placeholder="********" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-700 shadow-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100">
+                </div>
+                <div>
+                    <label class="mb-2 block text-sm font-medium text-slate-700">Nueva contraseña</label>
+                    <input type="password" name="password_new" autocomplete="new-password" placeholder="Nueva contraseña" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-700 shadow-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100">
+                </div>
+                <div>
+                    <label class="mb-2 block text-sm font-medium text-slate-700">Confirmar nueva contraseña</label>
+                    <input type="password" name="password_new_confirm" autocomplete="new-password" placeholder="Repite la nueva contraseña" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-700 shadow-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100">
+                </div>
+            </div>
+        </div>
+
+        <div class="flex justify-end">
+            <button type="submit" class="inline-flex items-center justify-center rounded-xl bg-emerald-500 px-8 py-3 text-sm font-bold text-white shadow-[0_8px_20px_rgba(16,185,129,0.3)] transition hover:bg-emerald-600">Guardar Cambios</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

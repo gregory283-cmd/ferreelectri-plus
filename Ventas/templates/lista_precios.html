@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="es">
+{% load static %}
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Lista de Precios - FERREELECTRI PLUS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root{ --teal-700:#0a6b66; --teal-500:#128f88; --muted:#9aa9b0; }
+        @page{ size: A4; margin: 0 }
+        html,body{height:100%;margin:0;padding:0;font-family:'Poppins',system-ui,-apple-system,Helvetica,Arial; background:linear-gradient(180deg,#f0fbff 0%, #ffffff 60%); color:#0b2630}
+        /* Full width container so PDF uses max space: no outer margins */
+        .container{width:100%;max-width:100%;margin:0;padding:20px}
+        .card{background:linear-gradient(180deg, rgba(255,255,255,0.98), #ffffff); border-radius:10px; box-shadow:0 24px 60px rgba(4,36,63,0.06); overflow:visible}
+        /* small lateral margin for the header so gradient doesn't touch the page edge */
+        /* Encabezado grande tipo banner (referencia visual) */
+        .card-header{
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            padding:28px 36px;
+            border-bottom:1px solid rgba(10,20,30,0.04);
+            background:linear-gradient(90deg,#073047 0%, #0f7b75 100%);
+            color:#fff;
+            margin:0 24px 14px 12px;
+            border-radius:18px;
+            box-shadow: 0 10px 30px rgba(6,50,60,0.08);
+        }
+        .brand{display:flex;align-items:center;gap:12px;flex:0 1 auto}
+        /* Logo: quitar recuadro interior, mover ligeramente a la izquierda */
+        .logo-box{width:96px;height:72px;border-radius:6px;background:transparent;display:flex;align-items:center;justify-content:flex-start;padding-left:2px;margin-left:-15px}
+        .logo{max-width:100%;max-height:64px;display:block}
+        .brand-title{margin-left:30px;font-weight:900;color:#ffffff;font-size:2.4rem;letter-spacing:1px}
+        .brand-sub{margin-left:30px;color:rgba(255,255,255,0.9);font-size:1rem;margin-top:6px}
+        .meta{color:#d7eef0;font-weight:600}
+        /* Empujar controles (fecha / botón) a la derecha del header */
+        .header-controls{display:flex;align-items:center;gap:12px;margin-left:auto}
+        .promo-toggle{background:linear-gradient(90deg,#ffd58a,#ff8a5b);border:none;color:#08323a;padding:8px 12px;border-radius:999px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:8px;box-shadow:0 8px 18px rgba(255,138,91,0.12)}
+        .promo-toggle .promo-count{background:#08323a;color:#fff;padding:2px 8px;border-radius:999px;font-weight:800;font-size:0.9rem}
+        .promo-toggle[aria-pressed="true"]{transform:translateY(-1px);box-shadow:0 12px 26px rgba(6,36,48,0.12)}
+        .promo-row-highlight{outline:3px solid rgba(18,51,58,0.04);border-radius:10px;padding:12px}
+        /* When filter active, hide non-promos */
+        .filter-promos-active .pl-grid.pl-row:not([data-promo="1"]){display:none}
+        @media print{ .promo-toggle{display:none} }
+        .table-wrap{padding:4px 28px 16px 12px;margin-top:0px}
+        .pl-grid{display:grid;grid-template-columns: 120px 1fr 180px;gap:18px;align-items:center;padding:18px 8px;border-bottom:1px solid rgba(10,20,30,0.03);position:relative}
+        /* Visual row style for products to separate them */
+        .pl-row{background:#ffffff;border-radius:10px;padding:14px;box-shadow:0 6px 20px rgba(4,36,63,0.03);margin:8px 0}
+        .pl-row{page-break-inside:avoid !important;break-inside:avoid !important}
+        .pl-row > div{page-break-inside:avoid !important;break-inside:avoid !important}
+        /* Alternar colores de fila usando paleta azul y amarillo suave */
+        .pl-row:nth-child(odd){ background: linear-gradient(180deg, rgba(226,246,255,0.9), rgba(239,252,255,0.95)); color: #08323a }
+        .pl-row:nth-child(even){ background: linear-gradient(180deg, rgba(255,249,230,0.95), rgba(255,246,220,0.95)); color: #12333a }
+        /* Fallback classes applied by JS to ensure striping works in PDF/renderers */
+        .stripe-odd{ background: linear-gradient(180deg, rgba(226,246,255,0.9), rgba(239,252,255,0.95)) !important; color: #08323a }
+        .stripe-even{ background: linear-gradient(180deg, rgba(255,249,230,0.95), rgba(255,246,220,0.95)) !important; color: #12333a }
+        .pl-grid.head{
+            background:linear-gradient(90deg,var(--teal-700),var(--teal-500));
+            color:#fff;
+            font-weight:700;
+            padding:12px 8px;
+            border-radius:8px;
+            margin:6px 0 14px 0;
+            box-shadow:none;
+            align-items:center;
+        }
+        .thumb{width:96px;height:96px;border-radius:10px;object-fit:cover;background:#f3f8f8;display:block}
+        /* Mostrar badge dentro de la fila (no en la esquina del documento) */
+        .promo-badge{position:static;margin-top:0;background:linear-gradient(180deg,#ff8a00,#ff5e3a);color:#fff;padding:6px 10px;border-radius:999px;font-weight:800;font-size:0.8rem;box-shadow:0 6px 18px rgba(255,94,58,0.18);display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
+        .promo-badge svg{width:16px;height:16px;display:inline-block}
+        .code{font-family:monospace;color:var(--teal-700);font-weight:800;font-size:1.05rem}
+        .desc{font-weight:700;color:#12333a;font-size:1.05rem}
+        .price{font-weight:900;color:var(--teal-700);text-align:right;font-size:1.5rem}
+        .price small{display:block;font-weight:600;color:#5e6a6f;font-size:0.95rem}
+        .price-block{display:flex;flex-direction:column;align-items:flex-end;gap:7px;min-width:0}
+        .price-stack{display:flex;flex-direction:column;align-items:flex-end;gap:3px}
+        .price-tax{font-size:.78rem;font-weight:700;color:#687a80;text-align:right;white-space:nowrap}
+        .price-total{font-weight:900;color:var(--teal-700);font-size:1.45rem;white-space:nowrap}
+        .footer{padding:18px 12px;text-align:center;color:var(--muted);border-top:1px solid rgba(10,20,30,0.02)}
+        @media (max-width:900px){
+            .pl-grid{grid-template-columns: 96px 1fr 140px}
+            .brand-title{font-size:1.4rem}
+        }
+        @media (max-width:700px){
+            .container{padding:12px}
+            .pl-grid{grid-template-columns: 1fr; gap:10px}
+            .pl-grid.head{display:none}
+            .price{text-align:left}
+        }
+        @media print{
+            body{background:#fff}
+            .container{margin:0;padding:6px}
+            .card{box-shadow:none;border-radius:0}
+        }
+    </style>
+    {% include 'reportes/pdf_design.html' %}
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+                <div class="card-header">
+                <div class="brand">
+                    <div class="logo-box">
+                        <img src="{% static 'img/logo.png' %}" class="logo" alt="FERREELECTRI PLUS">
+                    </div>
+                    <div>
+                        <div class="brand-title">LISTA DE PRECIOS</div>
+                        <div class="brand-sub">FERREELECTRI PLUS</div>
+                    </div>
+                </div>
+                <div class="header-controls">
+                    <div class="meta">Fecha: {% now "d/m/Y H:i" %}</div>
+                    <button id="btn-toggle-promos" class="promo-toggle" aria-pressed="false" title="Mostrar sólo productos en promoción">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L15 8L22 9L17 14L18 21L12 18L6 21L7 14L2 9L9 8L12 2Z" fill="#08323a"/></svg>
+                        Promociones <span class="promo-count">0</span>
+                    </button>
+                </div>
+            </div>
+            <div class="table-wrap">
+                {% for p in productos %}
+                {% comment %} robust promo detection: probar varios nombres de campo posibles {% endcomment %}
+                <div class="pl-grid pl-row {% if forloop.counter0|divisibleby:2 %}stripe-odd{% else %}stripe-even{% endif %}" {% if p.promocion or p.Promocion or p.promo or p.Promo or p.en_promocion or p.is_promo or p.PromocionFlag %}data-promo="1"{% endif %}>
+                    <div>
+                        {% if p.imagen %}
+                            <img class="thumb" src="{{ p.imagen.url }}" alt="{{ p.Descripcion }}">
+                        {% elif p.imagen_url %}
+                            <img class="thumb" src="{{ p.imagen_url }}" alt="{{ p.Descripcion }}">
+                        {% else %}
+                            <svg class="thumb" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" preserveAspectRatio="xMidYMid slice"><rect width="64" height="64" fill="#f3f8f8"/><path d="M8 44 L56 44 L56 20 L40 20 L32 28 L24 20 L8 20 Z" fill="#e6fbfa"/></svg>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <div class="code">{{ p.Codigo }}</div>
+                        <div class="desc">{{ p.Descripcion }}</div>
+                        {% if p.Categoria %}
+                        <div style="color:#6b7b84;font-size:0.9rem;margin-top:6px">{{ p.Categoria }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="price-block">
+                        {% if p.promocion %}
+                        <div class="promo-badge" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L15 8L22 9L17 14L18 21L12 18L6 21L7 14L2 9L9 8L12 2Z" fill="#fff"/></svg>
+                            OFERTA
+                        </div>
+                        {% endif %}
+                        <div class="price-stack">
+                            <div class="price-total">${{ p.precio_venta|floatformat:2 }}</div>
+                            {% if p.iva %}<div class="price-tax">+ IVA {{ p.iva|floatformat:0 }}%</div>{% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div style="padding:24px;text-align:center;color:#666">No hay productos para mostrar</div>
+                {% endfor %}
+            </div>
+            <script>
+                (function(){
+                    function qs(sel){return document.querySelector(sel)}
+                    function qsa(sel){return Array.from(document.querySelectorAll(sel))}
+                    document.addEventListener('DOMContentLoaded', function(){
+                        var btn = qs('#btn-toggle-promos');
+                        if(!btn) return;
+                        var promoRows = qsa('[data-promo="1"]');
+                        var promoCount = promoRows.length;
+                        var total = qsa('.pl-grid.pl-row').length;
+                        var countSpan = btn.querySelector('.promo-count');
+                        if(countSpan) countSpan.textContent = promoCount;
+                        // If there are no promos, disable the button
+                        if(promoCount === 0){ btn.disabled = true; btn.style.opacity = 0.6; btn.title = 'No hay promociones'; return; }
+
+                        function setFilter(active){
+                            if(active){
+                                document.body.classList.add('filter-promos-active');
+                                btn.setAttribute('aria-pressed','true');
+                            } else {
+                                document.body.classList.remove('filter-promos-active');
+                                btn.setAttribute('aria-pressed','false');
+                            }
+                        }
+
+                        // Toggle on click
+                        btn.addEventListener('click', function(e){
+                            var active = btn.getAttribute('aria-pressed') === 'true';
+                            setFilter(!active);
+                        });
+
+                        // Double-click to show only promos (quick shortcut)
+                        btn.addEventListener('dblclick', function(){ setFilter(true); });
+                    });
+                })();
+                // Fallback stripe: aplicar clases odd/even si el renderizador no respeta nth-child
+                (function(){
+                    document.addEventListener('DOMContentLoaded', function(){
+                        var rows = Array.from(document.querySelectorAll('.pl-grid.pl-row'));
+                        rows.forEach(function(r, i){
+                            if(i % 2 === 0) r.classList.add('stripe-odd'); else r.classList.add('stripe-even');
+                        });
+                    });
+                })();
+            </script>
+            <div class="footer">© {% now "Y" %} FERREELECTRI PLUS</div>
+        </div>
+    </div>
+</body>
+</html>

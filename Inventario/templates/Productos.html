@@ -1,0 +1,1139 @@
+{% extends 'base/pan_con_queso.html' %}
+{% block arroz_con_pollo %}
+{% load static %}
+<!-- Google Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+<script src="https://unpkg.com/alpinejs@3.12.0/dist/alpine.csp.min.js" defer></script>
+<style>
+    body {
+        background: #f9fbfd;
+    }
+    .productos-main {
+        margin: 0;
+        padding: 40px 24px 30px 24px;
+        background: #f9fbfd;
+        min-height: 100vh;
+        width: 100%;
+        max-width: none;
+        box-sizing: border-box;
+        overflow-x: hidden;
+    }
+    .productos-title {
+        color: #4CAF50;
+        text-align: center;
+        font-size: 2.3rem;
+        font-weight: 800;
+        margin-bottom: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        font-family: 'Arial', sans-serif;
+    }
+    .tabla-productos {
+        width: 100%;
+        margin: 30px 0;
+        border-collapse: collapse;
+        box-shadow: 0 4px 16px rgba(76,175,80,0.10);
+        background: #fff;
+        font-size: 1.08em;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    .tabla-productos th, .tabla-productos td {
+        padding: 10px 8px; /* reducir padding para filas más compactas */
+        text-align: center;
+        border-bottom: 1px solid #e0e0e0;
+        vertical-align: middle;
+    }
+
+    /* Badge de promoción para catálogo/tabla */
+    .badge-promocion-inline {
+        display:none !important; /* replaced by star-badge-inline */
+    }
+    .star-badge-inline { display:inline-block; vertical-align:middle }
+    .tabla-productos th {
+        background: #4CAF50;
+        color: #fff;
+        font-size: 1.1em;
+        letter-spacing: 1px;
+    }
+    /* Color uniforme para todas las filas del tbody y hover sutil */
+    .tabla-productos tbody tr { background: #f7fbff; }
+    .tabla-productos tbody tr:hover { background: #e6f7fa; }
+    /* Forzar tamaño de miniaturas en la tabla de productos (CRUD) */
+    .tabla-productos td img.product-thumb{
+        width:64px !important;
+        height:64px !important;
+        max-width:64px !important;
+        max-height:64px !important;
+        object-fit:contain !important;
+        display:block;
+        margin:0 auto;
+    }
+    .acciones-btns {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-start;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    td:last-child {
+        min-width: 180px;
+    }
+    .acciones-btns a {
+        white-space: nowrap;
+    }
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 10px 16px;
+        border-radius: 999px;
+        border: none;
+        text-decoration: none;
+        font-weight: 700;
+        font-size: 0.95rem;
+        cursor: pointer;
+        transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+        white-space: nowrap;
+        min-height: 44px;
+        min-width: 120px;
+        box-shadow: none;
+    }
+    .btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(15,23,42,0.12);
+    }
+    .btn-primary {
+        background: #172554;
+        color: #fff;
+        box-shadow: 0 6px 16px rgba(23,37,84,0.18);
+    }
+    .btn-primary:hover {
+        background: #1e3a8a;
+        transform: translateY(-1px);
+    }
+    .btn-secondary {
+        background: #f8fafc;
+        color: #0f172a;
+        border: 1px solid rgba(148,163,184,0.35);
+    }
+    .acciones-menu {
+        position: relative;
+        display: inline-block;
+    }
+    .acciones-trigger {
+        padding: 0.5rem;
+        border-radius: 0.375rem;
+        border: 1px solid transparent;
+        background: transparent;
+        color: inherit;
+        cursor: pointer;
+        transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .acciones-trigger:hover {
+        background: rgba(148,163,184,0.12);
+    }
+    .acciones-dropdown {
+        position: absolute;
+        right: 0;
+        margin-top: 0.5rem;
+        width: 10rem;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 0.375rem;
+        box-shadow: 0 16px 40px rgba(15, 23, 42, 0.12);
+        z-index: 10;
+    }
+    .acciones-dropdown a {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem 1rem;
+        font-size: 0.875rem;
+        color: #0f172a;
+        text-decoration: none;
+        transition: background-color 0.15s ease;
+    }
+    .acciones-dropdown a:hover {
+        background: #f8fafc;
+    }
+    .acciones-icon {
+        display: inline-flex;
+        width: 1rem;
+        height: 1rem;
+        min-width: 1rem;
+        min-height: 1rem;
+    }
+    .acciones-icon svg {
+        width: 100%;
+        height: 100%;
+        display: block;
+    }
+    .acciones-btns {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-start;
+        align-items: center;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        padding: 4px 0;
+    }
+    .acciones-btns a {
+        white-space: nowrap;
+    }
+    .btn-secondary:hover {
+        background: #e2e8f0;
+    }
+    .btn-ver {
+        background: #6b7280;
+        color: #fff;
+        border: none;
+    }
+    .btn-ver:hover {
+        background: #4b5563;
+    }
+    .btn-actualizar, .btn-eliminar {
+        position: relative;
+        border: none;
+        padding: 10px 18px;
+        border-radius: 999px;
+        font-weight: 700;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.95rem;
+        text-decoration: none;
+        transition: background 0.2s, transform 0.15s;
+        min-height: 44px;
+        justify-content: center;
+    }
+    .btn-actualizar {
+        background: #2196F3;
+        color: #fff;
+    }
+    .btn-actualizar:hover {
+        background: #1976D2;
+    }
+    .btn-eliminar {
+        background: #f44336;
+        color: #fff;
+    }
+    .btn-eliminar:hover {
+        background: #b71c1c;
+    }
+    .btn-registrar {
+        background: #4CAF50;
+        color: white;
+        border: none;
+        padding: 12px 28px;
+        border-radius: 7px;
+        font-weight: bold;
+        font-size: 1.1em;
+        cursor: pointer;
+        margin: 20px 0;
+        transition: background 0.2s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .btn-registrar:hover {
+        background: #388e3c;
+    }
+    .toolbar-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: center;
+    }
+    .boton {
+        display: inline-block;
+        margin: 10px;
+        padding: 10px 20px;
+        background-color: #2196F3;
+        color: white;
+        text-decoration: none;
+        border-radius: 5px;
+        font-family: Arial, sans-serif;
+        font-size: 1em;
+        transition: background-color 0.3s ease, transform 0.2s ease;
+    }
+    .boton:hover {
+        background-color: #1976D2;
+        transform: scale(1.05);
+    }
+    .boton:active {
+        background-color: #0D47A1;
+        transform: scale(0.95);
+    }
+    .pagination {
+        margin: 20px 0;
+        text-align: center;
+    }
+    .pagination .step-links a {
+        margin: 0 5px;
+        padding: 5px 10px;
+        background-color: #4CAF50;
+        color: white;
+        text-decoration: none;
+        border-radius: 5px;
+    }
+    .pagination .step-links a:hover {
+        background-color: #45a049;
+    }
+    .pagination .step-links span {
+        margin: 0 5px;
+        padding: 5px 10px;
+        color: #333;
+    }
+    /* Animación de iconos en acciones */
+    .btn-actualizar .icon-default,
+    .btn-actualizar .icon-hover,
+    .btn-eliminar .icon-default,
+    .btn-eliminar .icon-hover {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 22px;
+        transition: opacity 0.25s, color 0.25s;
+        pointer-events: none;
+    }
+    .btn-actualizar .icon-hover,
+    .btn-eliminar .icon-hover {
+        opacity: 0;
+        color: #ffd600;
+    }
+    .btn-actualizar:hover .icon-default,
+    .btn-eliminar:hover .icon-default {
+        opacity: 0;
+    }
+    .btn-actualizar:hover .icon-hover,
+    .btn-eliminar:hover .icon-hover {
+        opacity: 1;
+    }
+
+    .modal-custom {
+        position: fixed;
+        z-index: 9999;
+        left: 0; top: 0; width: 100vw; height: 100vh;
+        background: rgba(0,0,0,0.25);
+        display: flex; align-items: center; justify-content: center;
+    }
+    .modal-content-custom {
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 8px 32px 0 rgba(33,150,243,0.18);
+        padding: 32px 28px 22px 28px;
+        min-width: 320px;
+        max-width: 95vw;
+        position: relative;
+        animation: modalIn 0.18s;
+    }
+    @keyframes modalIn {
+        from { transform: scale(0.92); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+    }
+    .close-modal {
+        position: absolute; right: 18px; top: 12px;
+        font-size: 1.7rem; color: #1976d2; cursor: pointer;
+        font-weight: bold;
+        transition: color 0.2s;
+    }
+    .close-modal:hover { color: #f44336; }
+    .btn-guardar-modal {
+        background: #2196F3; color: #fff; border: none;
+        padding: 8px 22px; border-radius: 6px; font-weight: 600;
+        cursor: pointer; margin-left: 8px;
+        transition: background 0.2s;
+    }
+    .btn-guardar-modal:hover { background: #1976D2; }
+    .btn-cancelar-modal {
+        background: #f5f5f5; color: #333; border: none;
+        padding: 8px 18px; border-radius: 6px; font-weight: 600;
+        cursor: pointer; margin-right: 8px;
+        transition: background 0.2s;
+    }
+    .btn-cancelar-modal:hover { background: #e0e0e0; }
+    @media (max-width: 900px) {
+        .productos-main { margin-left: 0; padding: 15px; }
+        .tabla-productos th, .tabla-productos td { font-size: 13px; padding: 6px !important; }
+        .productos-main .tabla-productos{min-width:920px}
+        .productos-toolbar .toolbar-row.bottom .cols{justify-content:flex-start;flex-wrap:wrap}
+        .productos-toolbar .cols .col{flex:1 1 220px;justify-content:flex-start}
+        .productos-toolbar .cols .col .boton{width:100%}
+        .productos-toolbar .toolbar-actions{width:100%;flex-wrap:wrap}
+    }
+
+    /* Estilos para el modal mejorado */
+    .modal-custom {
+        backdrop-filter: blur(8px);
+    }
+    .modal-content-custom {
+        padding: 24px;
+        border-radius: 12px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+        animation: modalIn 0.25s;
+    }
+    .close-modal {
+        right: 16px;
+        top: 16px;
+        font-size: 1.5rem;
+    }
+    .btn-guardar-modal,
+    .btn-cancelar-modal {
+        padding: 10px 20px;
+        border-radius: 5px;
+        font-weight: 500;
+        font-size: 1em;
+        cursor: pointer;
+        transition: background 0.3s, transform 0.2s;
+    }
+    .btn-guardar-modal {
+        background: #4CAF50;
+        color: #fff;
+        border: none;
+    }
+    .btn-guardar-modal:hover {
+        background: #388e3c;
+        transform: translateY(-2px);
+    }
+    .btn-cancelar-modal {
+        background: #f0f0f0;
+        color: #333;
+        border: none;
+    }
+    .btn-cancelar-modal:hover {
+        background: #e0e0e0;
+        transform: translateY(-2px);
+    }
+    .input-group-modal {
+        margin-bottom: 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    .input-group-modal label {
+        font-weight: 600;
+        color: #333;
+        font-size: 1em;
+        margin-bottom: 2px;
+    }
+    .input-group-modal input[type="text"],
+    .input-group-modal input[type="number"] {
+        border: 1.5px solid #bdbdbd;
+        border-radius: 7px;
+        padding: 8px 12px;
+        font-size: 1.08em;
+        transition: border-color 0.2s;
+        outline: none;
+        background: #f8fafc;
+    }
+    .input-group-modal input[type="number"]:focus,
+    .input-group-modal input[type="text"]:focus {
+        border-color: #1976d2;
+        background: #fff;
+    }
+    .modal-content-custom {
+        max-width: 420px;
+        width: 98vw;
+    }
+    .modal-btns {
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+        margin-top: 10px;
+    }
+    .btn-abrir-modal-precio {
+        background: #fff;
+        border: 2px solid #2196F3;
+        color: #2196F3;
+        border-radius: 50%;
+        width: 38px;
+        height: 38px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.2s, color 0.2s, border 0.2s;
+        font-size: 1.3em;
+        margin-left: 4px;
+        box-shadow: 0 2px 8px rgba(33,150,243,0.07);
+    }
+    .btn-abrir-modal-precio:hover {
+        background: #2196F3;
+        color: #fff;
+        border-color: #1976D2;
+    }
+    /* Barra compacta para acciones generales del catálogo. */
+    .productos-toolbar{display:flex;flex-direction:column;gap:10px;align-items:stretch;margin:0 0 16px;padding:12px;background:var(--admin-surface);border:1px solid var(--admin-line);border-radius:12px}
+    .productos-toolbar .toolbar-row.top,.productos-toolbar .toolbar-row.bottom{display:flex;width:100%;justify-content:space-between}
+    .productos-toolbar .toolbar-row.bottom .cols{display:flex;width:100%;gap:10px;justify-content:flex-end}
+    .productos-toolbar .cols .col{display:flex;align-items:center;justify-content:flex-end}
+    .productos-toolbar .boton{margin:0}
+    .productos-main .tabla-productos{margin:0 0 16px}
+    .productos-main .productos-table-wrap{width:100%;overflow-x:auto;border-radius:12px}
+    .productos-main .tabla-productos{min-width:1100px}
+    .productos-main td:last-child{min-width:180px}
+    .productos-main .acciones-btns{justify-content:center;gap:4px;flex-wrap:nowrap;overflow:visible}
+    .productos-main .acciones-btns .btn{min-width:0;min-height:34px;padding:6px 8px;font-size:.8rem;border-radius:8px}
+    .acciones-btns {
+        background: transparent;
+        box-shadow: none;
+    }
+    .productos-toolbar .boton,
+    .productos-toolbar .btn-registrar {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 10px 18px;
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(15,23,42,0.08);
+        transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+    }
+    .productos-toolbar .boton:hover,
+    .productos-toolbar .btn-registrar:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(15,23,42,0.14);
+    }
+    .badge-oferta{display:inline-block;background:#ff512f;color:#fff;padding:6px 10px;border-radius:6px;font-weight:800;font-size:0.95em;margin-right:8px}
+    .presentations-cell { display:flex; gap:6px; flex-wrap:wrap; justify-content:center; }
+    .presentation-badge { background:#eef2ff; color:#1e3a8a; padding:6px 8px; border-radius:999px; font-weight:700; font-size:0.85rem; border:1px solid rgba(30,58,138,0.08); }
+    html[data-theme="dark"] .presentation-badge { background: rgba(59,130,246,0.12); color: #bfdbfe; border-color: rgba(255,255,255,0.06); }
+
+    /* =========================
+       PREMIUM: overrides modo oscuro (Inventario/Productos)
+       ========================= */
+    html[data-theme="dark"] body{
+        background: rgba(10,18,34,0.95) !important;
+    }
+    html[data-theme="dark"] .productos-main{
+        background: rgba(10,18,34,0.55) !important;
+        color: rgba(255,255,255,0.94) !important;
+    }
+    html[data-theme="dark"] .productos-title{
+        color: rgba(129,199,132,0.95) !important;
+    }
+
+    html[data-theme="dark"] .tabla-productos{
+        background: rgba(11,18,32,0.96) !important;
+        border: 1px solid rgba(255,255,255,0.10) !important;
+        box-shadow: 0 18px 50px rgba(0,0,0,0.28) !important;
+    }
+    html[data-theme="dark"] .tabla-productos th{
+        background: rgba(11,18,32,0.98) !important;
+        color: rgba(233,247,255,0.98) !important;
+        border-bottom: 1px solid rgba(0,178,255,0.35) !important;
+    }
+    html[data-theme="dark"] .tabla-productos tbody tr{
+        background: rgba(255,255,255,0.02) !important;
+    }
+    html[data-theme="dark"] .tabla-productos tbody tr:hover{
+        background: rgba(0,178,255,0.10) !important;
+    }
+    html[data-theme="dark"] .tabla-productos th, 
+    html[data-theme="dark"] .tabla-productos td{
+        border-bottom-color: rgba(255,255,255,0.10) !important;
+    }
+
+    html[data-theme="dark"] .btn-actualizar,
+    html[data-theme="dark"] .btn-eliminar,
+    html[data-theme="dark"] .btn-registrar,
+    html[data-theme="dark"] .boton{
+        color: rgba(233,247,255,0.96) !important;
+        border-color: rgba(255,255,255,0.12) !important;
+        box-shadow: 0 12px 36px rgba(0,0,0,0.18) !important;
+    }
+
+    html[data-theme="dark"] .btn-actualizar{
+        background: rgba(0,178,255,0.18) !important;
+        border: 1px solid rgba(0,178,255,0.35) !important;
+    }
+    html[data-theme="dark"] .btn-actualizar:hover{
+        background: rgba(0,178,255,0.26) !important;
+    }
+    html[data-theme="dark"] .btn-eliminar{
+        background: rgba(244,67,54,0.16) !important;
+        border: 1px solid rgba(244,67,54,0.32) !important;
+    }
+    html[data-theme="dark"] .btn-eliminar:hover{
+        background: rgba(244,67,54,0.26) !important;
+    }
+    html[data-theme="dark"] .btn-registrar{
+        background: rgba(67,233,123,0.16) !important;
+        border: 1px solid rgba(67,233,123,0.32) !important;
+    }
+    html[data-theme="dark"] .btn-registrar:hover{
+        background: rgba(67,233,123,0.24) !important;
+    }
+    html[data-theme="dark"] .boton{
+        background: rgba(25,118,210,0.16) !important;
+        border: 1px solid rgba(25,118,210,0.32) !important;
+    }
+    html[data-theme="dark"] .boton:hover{
+        background: rgba(25,118,210,0.26) !important;
+    }
+
+    /* Modal y inputs del modal (actualizar precio) */
+    html[data-theme="dark"] .modal-content-custom{
+        background: rgba(11,18,32,0.96) !important;
+        border: 1px solid rgba(0,178,255,0.18) !important;
+        color: rgba(255,255,255,0.94) !important;
+        box-shadow: 0 28px 90px rgba(0,0,0,0.42) !important;
+    }
+    html[data-theme="dark"] .modal-custom{
+        background: rgba(0,0,0,0.40) !important;
+    }
+    html[data-theme="dark"] .close-modal{
+        color: rgba(0,178,255,0.95) !important;
+    }
+    html[data-theme="dark"] .btn-cancelar-modal{
+        background: rgba(255,255,255,0.06) !important;
+        color: rgba(255,255,255,0.92) !important;
+    }
+    html[data-theme="dark"] .btn-cancelar-modal:hover{
+        background: rgba(255,255,255,0.10) !important;
+    }
+    html[data-theme="dark"] .btn-guardar-modal{
+        background: rgba(67,233,123,0.85) !important;
+        color: rgba(11,18,32,0.98) !important;
+    }
+    html[data-theme="dark"] .input-group-modal label{
+        color: rgba(255,255,255,0.92) !important;
+    }
+    html[data-theme="dark"] .input-group-modal input[type="text"],
+    html[data-theme="dark"] .input-group-modal input[type="number"]{
+        background: rgba(255,255,255,0.05) !important;
+        color: rgba(255,255,255,0.95) !important;
+        border-color: rgba(255,255,255,0.16) !important;
+    }
+    html[data-theme="dark"] .input-group-modal input[type="text"]::placeholder{
+        color: rgba(149,181,216,0.70) !important;
+    }
+    :root[data-theme] .main-content .productos-main { background:transparent!important; color:var(--admin-text)!important; }
+    :root[data-theme] .main-content .productos-title { color:var(--admin-text)!important; }
+    :root[data-theme] .main-content .tabla-productos { background:var(--admin-surface)!important; border:1px solid var(--admin-line)!important; box-shadow:var(--admin-shadow)!important; color:var(--admin-text)!important; }
+    :root[data-theme] .main-content .tabla-productos th { background:var(--admin-table-head)!important; color:var(--admin-text)!important; border-color:var(--admin-line-strong)!important; letter-spacing:0; }
+    :root[data-theme] .main-content .tabla-productos td { color:var(--admin-text)!important; border-color:var(--admin-line)!important; }
+    :root[data-theme] .main-content .tabla-productos tbody tr { background:var(--admin-surface)!important; }
+    :root[data-theme] .main-content .tabla-productos tbody tr:nth-child(even) { background:var(--admin-table-alt)!important; }
+    :root[data-theme] .main-content .tabla-productos tbody tr:hover { background:var(--admin-surface-soft)!important; }
+    :root[data-theme] .main-content .productos-toolbar .btn-registrar,
+    :root[data-theme] .main-content .productos-toolbar .boton { background:var(--admin-accent)!important; border:1px solid var(--admin-accent)!important; color:#fff!important; box-shadow:none!important; }
+    :root[data-theme] .main-content .productos-toolbar .btn-registrar:hover,
+    :root[data-theme] .main-content .productos-toolbar .boton:hover { filter:brightness(1.08); }
+    :root[data-theme] .main-content .pagination .step-links a { background:var(--admin-surface-raised)!important; border:1px solid var(--admin-line-strong); color:var(--admin-text)!important; }
+    :root[data-theme] .main-content .pagination .step-links span { color:var(--admin-muted)!important; }
+    :root[data-theme] .main-content .presentation-badge { background:var(--admin-surface-soft)!important; border-color:var(--admin-line)!important; color:var(--admin-text)!important; }
+    :root[data-theme] .main-content .modal-content-custom { background:var(--admin-surface)!important; border:1px solid var(--admin-line)!important; color:var(--admin-text)!important; box-shadow:var(--admin-shadow)!important; }
+    :root[data-theme] .main-content .modal-content-custom h2,
+    :root[data-theme] .main-content .modal-content-custom label { color:var(--admin-text)!important; }
+    :root[data-theme] .main-content .close-modal { color:var(--admin-accent)!important; }
+    .productos-toolbar { margin:0 0 14px; padding:10px; }
+    .productos-toolbar .toolbar-actions { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); align-items:stretch; gap:10px; width:100%; }
+    .productos-toolbar .toolbar-actions > :is(.btn-registrar,.boton) { align-self:stretch; width:100%; min-width:0; min-height:44px; margin:0; padding:9px 8px; border-radius:9px; white-space:normal; text-align:center; line-height:1.2; }
+    .productos-toolbar .toolbar-actions .material-symbols-outlined { flex:0 0 auto; margin:0; }
+    .productos-filter { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:0 0 12px; }
+    .productos-filter input { flex:1 1 260px; min-width:0; min-height:42px; padding:9px 12px; border:1px solid var(--admin-line-strong); border-radius:8px; background:var(--admin-surface-soft); color:var(--admin-text); }
+    .productos-filter button,.productos-filter a { display:inline-flex; align-items:center; justify-content:center; min-height:42px; padding:8px 13px; border:1px solid var(--admin-accent); border-radius:8px; background:var(--admin-accent); color:#fff; font-weight:700; text-decoration:none; }
+    @media (max-width:900px) { .productos-toolbar .toolbar-actions { grid-template-columns:repeat(3,minmax(0,1fr)); } }
+    @media (max-width:600px) { .productos-toolbar .toolbar-actions { grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; } .productos-toolbar .toolbar-actions > :is(.btn-registrar,.boton) { font-size:.82rem; } }
+</style>
+<div class="productos-main inventory-panel">
+    <header class="inventory-heading">
+        <div>
+            <p class="inventory-eyebrow">INVENTARIO · CATÁLOGO</p>
+            <h1 class="productos-title"><span class="material-symbols-outlined" aria-hidden="true">inventory_2</span> Productos</h1>
+            <p class="inventory-subtitle">Controla costos, existencias y presentaciones desde un solo lugar.</p>
+        </div>
+        <div class="inventory-count"><strong>{{ productos.paginator.count }}</strong><span>productos registrados</span></div>
+    </header>
+
+    {% for m in messages %}
+        <div class="inventory-message" role="status">
+            {{m}}
+        </div>
+    {% endfor %}
+
+    <form class="productos-filter" method="get" action="{% url 'listar_productos' %}" role="search">
+        <label class="sr-only" for="buscar-producto">Buscar productos</label>
+        <input id="buscar-producto" type="search" name="q" value="{{ search_query }}" placeholder="Código, descripción o categoría" autocomplete="off">
+        <button type="submit"><span class="material-symbols-outlined">search</span> Buscar</button>
+        {% if search_query %}<a href="{% url 'listar_productos' %}">Limpiar</a>{% endif %}
+    </form>
+
+    <div class="productos-toolbar">
+        <div class="toolbar-actions">
+            <a href="{% url 'addProducto' %}" class="btn-registrar">
+                <span class="material-symbols-outlined">add_box</span> Registrar Producto
+            </a>
+            <a href="{% url 'crear_categoria' %}" class="btn-registrar">
+                <span class="material-symbols-outlined">category</span> Crear categoría
+            </a>
+            <a href="{% url 'reporte_productos_pdf' %}" class="boton">
+                <span class="material-symbols-outlined">picture_as_pdf</span> Descargar Reporte PDF
+            </a>
+            <button type="button" id="btn-toggle-promos-catalog" class="boton">
+                Mostrar sólo promociones <span id="promo-count-catalog" style="background:#08323a;color:#fff;padding:2px 8px;border-radius:999px;margin-left:8px;">0</span>
+            </button>
+            <a href="{% url 'reporte_productos_excel' %}" class="boton">
+                <span class="material-symbols-outlined">grid_on</span> Descargar Reporte Excel
+            </a>
+        </div>
+    </div>
+    <div class="productos-table-wrap">
+    <table class="tabla-productos">
+        <thead>
+            <tr>
+                <th><span class="material-symbols-outlined">image</span>Imagen</th>
+                <th><span class="material-symbols-outlined">barcode</span>Código</th>
+                <th><span class="material-symbols-outlined">label</span>Descripción</th>
+                <th><span class="material-symbols-outlined">attach_money</span>Costo</th>
+                <th><span class="material-symbols-outlined">inventory</span>Cantidad</th>
+                <th><span class="material-symbols-outlined">inventory_2</span>Presentaciones</th>
+                <th><span class="material-symbols-outlined">calendar_month</span>Fecha de creación</th>
+                <th><span class="material-symbols-outlined">settings</span>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in productos %}
+            {% comment %} robust promo detection: comprobar varios nombres de campo posibles {% endcomment %}
+            <tr class="{% if forloop.counter0|divisibleby:2 %}stripe-odd{% else %}stripe-even{% endif %}" {% if p.promocion or p.Promocion or p.promo or p.Promo or p.en_promocion or p.is_promo or p.PromocionFlag %}data-promo="1"{% endif %}>
+                <td style="width:72px;">
+                    {% if p.Imagen %}
+                        <img class="product-thumb" src="{{ p.Imagen.url }}" data-full-src="{{ p.Imagen.url }}" alt="{{ p.Descripcion }}">
+                    {% else %}
+                        <img class="product-thumb" src="{% static 'img/no-image.svg' %}" data-full-src="{% static 'img/no-image.svg' %}" alt="Sin imagen">
+                    {% endif %}
+                </td>
+                <td>{{ p.Codigo }}</td>
+                <td style="text-align:center">
+                    {{ p.Descripcion }}
+                </td>
+                <td style="position:relative;">
+                    <div style="display:inline-flex;align-items:center;justify-content:center;gap:8px;">
+                    {% if p.promocion or p.Promocion or p.promo or p.Promo or p.en_promocion or p.is_promo or p.PromocionFlag %}
+                        <span class="badge-oferta" aria-hidden="true">OFERTA</span>
+                    {% endif %}
+                    {% if p.Costo %}
+                        <span class="precio">${{ p.Costo|floatformat:2 }}</span>
+                    {% else %}
+                        -
+                    {% endif %}
+                    </div>
+                </td>
+                <td>{{ p.Cantidad }}</td>
+                <td>
+                    {% if p.presentations %}
+                    <div class="presentations-cell">
+                        {% for pres in p.presentations %}
+                            <span class="presentation-badge" title="Equivalencia: {{ pres.factor }} — Unidad: {{ pres.unit }}">{{ pres.type }} ×{{ pres.factor }}</span>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td>{{ p.Fecha_creacion|date:"j \\d\\e F \\d\\e Y" }}</td>
+                <td>
+                    <div class="acciones-btns">
+                        {% if perms.Inventario.change_productos %}
+                        <a href="{% url 'updtProducto' p.Codigo %}" class="btn btn-actualizar" title="Editar producto {{ p.Codigo }}">Editar</a>
+                        {% endif %}
+
+                        {% if perms.Inventario.delete_productos %}
+                        <form method="post" action="{% url 'dltProducto' p.Codigo %}" class="inventory-delete-form" onsubmit="return confirm('¿Eliminar el producto {{ p.Codigo|escapejs }}?');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-eliminar" title="Eliminar producto {{ p.Codigo }}">Eliminar</button>
+                        </form>
+                        {% endif %}
+
+                        <a href="{% url 'producto_detalle' codigo=p.Codigo %}" class="btn btn-ver" title="Ver detalles de {{ p.Codigo }}">Ver</a>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+    <div class="pagination">
+        <span class="step-links">
+            {% if productos.has_previous %}
+                <a href="?q={{ search_query|urlencode }}&page=1">&laquo; Primera</a>
+                <a href="?q={{ search_query|urlencode }}&page={{ productos.previous_page_number }}">Anterior</a>
+            {% endif %}
+
+            <span>Página {{ productos.number }} de {{ productos.paginator.num_pages }}</span>
+
+            {% if productos.has_next %}
+                <a href="?q={{ search_query|urlencode }}&page={{ productos.next_page_number }}">Siguiente</a>
+                <a href="?q={{ search_query|urlencode }}&page={{ productos.paginator.num_pages }}">Última &raquo;</a>
+            {% endif %}
+        </span>
+    </div>
+    
+</div>
+<!-- MODAL MEJORADO -->
+<div id="modal-actualizar-precio" class="modal-custom" style="display:none;">
+    <div class="modal-content-custom">
+        <span class="close-modal" id="cerrar-modal-precio" title="Cerrar">&times;</span>
+        <h2 style="margin-bottom:18px; color:#1976d2; font-size:1.5rem; font-weight:700; letter-spacing:0.5px;">
+            <span class="material-symbols-outlined" style="vertical-align:middle;font-size:1.5em;color:#1976d2;">price_change</span>
+            Actualizar Precio de Venta
+        </h2>
+        <form id="form-actualizar-precio" autocomplete="off">
+            <input type="hidden" id="modal-producto-id">
+            <div class="input-group-modal">
+                <label>Producto</label>
+                <input type="text" id="modal-producto-nombre" readonly>
+            </div>
+            <div class="input-group-modal">
+                <label for="modal-nuevo-precio">Nuevo Precio</label>
+                <input type="number" step="0.01" min="0" id="modal-nuevo-precio" required>
+            </div>
+            <div class="modal-btns">
+                <button type="button" class="btn-cancelar-modal" id="cancelar-modal-precio">Cancelar</button>
+                <button type="submit" class="btn-guardar-modal">Actualizar</button>
+            </div>
+        </form>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    (function(){
+        // Promo toggle for catalog table
+        document.addEventListener('DOMContentLoaded', function(){
+            var btn = document.getElementById('btn-toggle-promos-catalog');
+            if(!btn) return;
+            var rows = Array.from(document.querySelectorAll('.tabla-productos tbody tr'));
+            var promoRows = rows.filter(r => r.getAttribute('data-promo') === '1');
+            var countSpan = document.getElementById('promo-count-catalog');
+            if(countSpan) countSpan.textContent = promoRows.length;
+            if(promoRows.length === 0){ btn.disabled = true; btn.style.opacity = 0.6; btn.title = 'No hay promociones'; return; }
+            var active = false;
+            btn.addEventListener('click', function(){
+                active = !active;
+                if(active){
+                    document.body.classList.add('filter-promos-active');
+                    btn.textContent = 'Mostrar todos';
+                } else {
+                    document.body.classList.remove('filter-promos-active');
+                    btn.textContent = 'Mostrar sólo promociones ';
+                    if(countSpan) btn.append(countSpan);
+                }
+            });
+        });
+    })();
+
+    // CSS rule applied via JS class .filter-promos-active hides non promo rows
+    (function(){
+        var style = document.createElement('style');
+        style.innerHTML = '.filter-promos-active .tabla-productos tbody tr:not([data-promo="1"]) { display:none !important }';
+        document.head.appendChild(style);
+    })();
+
+    function quitarArticulo(btn) {
+        Swal.fire({
+            title: '¿Estás seguro que quieres eliminar?',
+            text: "Este artículo será eliminado de la tabla.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#1976d2',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                btn.closest('tr').remove();
+                recalcularTotales();
+            }
+        });
+    }
+
+    // Script para manejar el modal de actualización de precio
+    document.querySelectorAll('.btn-actualizar-precio').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const productoId = this.getAttribute('data-producto-id');
+            const productoNombre = this.getAttribute('data-producto-nombre');
+            const productoPrecio = this.getAttribute('data-producto-precio');
+
+            document.getElementById('modal-producto-id').value = productoId;
+            document.getElementById('modal-producto-nombre').value = productoNombre;
+            document.getElementById('modal-nuevo-precio').value = productoPrecio;
+
+            document.getElementById('modal-actualizar-precio').style.display = 'flex';
+        });
+    });
+
+    document.getElementById('cerrar-modal-precio').addEventListener('click', function() {
+        document.getElementById('modal-actualizar-precio').style.display = 'none';
+    });
+
+    document.getElementById('cancelar-modal-precio').addEventListener('click', function() {
+        document.getElementById('modal-actualizar-precio').style.display = 'none';
+    });
+
+    document.getElementById('form-actualizar-precio').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        // Obtén los valores del modal
+        const productoId = document.getElementById('modal-producto-id').value;
+        const nuevoPrecio = document.getElementById('modal-nuevo-precio').value;
+
+        fetch("{% url 'actualizar_precio_ajax' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                producto_id: productoId,
+                nuevo_precio: nuevoPrecio
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if(data.success) {
+                // Actualiza el precio en la tabla sin recargar
+                const fila = document.querySelector('[data-producto-id="'+productoId+'"]').closest('tr');
+                fila.querySelectorAll('td')[2].innerText = '$' + parseFloat(nuevoPrecio).toFixed(2);
+
+                // Cierra el modal primero
+                document.getElementById('modal-actualizar-precio').style.display = 'none';
+
+                // Espera un instante antes de mostrar la alerta
+                setTimeout(function() {
+                    Swal.fire({
+                        title: '¡Precio actualizado!',
+                        text: `El precio del producto ha sido actualizado a $${parseFloat(nuevoPrecio).toFixed(2)}.`,
+                        icon: 'success',
+                        confirmButtonColor: '#1976d2',
+                        timer: 1800,
+                        showConfirmButton: false
+                    });
+                }, 250);
+            } else {
+                Swal.fire({
+                    title: 'Error',
+                    text: data.error || 'No se pudo actualizar el precio.',
+                    icon: 'error',
+                    confirmButtonColor: '#d33'
+                });
+            }
+        });
+    });
+
+    document.querySelectorAll('.btn-abrir-modal-precio').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const productoId = this.getAttribute('data-producto-id');
+            const productoNombre = this.getAttribute('data-producto-nombre');
+            const productoPrecio = this.getAttribute('data-producto-precio');
+
+            document.getElementById('modal-producto-id').value = productoId;
+            document.getElementById('modal-producto-nombre').value = productoNombre;
+            document.getElementById('modal-nuevo-precio').value = productoPrecio;
+
+            document.getElementById('modal-actualizar-precio').style.display = 'flex';
+        });
+    });
+
+    document.querySelectorAll('.btn-eliminar-articulo').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const url = this.getAttribute('data-url');
+            Swal.fire({
+                title: '¿Estás seguro que quieres eliminar este artículo?',
+                text: "Esta acción no se puede deshacer.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#1976d2',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Sí, eliminar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = url;
+                }
+            });
+        });
+    });
+</script>
+<!-- IMAGE PREVIEW OVERLAY (se muestra al hacer hover o al tocar en móviles) -->
+<div id="image-preview-overlay" class="image-preview-overlay" style="display:none;">
+    <div class="image-preview-box">
+        <span id="image-preview-close" class="image-preview-close" title="Cerrar">&times;</span>
+        <img id="image-preview-img" src="" alt="Preview" />
+    </div>
+</div>
+<style>
+    .image-preview-overlay{
+        position:fixed;
+        z-index:10000;
+        left:0; top:0; width:100vw; height:100vh;
+        display:flex; align-items:center; justify-content:center;
+        background: rgba(0,0,0,0.55);
+        backdrop-filter: blur(4px);
+    }
+    .image-preview-box{ position:relative; padding:12px; border-radius:10px; }
+    .image-preview-box img{ display:block; max-width:88vw; max-height:88vh; border-radius:8px; box-shadow:0 10px 40px rgba(0,0,0,0.45); background:#fff; }
+    .image-preview-close{ position:absolute; right:8px; top:8px; font-size:30px; color:#fff; cursor:pointer; font-weight:700; z-index:10001; }
+    @media (max-width:600px){ .image-preview-box img{ max-width:94vw; max-height:84vh; } }
+</style>
+<script>
+    (function(){
+        const overlay = document.getElementById('image-preview-overlay');
+        const previewImg = document.getElementById('image-preview-img');
+        const closeBtn = document.getElementById('image-preview-close');
+
+        // mejora visual: controlar visibilidad con clase para transiciones
+        overlay.classList.remove('visible');
+        overlay.style.transition = 'opacity 180ms ease';
+        overlay.style.opacity = 0;
+
+        function showOverlay(){
+            overlay.style.display = 'flex';
+            // allow small delay for browser to apply display before opacity
+            requestAnimationFrame(() => {
+                overlay.style.opacity = 1;
+            });
+            document.body.style.overflow = 'hidden';
+        }
+
+        function hideOverlay(){
+            overlay.style.opacity = 0;
+            // after transition hide completely
+            setTimeout(() => {
+                if(overlay.style.opacity == '0' || overlay.style.opacity === 0){
+                    overlay.style.display = 'none';
+                    previewImg.src = '';
+                    document.body.style.overflow = '';
+                }
+            }, 220);
+        }
+
+        function openPreview(src, alt){
+            previewImg.src = src;
+            previewImg.alt = alt || '';
+            showOverlay();
+        }
+
+        function closePreview(){
+            hideOverlay();
+        }
+
+        // Close handlers
+        closeBtn.addEventListener('click', closePreview);
+        overlay.addEventListener('click', function(e){
+            if(e.target === overlay) closePreview();
+        });
+        document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closePreview(); });
+
+        // Detect touch-capable devices
+        const isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+
+        // Attach to all thumbnails
+        document.querySelectorAll('img.product-thumb').forEach(img => {
+            const full = img.getAttribute('data-full-src') || img.src;
+            const alt = img.getAttribute('alt') || '';
+
+            if(isTouch){
+                img.style.cursor = 'pointer';
+                img.addEventListener('click', function(e){
+                    e.preventDefault();
+                    openPreview(full, alt);
+                });
+            } else {
+                // Use pointer events and relatedTarget checks to avoid closing when entering overlay
+                img.addEventListener('pointerenter', function(){ openPreview(full, alt); });
+                img.addEventListener('pointerleave', function(e){
+                    const to = e.relatedTarget;
+                    // if pointer moved into the overlay (preview area), keep it open
+                    if(to && (to === overlay || overlay.contains(to))) return;
+                    // otherwise close
+                    closePreview();
+                });
+
+                // Ensure overlay keeps open while hovered
+                overlay.addEventListener('pointerenter', function(){ /* keep open */ });
+                overlay.addEventListener('pointerleave', function(e){
+                    const to = e.relatedTarget;
+                    // if pointer moved back to any thumbnail, keep open (the img pointerenter will handle it)
+                    if(to && (to.tagName === 'IMG' && to.classList.contains('product-thumb'))) return;
+                    closePreview();
+                });
+
+                // Keyboard accessibility
+                img.setAttribute('tabindex', '0');
+                img.addEventListener('focus', function(){ openPreview(full, alt); });
+                img.addEventListener('blur', function(){ closePreview(); });
+            }
+        });
+    })();
+</script>
+<style>
+.inventory-panel { width:100%; max-width:none; min-height:0; margin:0; padding:26px; background:transparent!important; color:var(--admin-text,#193247)!important; }
+.inventory-panel header.inventory-heading { display:flex; align-items:flex-end; justify-content:space-between; gap:20px; margin:0 0 17px; padding:0!important; border:0!important; background:transparent!important; box-shadow:none!important; color:var(--admin-text,#193247)!important; }
+.inventory-eyebrow { margin:0 0 4px; color:#24777a; font-size:10px; font-weight:800; letter-spacing:.12em; }
+.inventory-panel .productos-title { justify-content:flex-start; margin:0; color:var(--admin-text,#193247)!important; font:750 25px/1.2 'DM Sans','Segoe UI',sans-serif; letter-spacing:0; }
+.inventory-panel .productos-title .material-symbols-outlined { color:#176b78; font-size:23px!important; }
+.inventory-panel .inventory-subtitle { margin:5px 0 0; color:var(--admin-muted,#647b8b)!important; font-size:12px; }
+.inventory-count { display:grid; gap:2px; min-width:140px; border-left:2px solid #176b78; padding:2px 0 2px 12px; }
+.inventory-panel .inventory-count strong { color:var(--admin-text,#193247)!important; font:700 21px 'DM Sans','Segoe UI',sans-serif; font-variant-numeric:tabular-nums; }
+.inventory-panel .inventory-count span { color:var(--admin-muted,#647b8b)!important; font-size:10px; }
+.inventory-message { margin:0 0 12px; border:1px solid #b8d9cc; border-left:3px solid #287b62; border-radius:5px; background:#edf7f1; color:#245d4b; padding:10px 12px; font-size:12px; }
+.inventory-panel .productos-filter { margin-bottom:10px; }
+.inventory-panel .productos-filter input { min-height:41px; border-color:var(--admin-line-strong,#cbd8df); border-radius:5px; background:var(--admin-surface,#fff); color:var(--admin-text,#193247); }
+.inventory-panel .productos-filter button { min-height:41px; border-color:#176b78; border-radius:5px; background:#176b78; padding:0 13px; }
+.inventory-panel .productos-filter a { min-height:41px; border-color:var(--admin-line-strong,#cbd8df); border-radius:5px; background:var(--admin-surface,#fff); color:var(--admin-text,#344b5b); }
+.inventory-panel .productos-toolbar { margin:0 0 12px; border:1px solid var(--admin-line,#d8e2e9); border-radius:7px; background:var(--admin-surface,#fff); padding:9px; }
+.inventory-panel .productos-toolbar .toolbar-actions { display:flex; flex-wrap:wrap; gap:7px; }
+.inventory-panel .productos-toolbar .btn-registrar, .inventory-panel .productos-toolbar .boton { display:inline-flex; min-height:37px; width:auto; align-items:center; justify-content:center; gap:6px; border:1px solid var(--admin-line-strong,#cbd8df)!important; border-radius:5px; background:var(--admin-surface,#fff)!important; color:var(--admin-text,#344b5b)!important; padding:0 10px; font-size:10px; text-decoration:none; box-shadow:none!important; }
+.inventory-panel .productos-toolbar .btn-registrar:first-child { border-color:#176b78!important; background:#176b78!important; color:#fff!important; }
+.inventory-panel .productos-toolbar .btn-registrar:hover, .inventory-panel .productos-toolbar .boton:hover { transform:translateY(-1px); }
+.inventory-panel .productos-table-wrap { overflow:auto; border:1px solid var(--admin-line,#d8e2e9); border-radius:8px; }
+.inventory-panel .tabla-productos { min-width:1080px; margin:0; border-collapse:separate; border-spacing:0; background:var(--admin-surface,#fff)!important; color:var(--admin-text,#193247)!important; box-shadow:none!important; font-size:11px; }
+.inventory-panel .tabla-productos th { background:var(--admin-table-head,#eaf1f5)!important; color:var(--admin-text,#193247)!important; border-bottom:1px solid var(--admin-line-strong,#cbd8df)!important; padding:11px 10px; font-size:9px; letter-spacing:.05em; text-transform:uppercase; white-space:nowrap; }
+.inventory-panel .tabla-productos td { background:var(--admin-surface,#fff)!important; color:var(--admin-text,#344b5b)!important; border-bottom:1px solid var(--admin-line,#e3eaee)!important; padding:10px 9px; }
+.inventory-panel .tabla-productos tbody tr:nth-child(even) td { background:var(--admin-surface-soft,#f7f9fa)!important; }
+.inventory-panel .tabla-productos tbody tr:hover td { background:rgba(23,107,120,.06)!important; }
+.inventory-panel .tabla-productos tbody tr { animation:none!important; opacity:1!important; transform:none!important; }
+.inventory-panel .tabla-productos td img.product-thumb { width:48px!important; height:48px!important; max-width:48px!important; max-height:48px!important; }
+.inventory-panel .acciones-btns { justify-content:center; gap:4px; }
+.inventory-panel .acciones-btns .btn { min-height:30px; min-width:0; border:1px solid var(--admin-line-strong,#cbd8df); border-radius:4px; background:var(--admin-surface,#fff); color:var(--admin-text,#344b5b); padding:0 7px; font-size:10px; }
+.inventory-panel .acciones-btns .btn-actualizar { border-color:#bbd2df; color:#315c78; }
+.inventory-panel .acciones-btns .btn-eliminar { border-color:#e7c2bd; color:#a4443b; cursor:pointer; }
+.inventory-delete-form { display:inline-flex; margin:0; }
+.inventory-panel .presentation-badge { border:1px solid var(--admin-line,#d8e2e9); border-radius:4px; background:var(--admin-surface-soft,#f4f7f8); color:var(--admin-text,#345366); padding:4px 6px; font-size:9px; }
+.inventory-panel .badge-oferta { border-radius:4px; background:#e8793f; padding:4px 6px; font-size:9px; }
+.inventory-panel .pagination { margin:15px 0 0; }
+.inventory-panel .pagination .step-links a { border:1px solid var(--admin-line-strong,#cbd8df); border-radius:5px; background:var(--admin-surface,#fff)!important; color:var(--admin-text,#193247)!important; padding:7px 10px; font-size:10px; text-decoration:none; }
+html[data-theme="dark"] .inventory-panel { --admin-surface:#101d2b; --admin-surface-soft:#142435; --admin-line:#2a3b4d; --admin-line-strong:#3a5064; --admin-table-head:#1a3043; --admin-text:#e8f0f6; --admin-muted:#a6b7c5; }
+html[data-theme="dark"] .inventory-panel .tabla-productos td { color:#dce6ed!important; }
+@media(max-width:900px) { .inventory-panel { padding:18px; } .inventory-heading { align-items:flex-start; } .inventory-count { min-width:115px; } }
+@media(max-width:600px) { .inventory-panel { padding:14px; } .inventory-heading { flex-direction:column; } .inventory-count { border-left:0; border-top:1px solid var(--admin-line,#d8e2e9); padding:9px 0 0; } .inventory-panel .productos-toolbar .toolbar-actions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); } .inventory-panel .productos-toolbar .btn-registrar, .inventory-panel .productos-toolbar .boton { width:100%; white-space:normal; line-height:1.2; } }
+</style>
+{% endblock %}
+
+{% block help_content %}
+<div>
+    <h4>Ayuda: Inventario</h4>
+    <p>Gestiona tus productos en este módulo. Acciones y consejos rápidos:</p>
+    <ul>
+        <li><strong>Buscar/Filtrar:</strong> Usa la paginación y el buscador para localizar productos por código o descripción.</li>
+        <li><strong>Registrar producto:</strong> Pulsa <em>Registrar Producto</em> para crear un nuevo artículo con su imagen, costo y existencias.</li>
+        <li><strong>Actualizar precio:</strong> Usa el botón de actualizar para cambiar precios sin recargar la página.</li>
+        <li><strong>Eliminar:</strong> Eliminar un producto es irreversible; revisa dependencias (ventas/compras) antes de borrarlo.</li>
+    </ul>
+    <p>Buenas prácticas:</p>
+    <ol>
+        <li>Mantén la imagen y descripción claras para facilitar búsquedas rápidas.</li>
+        <li>Actualiza el costo y el stock regularmente para evitar desajustes en compras y ventas.</li>
+    </ol>
+</div>
+{% endblock %}

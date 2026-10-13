@@ -1,0 +1,263 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Mi carrito | FerreElectri PLUS{% endblock %}
+
+{% block content %}
+<section class="cart-page">
+  <div class="cart-page-heading">
+    <div>
+      <span class="section-eyebrow">Compra segura</span>
+      <h1>Mi carrito</h1>
+      <p>Revisa tus productos antes de continuar al pago.</p>
+    </div>
+    <a href="{% url 'index' %}#catalogo" class="cart-back-link"><i class="fa-solid fa-arrow-left"></i> Seguir comprando</a>
+  </div>
+
+  {% if messages %}
+    <div class="cart-messages">
+      {% for message in messages %}{% if 'admin-action' not in message.tags %}<div class="cart-message">{{ message }}</div>{% endif %}{% endfor %}
+    </div>
+  {% endif %}
+
+  <div class="cart-layout">
+    <section class="cart-products-panel" aria-labelledby="cartProductsTitle">
+      <div class="cart-panel-heading">
+        <h2 id="cartProductsTitle">Productos seleccionados</h2>
+        <span>{{ items|length }} artículo{{ items|length|pluralize }}</span>
+      </div>
+
+      {% if items %}
+        <div class="cart-product-list">
+          {% for item in items %}
+            <article class="cart-product-row">
+              <div class="cart-product-image">
+                {% if item.producto and item.producto.Imagen %}
+                  <img src="{{ item.producto.Imagen.url }}" alt="{{ item.producto.Descripcion }}">
+                {% else %}
+                  <img src="{% static 'img/default-product.png' %}" alt="Imagen no disponible">
+                {% endif %}
+              </div>
+              <div class="cart-product-info">
+                <h3>{% if item.producto %}{{ item.producto.Descripcion }}{% else %}Producto eliminado{% endif %}</h3>
+                {% if item.producto %}<p>Código {{ item.producto.Codigo }}</p>{% endif %}
+                {% if item.presentacion_type %}
+                  <p class="cart-product-presentation">Presentación: {{ item.presentacion_type }}{% if item.presentacion_factor and item.presentacion_factor > 1 %} ×{{ item.presentacion_factor }}{% endif %}</p>
+                {% endif %}
+                {% if item.producto %}<div class="cart-product-unit">Precio unitario: $ {{ item.producto.Precio|floatformat:2 }}</div>{% endif %}
+                <div class="cart-product-actions">
+                  {% if item.producto %}
+                    <div class="quantity-control" aria-label="Cantidad">
+                      {% if item.cantidad > 1 %}
+                        <a href="{% url 'actualizar_cantidad_carrito' item.producto.Codigo item.cantidad|add:'-1' %}" aria-label="Disminuir cantidad">−</a>
+                      {% else %}
+                        <span aria-hidden="true">−</span>
+                      {% endif %}
+                      <strong>{{ item.cantidad }}</strong>
+                      <a href="{% url 'actualizar_cantidad_carrito' item.producto.Codigo item.cantidad|add:'1' %}" aria-label="Aumentar cantidad">+</a>
+                    </div>
+                  {% endif %}
+                  {% if item.id %}
+                    <form method="post" action="{% url 'eliminar_item_carrito' item.id %}" class="m-0">
+                      {% csrf_token %}
+                      <button type="submit" class="cart-remove border-0 bg-transparent p-0 cursor-pointer" aria-label="Eliminar producto"><i class="fa-regular fa-trash-can"></i></button>
+                    </form>
+                  {% elif item.producto %}
+                    <form method="post" action="{% url 'eliminar_item_carrito_anon' item.producto.Codigo %}" class="m-0">
+                      {% csrf_token %}
+                      <button type="submit" class="cart-remove border-0 bg-transparent p-0 cursor-pointer" aria-label="Eliminar producto"><i class="fa-regular fa-trash-can"></i></button>
+                    </form>
+                  {% endif %}
+                </div>
+              </div>
+              <strong class="cart-product-total">$ {{ item.subtotal|floatformat:2 }}</strong>
+            </article>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="cart-page-empty">
+          <i class="fa-solid fa-cart-shopping"></i>
+          <h3>Tu carrito está vacío</h3>
+          <p>Explora nuestro catálogo y agrega lo que necesitas.</p>
+          <a href="{% url 'productos' %}?vista=catalogo#productos-grid" class="btn-primary">Ver productos</a>
+        </div>
+      {% endif %}
+    </section>
+
+    <aside class="cart-summary-card">
+      <h2>Resumen de compra</h2>
+      <div class="summary-line"><span>Subtotal</span><strong>$ {{ total|floatformat:2 }}</strong></div>
+      <div class="summary-line"><span>Impuestos</span><strong>$ 0.00</strong></div>
+      <div class="summary-note"><i class="fa-solid fa-circle-info"></i> Los impuestos se calcularán si aplican al finalizar el pedido.</div>
+      <div class="summary-total"><span>Total</span><strong>$ {{ total|floatformat:2 }}</strong></div>
+      {% if items %}
+        {% if user.is_authenticated %}
+          <a href="{% url 'checkout' %}" class="checkout-button" id="checkoutButton"><i class="fa-solid fa-lock"></i> Proceder al Pago</a>
+        {% else %}
+          <a href="{% url 'cliente_login' %}?next={% url 'checkout' %}" class="checkout-button" id="checkoutButton"><i class="fa-solid fa-lock"></i> Proceder al Pago</a>
+        {% endif %}
+      {% else %}
+        <a href="{% url 'productos' %}?vista=catalogo#productos-grid" class="checkout-button">Explorar productos</a>
+      {% endif %}
+      <div class="secure-checkout"><i class="fa-solid fa-shield-halved"></i> Compra protegida y pagos seguros</div>
+    </aside>
+  </div>
+</section>
+
+<div id="cedulaModal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-slate-950/75 backdrop-blur-sm" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="cedulaModalTitle" aria-describedby="cedulaModalDescription">
+  <div class="flex min-h-full items-center justify-center p-3 sm:p-6">
+    <div class="my-auto w-full max-w-3xl rounded-xl border border-slate-200 bg-white p-5 shadow-2xl dark:border-slate-700 dark:bg-slate-900 sm:p-8">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <span class="text-xs font-bold uppercase tracking-[0.16em] text-emerald-600">Datos para tu compra</span>
+          <h2 id="cedulaModalTitle" class="mt-1 text-xl font-black text-slate-900 dark:text-white sm:text-2xl">Completa tus datos fiscales</h2>
+        </div>
+        <button type="button" id="closeCedulaModal" class="grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-slate-200 text-slate-500 transition hover:border-slate-400 hover:text-slate-900 dark:border-slate-700 dark:text-slate-300 dark:hover:text-white" aria-label="Cerrar formulario"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+      </div>
+      <p id="cedulaModalDescription" class="mt-2 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">Necesitamos completar la identificación, el contacto y la dirección fiscal para continuar al pago.</p>
+
+      <form method="post" action="{% url 'completar_datos_facturacion' %}" id="cedulaForm" class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {% csrf_token %}
+        <label class="block min-w-0">
+          <span class="mb-1.5 block text-sm font-semibold text-slate-700 dark:text-slate-200">Nombre</span>
+          <input name="nombre" type="text" value="{{ checkout_profile.nombre }}" autocomplete="given-name" maxlength="150" required class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:border-slate-600 dark:bg-slate-800 dark:text-white">
+        </label>
+        <label class="block min-w-0">
+          <span class="mb-1.5 block text-sm font-semibold text-slate-700 dark:text-slate-200">Apellido</span>
+          <input name="apellido" type="text" value="{{ checkout_profile.apellido }}" autocomplete="family-name" maxlength="150" required class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:border-slate-600 dark:bg-slate-800 dark:text-white">
+        </label>
+        <label class="block min-w-0 sm:col-span-2">
+          <span class="mb-1.5 block text-sm font-semibold text-slate-700 dark:text-slate-200">Razón social <span class="font-normal text-slate-500">(si aplica)</span></span>
+          <input name="razon_social" type="text" value="{{ checkout_profile.razon_social }}" autocomplete="organization" maxlength="200" placeholder="Nombre de la empresa u organismo" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:border-slate-600 dark:bg-slate-800 dark:text-white">
+        </label>
+        <div class="grid min-w-0 grid-cols-[minmax(145px,.9fr)_minmax(0,1.1fr)] gap-2">
+          <label class="block min-w-0">
+            <span class="mb-1.5 block text-sm font-semibold text-slate-700 dark:text-slate-200">Tipo</span>
+            <select id="tipoDocumento" name="tipo_documento" required class="min-w-[145px] w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:border-slate-600 dark:bg-slate-800 dark:text-white">
+              <option value="V">V · Cédula</option>
+              <option value="G">G · Organismo</option>
+              <option value="J">J · Empresa</option>
+            </select>
+          </label>
+          <label class="block min-w-0">
+            <span class="mb-1.5 block text-sm font-semibold text-slate-700 dark:text-slate-200">Número</span>
+            <input id="numeroDocumento" name="numero_documento" type="text" inputmode="numeric" autocomplete="off" pattern="[0-9]{5,10}" minlength="5" maxlength="10" placeholder="12345678" required class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:border-slate-600 dark:bg-slate-800 dark:text-white">
+          </label>
+        </div>
+        <label class="block min-w-0">
+          <span class="mb-1.5 block text-sm font-semibold text-slate-700 dark:text-slate-200">Teléfono</span>
+          <input name="telefono" type="tel" value="{{ checkout_profile.telefono }}" autocomplete="tel" minlength="7" maxlength="20" placeholder="0414 000 0000" required class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:border-slate-600 dark:bg-slate-800 dark:text-white">
+        </label>
+        <label class="block min-w-0 sm:col-span-2">
+          <span class="mb-1.5 block text-sm font-semibold text-slate-700 dark:text-slate-200">Dirección fiscal y de entrega</span>
+          <input name="direccion" type="text" value="{{ checkout_profile.direccion }}" autocomplete="street-address" maxlength="255" placeholder="Ciudad, sector y dirección" required class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:border-slate-600 dark:bg-slate-800 dark:text-white">
+        </label>
+        <label class="block min-w-0 sm:col-span-2">
+          <span class="mb-1.5 block text-sm font-semibold text-slate-700 dark:text-slate-200">Correo electrónico</span>
+          <input name="email" type="email" value="{{ checkout_profile.email }}" autocomplete="email" maxlength="254" placeholder="correo@ejemplo.com" required class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:border-slate-600 dark:bg-slate-800 dark:text-white">
+        </label>
+        <input id="cedulaRif" type="hidden" name="cedula_rif" value="">
+        <div class="flex flex-col-reverse gap-2 border-t border-slate-200 pt-4 sm:col-span-2 sm:flex-row sm:justify-end dark:border-slate-700">
+          <button type="button" id="cancelCedulaModal" class="min-h-11 rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800">Ahora no</button>
+          <button type="submit" class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-700"><i class="fa-solid fa-lock" aria-hidden="true"></i> Guardar y continuar al pago</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<style>
+  body.fiscal-modal-open #aiAssistantDrawer,
+  body.fiscal-modal-open #aiAssistantFabContainer,
+  body.fiscal-modal-open #aiAssistantOverlay {
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+</style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const checkoutButton = document.getElementById('checkoutButton');
+    const cedulaModal = document.getElementById('cedulaModal');
+    const closeCedulaModal = document.getElementById('closeCedulaModal');
+    const cancelCedulaModal = document.getElementById('cancelCedulaModal');
+    const fiscalForm = document.getElementById('cedulaForm');
+    const documentType = document.getElementById('tipoDocumento');
+    const documentNumber = document.getElementById('numeroDocumento');
+    const documentValue = document.getElementById('cedulaRif');
+    let assistantWasOpenBeforeFiscalModal = false;
+
+    function closeFiscalModal() {
+      cedulaModal?.classList.add('hidden');
+      cedulaModal?.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('overflow-hidden');
+      document.body.classList.remove('fiscal-modal-open');
+      if (assistantWasOpenBeforeFiscalModal) {
+        assistantWasOpenBeforeFiscalModal = false;
+        window.requestAnimationFrame(() => document.getElementById('aiAssistantFab')?.click());
+      } else {
+        checkoutButton?.focus();
+      }
+    }
+
+    function openFiscalModal() {
+      const assistantDrawer = document.getElementById('aiAssistantDrawer');
+      assistantWasOpenBeforeFiscalModal = assistantDrawer?.getAttribute('aria-hidden') === 'false';
+      if (assistantWasOpenBeforeFiscalModal) document.getElementById('aiAssistantClose')?.click();
+      document.body.classList.add('fiscal-modal-open');
+      cedulaModal?.classList.remove('hidden');
+      cedulaModal?.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('overflow-hidden');
+      window.requestAnimationFrame(() => fiscalForm?.querySelector('input[name="nombre"]')?.focus());
+    }
+
+    const savedDocument = "{{ checkout_profile.cedula_rif|default:''|escapejs }}";
+    const savedDocumentMatch = savedDocument.match(/^([VGJ])[-\s]?([0-9]{5,10})$/i);
+    if (savedDocumentMatch) {
+      documentType.value = savedDocumentMatch[1].toUpperCase();
+      documentNumber.value = savedDocumentMatch[2];
+    }
+
+    if (checkoutButton) {
+      checkoutButton.addEventListener('click', function (event) {
+        window.sessionStorage.setItem('ferrebot_checkout_guide', 'true');
+        const isAuthenticated = {{ request.user.is_authenticated|yesno:"true,false" }};
+        if (!isAuthenticated) return;
+        const requiredFiscalValues = [
+          "{{ checkout_profile.nombre|escapejs }}",
+          "{{ checkout_profile.apellido|escapejs }}",
+          "{{ checkout_profile.email|escapejs }}",
+          savedDocument,
+          "{{ checkout_profile.telefono|escapejs }}",
+          "{{ checkout_profile.direccion|escapejs }}",
+        ];
+        if (requiredFiscalValues.some((value) => !value.trim())) {
+          event.preventDefault();
+          openFiscalModal();
+        }
+      });
+    }
+
+    fiscalForm?.addEventListener('submit', function (event) {
+      const number = documentNumber.value.trim();
+      if (!/^[0-9]{5,10}$/.test(number)) {
+        event.preventDefault();
+        documentNumber.setCustomValidity('Ingresa entre 5 y 10 dígitos.');
+        documentNumber.reportValidity();
+        documentNumber.addEventListener('input', () => documentNumber.setCustomValidity(''), {once: true});
+        return;
+      }
+      documentValue.value = `${documentType.value}-${number}`;
+    });
+
+    closeCedulaModal?.addEventListener('click', closeFiscalModal);
+    cancelCedulaModal?.addEventListener('click', closeFiscalModal);
+    cedulaModal?.addEventListener('click', (event) => {
+      if (event.target === cedulaModal) closeFiscalModal();
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && cedulaModal && !cedulaModal.classList.contains('hidden')) closeFiscalModal();
+    });
+  });
+</script>
+{% endblock %}

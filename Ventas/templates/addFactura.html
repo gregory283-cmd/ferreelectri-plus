@@ -1,0 +1,45 @@
+{% extends 'base/pan_con_queso.html' %}
+
+{% block arroz_con_pollo %}
+<section class="form-card factura-manual-page">
+    <header class="factura-manual-header">
+        <div>
+            <h2>Registrar venta</h2>
+            <p>Completa los datos del artículo vendido.</p>
+        </div>
+    </header>
+
+    <form method="post" class="factura-manual-form">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        <div class="factura-manual-grid">
+            {% for field in form %}
+            <div class="factura-manual-field">
+                {{ field.label_tag }}
+                {{ field }}
+                {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+                {{ field.errors }}
+            </div>
+            {% endfor %}
+        </div>
+        <div class="factura-manual-actions">
+            <button type="submit" class="btn btn-primary">Guardar venta</button>
+            <a href="{% url 'listar_facturas' %}" class="btn btn-secondary">Volver a ventas</a>
+        </div>
+    </form>
+</section>
+
+<style>
+    .factura-manual-page { width:100%; max-width:900px; margin:0 auto; padding:24px; border:1px solid var(--admin-line); border-radius:12px; background:var(--admin-surface); color:var(--admin-text); }
+    .factura-manual-header { margin-bottom:20px; padding-bottom:16px; border-bottom:1px solid var(--admin-line); }
+    .factura-manual-header h2 { margin:0 0 6px; color:var(--admin-text); font-size:1.5rem; }
+    .factura-manual-header p { margin:0; color:var(--admin-muted); }
+    .factura-manual-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }
+    .factura-manual-field { min-width:0; }
+    .factura-manual-field label { display:block; margin-bottom:6px; font-weight:700; }
+    .factura-manual-field input, .factura-manual-field select, .factura-manual-field textarea { width:100%; min-width:0; padding:10px 12px; border:1px solid var(--admin-line-strong); border-radius:8px; background:var(--admin-surface-soft); color:var(--admin-text); }
+    .factura-manual-actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:20px; }
+    .factura-manual-actions .btn { min-width:150px; justify-content:center; }
+    @media (max-width:680px) { .factura-manual-page { padding:16px; } .factura-manual-grid { grid-template-columns:minmax(0,1fr); } .factura-manual-actions .btn { flex:1 1 100%; } }
+</style>
+{% endblock %}

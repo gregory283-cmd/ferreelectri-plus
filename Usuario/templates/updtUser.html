@@ -1,0 +1,275 @@
+﻿{% extends 'base/pan_con_queso.html' %}
+{% load static %}
+
+{% block arroz_con_pollo %}
+<section id="editar-cliente" class="section-panel form-card">
+    <div class="section-header">
+        <div>
+            <h2>Actualizar cliente</h2>
+            <p>Modifica los datos del cliente con el mismo estilo moderno y consistente del formulario de alta.</p>
+        </div>
+    </div>
+
+    <div class="form-layout">
+        <aside class="summary-card">
+            <div class="summary-badge">
+                <span class="material-symbols-outlined">people</span>
+            </div>
+            <h3>Edición de cliente</h3>
+            <p>Actualiza la información del cliente sin perder la coherencia visual del resto del sistema.</p>
+            <ul class="summary-list">
+                <li><span class="material-symbols-outlined">verified</span> Datos consistentes</li>
+                <li><span class="material-symbols-outlined">sync_alt</span> Flujo uniforme</li>
+                <li><span class="material-symbols-outlined">person_search</span> Búsqueda y edición más clara</li>
+            </ul>
+        </aside>
+
+        <div class="form-panel">
+            <form id="clienteForm" action="" method="POST" enctype="multipart/form-data" autocomplete="off">
+                {% csrf_token %}
+                {% if form.errors %}
+                    <div class="alert-banner alert-error">
+                        {{ form.errors }}
+                    </div>
+                {% endif %}
+
+                <div class="form-grid">
+                    <div class="form-field">
+                        {{ form.cedula.label_tag }}
+                        {{ form.cedula }}
+                    </div>
+                    <div class="form-field">
+                        {{ form.nombre.label_tag }}
+                        {{ form.nombre }}
+                    </div>
+                    <div class="form-field">
+                        {{ form.apellido.label_tag }}
+                        {{ form.apellido }}
+                    </div>
+                    <div class="form-field">
+                        {{ form.telefono.label_tag }}
+                        {{ form.telefono }}
+                    </div>
+                    <div class="form-field">
+                        {{ form.fecha_nacimiento.label_tag }}
+                        {{ form.fecha_nacimiento }}
+                    </div>
+                    <div class="form-field md:col-span-2 full-width">
+                        {{ form.email.label_tag }}
+                        {{ form.email }}
+                    </div>
+                    <div class="form-field full-width">
+                        {{ form.direccion.label_tag }}
+                        {{ form.direccion }}
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary"><span class="material-symbols-outlined">save</span> Actualizar cliente</button>
+                    <a href="{% url 'usuarios' %}" class="btn btn-secondary"><span class="material-symbols-outlined">arrow_back</span> Volver a clientes</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <style>
+    #editar-cliente {
+        padding: 32px;
+        background: #ffffff;
+        border-radius: 28px;
+        box-shadow: 0 30px 80px rgba(15, 23, 42, 0.12);
+        border: 1px solid rgba(148, 163, 184, 0.2);
+    }
+    .section-header h2 {
+        margin: 0 0 10px;
+        color: #0f172a;
+        font-size: clamp(2rem, 2.3vw, 2.5rem);
+    }
+    .section-header p {
+        margin: 0;
+        max-width: 720px;
+        color: #475569;
+        line-height: 1.75;
+    }
+    .form-layout {
+        display: grid;
+        grid-template-columns: 300px minmax(360px, 1fr);
+        gap: 24px;
+        margin-top: 28px;
+    }
+    .summary-card,
+    .form-panel {
+        background: #f8fafc;
+        border: 1px solid rgba(148, 163, 184, 0.35);
+        border-radius: 24px;
+        padding: 24px;
+    }
+    .summary-card {
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+    }
+    .summary-badge {
+        width: 64px;
+        height: 64px;
+        display: grid;
+        place-items: center;
+        border-radius: 20px;
+        background: rgba(59, 130, 246, 0.12);
+        color: #2563eb;
+    }
+    .summary-card h3 {
+        margin: 0;
+        color: #0f172a;
+        font-size: 1.25rem;
+    }
+    .summary-card p {
+        margin: 0;
+        color: #475569;
+    }
+    .summary-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: grid;
+        gap: 12px;
+    }
+    .summary-list li {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: #334155;
+        font-weight: 600;
+    }
+    .summary-list .material-symbols-outlined {
+        color: #1d4ed8;
+        font-size: 1.15rem;
+    }
+    .alert-banner {
+        margin-bottom: 18px;
+        padding: 14px 16px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 600;
+        color: #0f172a;
+        background: #fef3c7;
+        border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+    .alert-error {
+        background: #fee2e2;
+        border: 1px solid rgba(239, 68, 68, 0.2);
+        color: #991b1b;
+    }
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 18px;
+    }
+    .form-field {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    .form-field.full-width {
+        grid-column: 1 / -1;
+    }
+    .form-field.md\:col-span-2 {
+        grid-column: 1 / -1;
+    }
+    .form-field label {
+        color: #334155;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.96rem;
+    }
+    .form-panel input,
+    .form-panel select,
+    .form-panel textarea {
+        width: 100%;
+        border: 1px solid rgba(148, 163, 184, 0.35);
+        border-radius: 14px;
+        padding: 0.9rem 1rem;
+        font-size: 1rem;
+        background: rgba(15, 23, 42, 0.05);
+        color: #0f172a;
+        outline: none;
+        box-shadow: none;
+        transition: background-color 200ms, border-color 200ms, box-shadow 200ms;
+    }
+    .form-panel textarea {
+        min-height: 120px;
+        resize: vertical;
+    }
+    .form-panel input:focus,
+    .form-panel select:focus,
+    .form-panel textarea:focus {
+        border-color: #2563eb;
+        box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.5), 0 4px 12px rgba(37, 99, 235, 0.2);
+    }
+    .form-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        justify-content: flex-end;
+        margin-top: 24px;
+    }
+    .btn { display: inline-flex; align-items: center; gap: 8px; border-radius: 12px; font-weight: 700; padding: 12px 22px; text-decoration: none; border: none; cursor: pointer; }
+    .btn-primary { background: #2563eb; color: #fff; }
+    .btn-primary:hover { background: #1d4ed8; }
+    .btn-secondary { background: #e2e8f0; color: #0f172a; }
+    .btn-secondary:hover { background: #cbd5e1; }
+    @media (max-width: 900px) {
+        .form-layout { grid-template-columns: 1fr; }
+        .form-panel { padding: 20px; }
+        #editar-cliente { padding: 22px; }
+    }
+    html[data-theme="dark"] #editar-cliente{
+        background: rgba(11,18,32,0.96) !important;
+        border-color: rgba(148,163,184,0.18) !important;
+        box-shadow: 0 30px 80px rgba(0,0,0,0.45) !important;
+        color: rgba(255,255,255,0.94) !important;
+    }
+    html[data-theme="dark"] .summary-card,
+    html[data-theme="dark"] .form-panel{
+        background: rgba(11,18,32,0.96) !important;
+        border-color: rgba(255,255,255,0.12) !important;
+    }
+    html[data-theme="dark"] .section-header h2,
+    html[data-theme="dark"] .summary-card h3,
+    html[data-theme="dark"] .section-header p,
+    html[data-theme="dark"] .summary-card p,
+    html[data-theme="dark"] .form-field label,
+    html[data-theme="dark"] .alert-banner,
+    html[data-theme="dark"] .summary-list li {
+        color: rgba(226, 232, 240, 0.95) !important;
+    }
+    html[data-theme="dark"] .form-panel input,
+    html[data-theme="dark"] .form-panel select,
+    html[data-theme="dark"] .form-panel textarea {
+        background: rgba(255,255,255,0.05) !important;
+        border-color: rgba(255,255,255,0.14) !important;
+        color: rgba(255,255,255,0.94) !important;
+    }
+    html[data-theme="dark"] .btn-secondary {
+        background: rgba(148, 163, 184, 0.15) !important;
+        color: rgba(241, 245, 249, 0.95) !important;
+    }
+    html[data-theme="dark"] .btn-secondary:hover {
+        background: rgba(148, 163, 184, 0.2) !important;
+    }
+    html[data-theme="dark"] .btn-primary {
+        filter: brightness(1.05);
+    }
+    html[data-theme="dark"] .summary-badge {
+        background: rgba(37, 99, 235, 0.15) !important;
+    }
+    html[data-theme="dark"] .summary-list .material-symbols-outlined {
+        color: #60a5fa !important;
+    }
+    </style>
+</section>
+{% endblock %}

@@ -1,0 +1,86 @@
+﻿{% extends 'base_panel.html' %}
+
+{% block content %}
+<div class="w-full max-w-[95%] 2xl:max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8 min-h-screen">
+    <div class="mb-8">
+        <p class="text-[11px] uppercase tracking-[0.15em] text-emerald-600 font-bold">Pedidos</p>
+        <h1 class="mt-2 text-3xl md:text-4xl font-black tracking-tight text-slate-900">Mis pedidos</h1>
+        <p class="mt-2 text-sm md:text-base text-slate-500 font-medium">Revisa el estado, el total y accede al detalle de cada orden.</p>
+    </div>
+
+    <div class="mb-8 grid grid-cols-1 gap-5 md:grid-cols-3">
+        <div class="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100/60 backdrop-blur-sm p-5">
+            <div class="flex items-center justify-between">
+                <span class="text-sm font-medium text-slate-500">Pedidos totales</span>
+                <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M3 7.5A2.5 2.5 0 015.5 5h13A2.5 2.5 0 0121 7.5v9A2.5 2.5 0 0118.5 19h-13A2.5 2.5 0 013 16.5v-9zm0 0l9 6 9-6"/></svg>
+                </span>
+            </div>
+            <div class="mt-4 text-3xl font-black tracking-tight text-slate-900">{{ pedidos|length|default:"0" }}</div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100/60 backdrop-blur-sm p-5">
+            <div class="flex items-center justify-between">
+                <span class="text-sm font-medium text-slate-500">Último pedido</span>
+                <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M8 2v4m8-4v4M3 10h18M5 6h14a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2z"/></svg>
+                </span>
+            </div>
+            <div class="mt-4 text-xl font-black tracking-tight text-slate-900">{{ pedidos.first.fecha_creacion|date:"d/m/Y"|default:"-" }}</div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100/60 backdrop-blur-sm p-5">
+            <div class="flex items-center justify-between">
+                <span class="text-sm font-medium text-slate-500">Último estado</span>
+                <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M5 13l4 4L19 3"/></svg>
+                </span>
+            </div>
+            <div class="mt-4 inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800">{{ pedidos.first.estado|default:"-" }}</div>
+        </div>
+    </div>
+
+    <div class="overflow-hidden rounded-2xl border border-slate-100/60 bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-sm">
+        <div class="border-b border-slate-100 bg-slate-50 px-6 py-4">
+            <h3 class="text-lg font-black tracking-tight text-slate-800">Tus pedidos recientes</h3>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full border-separate border-spacing-y-2 text-left">
+                <thead>
+                    <tr class="text-[11px] uppercase tracking-[0.14em] text-slate-500">
+                        <th class="px-6 py-4 font-semibold">Pedido</th>
+                        <th class="px-6 py-4 font-semibold">Fecha</th>
+                        <th class="px-6 py-4 font-semibold">Total</th>
+                        <th class="px-6 py-4 font-semibold">Estado</th>
+                        <th class="px-6 py-4 text-center font-semibold">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for pedido in pedidos %}
+                    <tr class="bg-slate-50/80 text-sm text-slate-600 shadow-sm">
+                        <td class="rounded-l-xl px-6 py-4 text-sm font-bold text-slate-800">#{{ pedido.id }}</td>
+                        <td class="px-6 py-4">{{ pedido.fecha_creacion|date:"d/m/Y H:i" }}</td>
+                        <td class="px-6 py-4 font-semibold text-slate-800">${{ pedido.total }}</td>
+                        <td class="px-6 py-4">
+                            <span class="inline-flex rounded-full px-3 py-1 text-xs font-bold bg-amber-100 text-amber-800">{{ pedido.estado }}</span>
+                        </td>
+                        <td class="rounded-r-xl px-6 py-4 text-center">
+                            <div class="flex items-center justify-center gap-2">
+                                <a href="{% url 'detalle_pedido_cliente' pedido.id %}" class="inline-flex items-center rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-emerald-600">Ver detalle</a>
+                                {% if pedido.factura and pedido.factura.estado == 'facturada' %}
+                                    <a href="{% url 'descargar_factura_pdf_cliente' pedido.factura.numero %}" class="inline-flex items-center rounded-lg bg-sky-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-sky-700">Descargar factura</a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="px-6 py-10 text-center text-sm text-slate-500">No tienes pedidos registrados aún.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

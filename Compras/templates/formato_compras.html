@@ -1,0 +1,1469 @@
+{% extends 'base/pan_con_queso.html' %}
+{% block title %}Registrar compra | FERREELECTRI PLUS{% endblock %}
+
+{% block arroz_con_pollo %}
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+
+<main class="formato-compras-card purchase-shell">
+    <header class="purchase-heading">
+        <span class="purchase-heading-icon material-symbols-outlined" aria-hidden="true">shopping_cart</span>
+        <div>
+            <p class="purchase-eyebrow">ABASTECIMIENTO · INVENTARIO</p>
+            <h1>Registrar compra</h1>
+            <p class="purchase-subtitle">Registra el proveedor y los artículos recibidos.</p>
+        </div>
+        <span class="purchase-document-mark">NUEVA ENTRADA</span>
+    </header>
+    
+    <!-- Información de la compra -->
+    <div class="formato-compras-proveedor bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-5 mb-6 transition-all">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 items-end">
+            <div class="formato-compras-proveedor-datos relative block">
+                <label for="ruc_nit">Cédula / RIF</label>
+                <div class="relative w-full"><div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor" class="h-5 w-5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 9h.008v.008H15V9Zm-3 0h.008v.008H12V9Zm-3 0h.008v.008H9V9Zm9 4.5h.008v.008H18V13.5ZM6 13.5h.008v.008H6V13.5Zm3 0h.008v.008H9V13.5ZM5.25 4.5h13.5A2.25 2.25 0 0 1 21 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25H5.25A2.25 2.25 0 0 1 3 17.25V6.75A2.25 2.25 0 0 1 5.25 4.5Z" /></svg></div><input class="w-full pl-11 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-950 focus:border-transparent outline-none transition-all duration-200 text-sm" type="text" id="ruc_nit" placeholder="Cédula" readonly /></div>
+            </div>
+            <div class="formato-compras-proveedor-datos relative block">
+                <label for="proveedor">Proveedor</label>
+                <div class="relative w-full"><div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor" class="h-5 w-5"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 21v-7.5h3A1.5 1.5 0 0 0 18 12V5.25A2.25 2.25 0 0 0 15.75 3h-7.5A2.25 2.25 0 0 0 6 5.25V12a1.5 1.5 0 0 0 1.5 1.5h3V21m-4.5 0h9M9 6.75h.008v.008H9V6.75Zm3 0h.008v.008H12V6.75Zm3 0h.008v.008H15V6.75Z" /></svg></div><input class="w-full pl-11 pr-12 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-950 focus:border-transparent outline-none transition-all duration-200 text-sm" type="text" id="proveedor" placeholder="Nombre del proveedor" autocomplete="off" /><button class="btn-modal-busqueda btn-buscar-proveedor" type="button" title="Buscar proveedor" aria-label="Buscar proveedor"><span class="material-symbols-outlined">search</span></button></div>
+            </div>
+            <div class="formato-compras-proveedor-datos relative block">
+                <label for="fecha_compra">Fecha</label>
+                <div class="relative w-full"><div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor" class="h-5 w-5"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3.75 8.25h16.5M5.25 5.25h13.5A1.5 1.5 0 0 1 20.25 6.75v12A1.5 1.5 0 0 1 18.75 20.25H5.25a1.5 1.5 0 0 1-1.5-1.5v-12a1.5 1.5 0 0 1 1.5-1.5Z" /></svg></div><input class="w-full pl-11 pr-4 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-950 focus:border-transparent outline-none transition-all" type="date" id="fecha_compra" name="fecha_compra" required /></div>
+            </div>
+            <div class="formato-compras-proveedor-datos relative block">
+                <label for="control_fiscal">N° Control Fiscal</label>
+                <div class="relative w-full"><div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor" class="h-5 w-5"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A2.625 2.625 0 0 1 12 5.625V4.5m0 0H8.625A2.625 2.625 0 0 0 6 7.125v12.75A2.625 2.625 0 0 0 8.625 22.5h6.75A2.625 2.625 0 0 0 18 19.875V12m-6-7.5V1.5L19.5 8.25M9 13.5h6m-6 3h4.5" /></svg></div><input class="w-full pl-11 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-950 focus:border-transparent outline-none transition-all duration-200 text-sm" type="text" id="control_fiscal" name="control_fiscal" maxlength="50" placeholder="Número de control" autocomplete="off" required /></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Artículos a agregar -->
+    <section class="formato-compras-articulos purchase-items">
+        <div class="formato-compras-articulos-header">
+            <span class="purchase-section-icon material-symbols-outlined" aria-hidden="true">inventory_2</span>
+            <div><h2>Artículos de la compra</h2><p>Agrega los productos y las cantidades recibidas.</p></div>
+        </div>
+        <div class="purchase-table-wrap">
+        <table class="formato-compras-tabla">
+            <thead class="bg-blue-950 text-white border-b-2 border-orange-500">
+                <tr class="border-b border-gray-100 hover:bg-gray-50/50 transition-colors">
+                    <th class="px-5 py-3 text-left text-[11px] font-bold uppercase tracking-widest opacity-90">Código</th>
+                    <th class="px-5 py-3 text-left text-[11px] font-bold uppercase tracking-widest opacity-90">Descripción</th>
+                    <th class="px-5 py-3 text-left text-[11px] font-bold uppercase tracking-widest opacity-90">Costo</th>
+                    <th class="px-5 py-3 text-left text-[11px] font-bold uppercase tracking-widest opacity-90">Cantidad</th>
+                    <th class="px-5 py-3 text-left text-[11px] font-bold uppercase tracking-widest opacity-90">Subtotal</th>
+                    <th class="px-5 py-3 text-left text-[11px] font-bold uppercase tracking-widest opacity-90">Acción</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="border-b border-gray-100 hover:bg-gray-50/50 transition-colors">
+                    <td><div class="compra-code-field"><input type="text" class="table-field codigo-articulo w-full bg-transparent border-b border-gray-200 focus:border-orange-500 focus:ring-0 px-2 py-1 transition-colors outline-none" placeholder="Código" autocomplete="off" /><button class="btn-modal-busqueda btn-buscar-articulo" type="button" title="Buscar artículo" aria-label="Buscar artículo"><span class="material-symbols-outlined">search</span></button></div></td>
+                    <td><input type="text" class="table-field descripcion-articulo w-full bg-transparent border-b border-gray-200 focus:border-orange-500 focus:ring-0 px-2 py-1 transition-colors outline-none" placeholder="Descripción" readonly /></td>
+                    <td>
+                        <input type="number" class="table-field precio-articulo w-full bg-transparent border-b border-gray-200 focus:border-orange-500 focus:ring-0 px-2 py-1 transition-colors outline-none" min="0" step="0.01" placeholder="0.00" />
+                        <div class="costo-change" title="Al actualizar aquí se cambiará el costo en la ficha del producto; el precio de venta no se modifica." style="display:none; margin-top:6px; color:#b45309; font-weight:600; font-size:0.85em;">Se actualizará el costo en inventario</div>
+                    </td>
+                    <td><input type="number" class="table-field cantidad-articulo w-full bg-transparent border-b border-gray-200 focus:border-orange-500 focus:ring-0 px-2 py-1 transition-colors outline-none" min="1" placeholder="0" /></td>
+                    <td><input type="text" class="table-field subtotal-articulo w-full bg-transparent border-b border-gray-200 focus:border-orange-500 focus:ring-0 px-2 py-1 transition-colors outline-none" placeholder="0.00" readonly /></td>
+                    <td>
+                        <button class="btn-agregar-articulo bg-orange-500 hover:bg-orange-600 text-white p-2 rounded-full transform hover:scale-110 hover:shadow-lg hover:shadow-orange-500/30 transition-all duration-200" title="Agregar">
+                            <span class="material-symbols-outlined">add_circle</span>
+                        </button>
+                        <button class="btn-quitar-articulo" title="Quitar" style="background:#fff; color:#d32f2f; border:none; border-radius:50%; margin-left:5px; font-size:1.3em;">
+                            <span class="material-symbols-outlined">remove_circle</span>
+                        </button>
+                    </td>
+                </tr>
+                <!-- Aquí se listarán los artículos agregados dinámicamente -->
+            </tbody>
+        </table>
+        </div>
+    </section>
+
+    <!-- Resumen de totales -->
+    <footer class="purchase-footer">
+        <div class="formato-compras-totales">
+            <span class="purchase-total-label">Total de compra</span>
+            <strong class="formato-compras-total-valor">$0.00</strong>
+        </div>
+
+        <div class="formato-compras-acciones">
+            <div class="cost-policy-control">
+                <select id="politica_costo" name="politica_costo" aria-label="Tratamiento del nuevo costo">
+                    <option value="pendiente" selected>Costo real pendiente</option>
+                    <option value="vigente">Actualizar costo actual</option>
+                </select>
+            </div>
+            <button type="button" class="btn-cancelar-compra">
+                <span class="material-symbols-outlined" aria-hidden="true">close</span>
+                Cancelar
+            </button>
+            <button type="button" class="btn-guardar-compra">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" class="h-5 w-5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M17.25 3.75H6.75A2.25 2.25 0 0 0 4.5 6v12a2.25 2.25 0 0 0 2.25 2.25h10.5A2.25 2.25 0 0 0 19.5 18V6a2.25 2.25 0 0 0-2.25-2.25ZM8.25 3.75v4.5h7.5v-4.5M8.25 15h7.5" /></svg>
+            Guardar Compra
+            </button>
+        </div>
+    </footer>
+</main>
+
+<!-- Modal de búsqueda reutilizable -->
+<div id="modal-busqueda" class="modal-busqueda-oculto">
+    <div class="modal-busqueda-contenido">
+        <button type="button" class="material-symbols-outlined modal-busqueda-cerrar" title="Cerrar" aria-label="Cerrar búsqueda">close</button>
+        <h3 id="modal-busqueda-titulo">Buscar</h3>
+        <input type="text" id="modal-busqueda-input" placeholder="Buscar..." autocomplete="off" />
+        <div id="proveedores-list" class="mb-3 text-sm text-gray-500" aria-live="polite"></div>
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:8px;">
+                <div id="modal-busqueda-note" style="display:none; font-size:0.95em; color:#b45309; font-weight:600;">Para la compra se usará el <strong>costo</strong>. Precio de venta, stock, IVA y promoción son informativos.</div>
+            </div>
+            <div class="modal-busqueda-tabla-wrapper">
+            <table id="modal-busqueda-tabla">
+                <thead></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+function abrirModalBusquedaProveedor() {
+    // Aquí tu lógica para mostrar el modal de proveedores
+    alert("Aquí debería abrirse el modal de búsqueda de proveedor");
+}
+function abrirModalBusquedaArticulo() {
+    // Aquí tu lógica para mostrar el modal de artículos
+    alert("Aquí debería abrirse el modal de búsqueda de artículo");
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // --- MODAL DE BÚSQUEDA ---
+    const modal = document.getElementById('modal-busqueda');
+    const modalTitulo = document.getElementById('modal-busqueda-titulo');
+    const modalInput = document.getElementById('modal-busqueda-input');
+    const modalTabla = document.getElementById('modal-busqueda-tabla');
+    const modalCerrar = document.querySelector('.modal-busqueda-cerrar');
+
+    let modalCallback = null;
+    let modalData = [];
+    let modalCols = [];
+
+    function abrirModalBusqueda(titulo, columnas, datos, callback) {
+        modalTitulo.textContent = titulo;
+        modalInput.value = '';
+        modalCols = columnas;
+        modalData = datos;
+        modalCallback = callback;
+        // Mostrar nota naranja sólo cuando el modal sea de artículos (detectamos columna 'costo')
+        const nota = document.getElementById('modal-busqueda-note');
+        try {
+            const mostrarNota = modalCols && modalCols.some(col => String(col.key).toLowerCase() === 'costo') || String(titulo).toLowerCase().includes('artículo');
+            if (nota) nota.style.display = mostrarNota ? 'block' : 'none';
+        } catch (err) {
+            if (nota) nota.style.display = 'none';
+        }
+        // Cabecera
+        const headerRow = document.createElement('tr');
+        columnas.forEach(col => {
+            const cell = document.createElement('th');
+            cell.textContent = col.label;
+            headerRow.appendChild(cell);
+        });
+        modalTabla.querySelector('thead').replaceChildren(headerRow);
+        // Filas
+        renderModalFilas(datos);
+        modal.classList.remove('modal-busqueda-oculto');
+        modalInput.focus();
+    }
+
+    function markCostoChangeForRow(row) {
+        const precioInput = row.querySelector('.precio-articulo');
+        const badge = row.querySelector('.costo-change');
+        if (!precioInput || !badge) return;
+        const original = parseFloat(precioInput.dataset.originalCost || 0) || 0;
+        const actual = parseFloat(precioInput.value) || 0;
+        if (Math.abs(actual - original) > 0.0001) badge.style.display = 'block'; else badge.style.display = 'none';
+    }
+
+    // --- Autocompletado por código: normalización y helper ---
+    const API_URL = "{% url 'api_articulos' %}?all=1";
+    const PROVEEDORES_API_URL = "{% url 'api_proveedores' %}?all=1";
+    let comprasProductosData = null;
+
+    function normalizeComprasData(data) {
+        if (!Array.isArray(data)) return [];
+        return data.map(a => {
+            const codigo = a.codigo || a.Codigo || a.CODIGO || (a.fields && (a.fields.codigo || a.fields.Codigo)) || '';
+            const descripcion = a.descripcion || a.Descripcion || a.DESCRIPCION || (a.fields && (a.fields.descripcion || a.fields.Descripcion)) || '';
+            const precio = (a.precio !== undefined && a.precio !== null) ? a.precio : ((a.costo !== undefined && a.costo !== null) ? a.costo : null);
+            const costo = (a.costo !== undefined && a.costo !== null) ? a.costo : ((a.precio !== undefined && a.precio !== null) ? a.precio : null);
+            return {
+                codigo: String(codigo).trim(),
+                descripcion: String(descripcion).trim(),
+                precio: precio,
+                costo: costo,
+                __raw: a
+            };
+        });
+    }
+
+    async function buscarArticuloYCargarInputs(codigoInput, row) {
+        if (!codigoInput || !row) return;
+        const codigo = (codigoInput.value || '').trim();
+        if (!codigo) return;
+        const codigoNorm = codigo.toLowerCase();
+
+        // Primero intentar con valores ya presentes en la tabla (originales)
+        // Buscar en otras filas si existe descripción
+        const foundInTable = Array.from(document.querySelectorAll('.codigo-articulo')).find(i => (i.value || '').trim().toLowerCase() === codigoNorm && i !== codigoInput);
+        if (foundInTable) {
+            const desc = foundInTable.closest('tr').querySelector('.descripcion-articulo').value;
+            if (desc) row.querySelector('.descripcion-articulo').value = desc;
+        }
+
+        // Buscar en cache o cargarla
+        let data = comprasProductosData;
+        if (!data) {
+            try {
+                const resp = await fetch(API_URL);
+                const raw = await resp.json();
+                comprasProductosData = normalizeComprasData(raw);
+                console.log('comprasProductosData cargados (normalizados):', comprasProductosData.length);
+                data = comprasProductosData;
+            } catch (err) {
+                console.warn('Error cargando compras API en buscarArticuloYCargarInputs', err);
+                data = [];
+            }
+        }
+
+        console.log('buscarArticuloYCargarInputs busca:', codigoNorm, 'items:', data ? data.length : 0);
+        const articulo = (data || []).find(a => (a.codigo || '').trim().toLowerCase() === codigoNorm);
+        console.log('buscarArticuloYCargarInputs resultado:', articulo);
+        if (articulo) {
+            row.querySelector('.descripcion-articulo').value = articulo.descripcion || '';
+            const precioInput = row.querySelector('.precio-articulo');
+            const valorCosto = (articulo.costo !== undefined && articulo.costo !== null) ? articulo.costo : articulo.precio;
+            if (precioInput) {
+                precioInput.value = valorCosto !== null && valorCosto !== undefined ? valorCosto : '';
+                precioInput.dataset.originalCost = valorCosto || 0;
+            }
+            recalcularSubtotal(row);
+            markCostoChangeForRow(row);
+        }
+    }
+
+    // Cargar cache inicialmente y autocompletar filas existentes
+    (function initComprasCache() {
+        fetch(API_URL)
+            .then(r => r.json())
+            .then(d => {
+                comprasProductosData = normalizeComprasData(d);
+                console.log('comprasProductosData cargados (normalizados) en init:', comprasProductosData.length);
+                // Intentar autocompletar filas ya existentes
+                try {
+                    document.querySelectorAll('.formato-compras-tabla tbody tr').forEach(tr => {
+                        const input = tr.querySelector('.codigo-articulo');
+                        const desc = tr.querySelector('.descripcion-articulo');
+                        if (input && input.value && desc && !desc.value) {
+                            buscarArticuloYCargarInputs(input, tr);
+                        }
+                    });
+                } catch (e) { console.warn('Error autocompletando filas iniciales', e); }
+            })
+            .catch(e => console.warn('No se pudo cargar compras API cache (init)', e));
+    })();
+
+    function renderModalFilas(datos) {
+        const body = modalTabla.querySelector('tbody');
+        const fragment = document.createDocumentFragment();
+        datos.forEach(row => {
+            const tableRow = document.createElement('tr');
+            tableRow.dataset.idx = String(modalData.indexOf(row));
+            tableRow.tabIndex = 0;
+            modalCols.forEach(col => {
+                const cell = document.createElement('td');
+                const value = row[col.key];
+                cell.textContent = typeof value === 'boolean' ? (value ? 'Activa' : 'No') : (value ?? '—');
+                tableRow.appendChild(cell);
+            });
+            fragment.appendChild(tableRow);
+        });
+        body.replaceChildren(fragment);
+    }
+
+    modalInput.oninput = function() {
+        const q = modalInput.value.toLowerCase();
+        const filtrados = modalData.filter(row =>
+            modalCols.some(col => String(row[col.key] ?? '').toLowerCase().includes(q))
+        );
+        renderModalFilas(filtrados);
+    };
+
+    modalCerrar.onclick = function() {
+        modal.classList.add('modal-busqueda-oculto');
+    };
+
+    modalTabla.onclick = function(e) {
+        const tr = e.target.closest('tr[data-idx]');
+        if (tr) {
+            const idx = tr.getAttribute('data-idx');
+            modal.classList.add('modal-busqueda-oculto');
+            modalCallback(modalData[idx]);
+        }
+    };
+
+    modalTabla.onkeydown = function(e) {
+        if (e.key === 'Enter') {
+            const tr = document.activeElement;
+            if (tr && tr.hasAttribute('data-idx')) {
+                const idx = tr.getAttribute('data-idx');
+                modal.classList.add('modal-busqueda-oculto');
+                modalCallback(modalData[idx]);
+            }
+        }
+    };
+
+    // Attach listeners to precio inputs to show badge and prevent negatives
+    function attachPrecioListeners() {
+        document.querySelectorAll('.precio-articulo').forEach(input => {
+            if (input.dataset._listenerAttached) return;
+            input.dataset._listenerAttached = '1';
+            input.addEventListener('input', function() {
+                if (parseFloat(input.value) < 0) input.value = Math.abs(parseFloat(input.value) || 0);
+                const row = input.closest('tr');
+                markCostoChangeForRow(row);
+                recalcularSubtotal(row);
+            });
+        });
+    }
+    attachPrecioListeners();
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && !modal.classList.contains('modal-busqueda-oculto')) {
+            modal.classList.add('modal-busqueda-oculto');
+        }
+    });
+
+    // --- PROVEEDOR ---
+    const proveedorInput = document.getElementById('proveedor');
+    const rucInput = document.getElementById('ruc_nit');
+
+    async function abrirBusquedaProveedores() {
+        const proveedoresList = document.getElementById('proveedores-list');
+        try {
+            const response = await fetch(PROVEEDORES_API_URL);
+            if (!response.ok) throw new Error('Network response was not ok');
+            const data = await response.json();
+            proveedoresList.innerHTML = data.length ? '' : '<p class="text-gray-500">No hay proveedores registrados.</p>';
+            abrirModalBusqueda('Buscar Proveedor', [
+                {key: 'ruc_nit', label: 'Cédula/RIF'},
+                {key: 'nombre', label: 'Proveedor'},
+                {key: 'telefono', label: 'Teléfono'},
+                {key: 'email', label: 'Correo'},
+                {key: 'direccion', label: 'Dirección'},
+            ], data, function(seleccionado) {
+                rucInput.value = seleccionado.ruc_nit;
+                proveedorInput.value = seleccionado.nombre;
+                rucInput.focus();
+            });
+        } catch (error) {
+            console.warn('Error fetching providers:', error);
+            proveedoresList.innerHTML = '<p class="text-gray-500">No se pudieron cargar los proveedores o la lista está vacía.</p>';
+            abrirModalBusqueda('Buscar Proveedor', [
+                {key: 'ruc_nit', label: 'Cédula/RIF'},
+                {key: 'nombre', label: 'Proveedor'},
+                {key: 'telefono', label: 'Teléfono'},
+                {key: 'email', label: 'Correo'},
+                {key: 'direccion', label: 'Dirección'},
+            ], [], function() {});
+        }
+    }
+
+    document.querySelectorAll('.btn-buscar-proveedor').forEach(button => {
+        button.addEventListener('click', abrirBusquedaProveedores);
+    });
+
+    // Permite F2 en ambos campos: proveedor y cédula
+    [proveedorInput, rucInput].forEach(input => {
+        input.addEventListener('keydown', async function(e) {
+            if (e.key === 'F2') {
+                e.preventDefault();
+                await abrirBusquedaProveedores();
+            }
+        });
+    });
+
+    // --- ARTÍCULO ---
+    function addF2ListenerToCodigoInputs() {
+        document.querySelectorAll('.codigo-articulo').forEach(input => {
+            if (input.dataset.f2listener) return;
+            input.dataset.f2listener = "1";
+            // F2 para abrir modal
+            input.addEventListener('keydown', async function(e) {
+                if (e.key === 'F2') {
+                    e.preventDefault();
+                    const resp = await fetch("{% url 'api_articulos' %}?all=1");
+                    const data = await resp.json();
+                    abrirModalBusqueda(
+                        'Buscar Artículo',
+                        [
+                                    {key: 'codigo', label: 'Código'},
+                                    {key: 'descripcion', label: 'Descripción'},
+                                    {key: 'costo', label: 'Costo de compra'},
+                                    {key: 'precio', label: 'Precio de venta'},
+                                    {key: 'stock', label: 'Stock actual'},
+                                    {key: 'iva', label: 'IVA'},
+                                    {key: 'promocion', label: 'Promoción'},
+                        ],
+                        data,
+                        function(seleccionado) {
+                            input.value = seleccionado.codigo;
+                            const row = input.closest('tr');
+                            if (row) {
+                                row.querySelector('.descripcion-articulo').value = seleccionado.descripcion;
+                                // Usar el costo del producto (no el precio de venta) para compras
+                                    const precioInput = row.querySelector('.precio-articulo');
+                                    const valorCosto = seleccionado.costo !== undefined ? seleccionado.costo : (seleccionado.precio || '');
+                                    precioInput.value = valorCosto;
+                                    // store original cost to detect later changes
+                                    precioInput.dataset.originalCost = (seleccionado.costo !== undefined ? seleccionado.costo : (seleccionado.precio || 0));
+                                recalcularSubtotal(row);
+                                row.querySelector('.cantidad-articulo').focus();
+                            }
+                        }
+                    );
+                }
+            });
+            // Enter/Tab autocompleta la fila sin modal
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === 'Tab') {
+                    e.preventDefault();
+                    const row = input.closest('tr');
+                    buscarArticuloYCargarInputs(input, row);
+                    const c = row.querySelector('.cantidad-articulo'); if (c) setTimeout(() => c.focus(), 80);
+                }
+            });
+            // Debounced input autocompletion
+            let debounceTimer = null;
+            input.addEventListener('input', function() {
+                if (debounceTimer) clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => {
+                    const row = input.closest('tr');
+                    buscarArticuloYCargarInputs(input, row);
+                }, 250);
+            });
+            // blur/change triggers
+            input.addEventListener('blur', function() { buscarArticuloYCargarInputs(input, input.closest('tr')); });
+            input.addEventListener('change', function() { buscarArticuloYCargarInputs(input, input.closest('tr')); });
+        });
+    }
+    addF2ListenerToCodigoInputs();
+
+    document.addEventListener('click', function(event) {
+        const button = event.target.closest('.btn-buscar-articulo');
+        if (!button) return;
+        const input = button.closest('tr').querySelector('.codigo-articulo');
+        input.focus();
+        input.dispatchEvent(new KeyboardEvent('keydown', {key: 'F2', bubbles: true}));
+    });
+
+    // --- AGREGAR NUEVA FILA ---
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.btn-agregar-articulo')) {
+            e.preventDefault();
+            const row = e.target.closest('tr');
+            if (!validarFila(row)) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: '¡Atención!',
+                    text: 'Debes completar todos los campos.',
+                    confirmButtonColor: '#1976d2'
+                });
+                return;
+            }
+            // Validar que el código no esté repetido
+            const codigoActual = row.querySelector('.codigo-articulo').value.trim();
+            let repetido = false;
+            document.querySelectorAll('.codigo-articulo').forEach(input => {
+                if (input !== row.querySelector('.codigo-articulo') && input.value.trim() === codigoActual) {
+                    repetido = true;
+                }
+            });
+            if (repetido) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Artículo repetido',
+                    text: 'Este artículo ya fue agregado a la compra.',
+                    confirmButtonColor: '#1976d2'
+                });
+                return;
+            }
+            agregarNuevaFila();
+            attachPrecioListeners();
+        }
+    });
+
+    function agregarNuevaFila() {
+        const tabla = document.querySelector('.formato-compras-tabla tbody');
+        const nueva = tabla.rows[0].cloneNode(true);
+        nueva.querySelectorAll('input').forEach(input => {
+            input.value = '';
+            delete input.dataset.f2listener;
+        });
+        tabla.appendChild(nueva);
+        addF2ListenerToCodigoInputs();
+    }
+
+    // --- AUTOCÁLCULO SUBTOTAL ---
+    document.addEventListener('input', function(e) {
+        if (e.target.classList.contains('cantidad-articulo') || e.target.classList.contains('precio-articulo')) {
+            const row = e.target.closest('tr');
+            calcularSubtotal(row);
+        }
+    });
+
+    function calcularSubtotal(row) {
+        const cantidad = parseFloat(row.querySelector('.cantidad-articulo').value) || 0;
+        const precio = parseFloat(row.querySelector('.precio-articulo').value) || 0;
+        row.querySelector('.subtotal-articulo').value = (cantidad * precio).toFixed(2);
+        calcularTotal();
+    }
+
+    function calcularTotal() {
+        let total = 0;
+        document.querySelectorAll('.subtotal-articulo').forEach(input => {
+            total += parseFloat(input.value) || 0;
+        });
+        document.querySelector('.formato-compras-total-valor').textContent = `$${total.toFixed(2)}`;
+    }
+
+    function validarFila(row) {
+        const codigo = row.querySelector('.codigo-articulo').value.trim();
+        const cantidad = row.querySelector('.cantidad-articulo').value;
+        const precio = row.querySelector('.precio-articulo').value;
+        return codigo && cantidad > 0 && precio > 0;
+    }
+
+    // --- GUARDAR COMPRA ---
+    document.querySelector('.btn-guardar-compra').addEventListener('click', async function(e) {
+        e.preventDefault();
+
+        let proveedor = document.getElementById('proveedor').value.trim();
+        let ruc_nit = document.getElementById('ruc_nit').value.trim();
+        let control_fiscal = document.getElementById('control_fiscal').value.trim();
+        let politica_costo = document.getElementById('politica_costo').value;
+        let fecha_compra = document.getElementById('fecha_compra').value;
+        let articulos = [];
+        document.querySelectorAll('.formato-compras-tabla tbody tr').forEach(row => {
+            let codigo = row.querySelector('.codigo-articulo').value;
+            let descripcion = row.querySelector('.descripcion-articulo').value;
+            let precio = row.querySelector('.precio-articulo').value;
+            let cantidad = row.querySelector('.cantidad-articulo').value;
+            let subtotal = row.querySelector('.subtotal-articulo').value;
+            if (codigo && cantidad > 0 && precio > 0) {
+                articulos.push({codigo, descripcion, precio, cantidad, subtotal});
+            }
+        });
+
+        // Validación
+        if (!proveedor || !ruc_nit) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Proveedor requerido',
+                text: 'Debes seleccionar un proveedor antes de guardar la compra.',
+                confirmButtonColor: '#1976d2'
+            });
+            return;
+        }
+        if (!control_fiscal) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Control fiscal requerido',
+                text: 'Debes ingresar el número de control fiscal antes de guardar la compra.',
+                confirmButtonColor: '#1976d2'
+            });
+            document.getElementById('control_fiscal').focus();
+            return;
+        }
+        if (articulos.length === 0) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Sin artículos',
+                text: 'Debes agregar al menos un artículo válido antes de guardar la compra.',
+                confirmButtonColor: '#1976d2'
+            });
+            return;
+        }
+        let codigos = articulos.map(a => a.codigo);
+        let codigosSet = new Set(codigos);
+        if (codigos.length !== codigosSet.size) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Artículos repetidos',
+                text: 'No puedes agregar el mismo artículo más de una vez en la compra.',
+                confirmButtonColor: '#1976d2'
+            });
+            return;
+        }
+        for (let art of articulos) {
+            if (!art.codigo || !art.cantidad || !art.precio || art.cantidad <= 0 || art.precio < 0) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Datos inválidos',
+                    text: 'Verifica que todos los artículos tengan código, cantidad mayor a 0 y precio válido.',
+                    confirmButtonColor: '#1976d2'
+                });
+                return;
+            }
+        }
+
+        // Enviar por AJAX
+        const resp = await fetch("{% url 'guardar_compra' %}", {
+            method: 'POST',
+            body: JSON.stringify({
+                proveedor: proveedor,
+                ruc_nit: ruc_nit,
+                control_fiscal: control_fiscal,
+                politica_costo: politica_costo,
+                fecha_compra: fecha_compra,
+                articulos: articulos
+            }),
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.ok) {
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Compra guardada!',
+                    text: 'La compra se guardó correctamente.',
+                    showConfirmButton: false,
+                    timer: 1800
+                });
+                setTimeout(() => {
+                        window.location.href = "{% url 'listar_compras' %}";
+                }, 1850);
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: data.msg || 'No se pudo guardar la compra.',
+                    confirmButtonColor: '#1976d2'
+                });
+            }
+        })
+        .catch(error => {
+            alert('Error en la petición: ' + error);
+        });
+
+    });
+
+    document.querySelector('.btn-cancelar-compra').addEventListener('click', function(e) {
+        e.preventDefault();
+        window.location.href = "{% url 'listar_compras' %}";
+    });
+
+    // Función para CSRF
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    function quitarArticulo(btn) {
+        Swal.fire({
+            title: '¿Estás seguro que quieres eliminar?',
+            text: "Este artículo será eliminado de la compra.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#1976d2',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Si solo queda una fila, no permitir quitarla
+                const filas = document.querySelectorAll('.formato-compras-tabla tbody tr');
+                if (filas.length === 1) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'No permitido',
+                        text: 'Debe haber al menos un artículo en la compra.',
+                        confirmButtonColor: '#1976d2'
+                    });
+                    return;
+                }
+                btn.closest('tr').remove();
+                recalcularTotales();
+            }
+        });
+    }
+
+    // Función para recalcular totales y subtotales
+    function recalcularSubtotal(row) {
+        const cantidad = parseFloat(row.querySelector('.cantidad-articulo').value) || 0;
+        const precio = parseFloat(row.querySelector('.precio-articulo').value) || 0;
+        row.querySelector('.subtotal-articulo').value = (cantidad * precio).toFixed(2);
+        recalcularTotales();
+    }
+    function recalcularTotales() {
+        let total = 0;
+        document.querySelectorAll('.subtotal-articulo').forEach(input => {
+            total += parseFloat(input.value) || 0;
+        });
+        document.querySelector('.formato-compras-total-valor').textContent = `$${total.toFixed(2)}`;
+    }
+});
+
+</script>
+
+<style>
+.formato-compras-card { background: #fff; border: 1px solid #f1f5f9; border-radius: 1rem; box-shadow: 0 1px 3px rgba(15,23,42,.06); padding: 1.5rem; }
+.formato-compras-header, .formato-compras-articulos-header { color: #172554; }
+.formato-compras-proveedor { background: #fff; border: 1px solid #f1f5f9; border-radius: 1rem; box-shadow: 0 1px 3px rgba(15,23,42,.05); padding: 1.5rem; }
+.formato-compras-proveedor-datos { background: #f8fafc; border-color: #e2e8f0; }
+.formato-compras-proveedor-datos label { color: #172554; }
+.formato-compras-proveedor-datos input, .formato-compras-tabla input, #modal-busqueda-input { background: #f8fafc; border-color: #e2e8f0; border-radius: .75rem; }
+.formato-compras-proveedor-datos input:focus, .formato-compras-tabla input:focus, #modal-busqueda-input:focus { outline: none; border-color: transparent; box-shadow: 0 0 0 2px #172554; }
+.formato-compras-tabla th { background: #172554; color: #fff; border-bottom: 4px solid #f97316; padding: 1rem 1.5rem; font-size: .75rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
+.formato-compras-tabla td { padding: .9rem 1.5rem; border-color: #e2e8f0; }
+.formato-compras-tabla tbody tr { border-bottom: 1px solid #f1f5f9; transition: background-color .2s; }
+.formato-compras-tabla tbody tr:hover { background: rgba(249,250,251,.5); }
+.formato-compras-tabla input.table-field { width: 100%; background: transparent; border: 0; border-bottom: 1px solid #e5e7eb; border-radius: 0; padding: .25rem .5rem; outline: none; transition: border-color .2s; }
+.formato-compras-tabla input.table-field:focus { border-color: #f97316; box-shadow: none; }
+.formato-compras-card .formato-compras-proveedor-datos input:focus,
+.formato-compras-card .formato-compras-tabla input:focus,
+#modal-busqueda-input:focus {
+    outline: 3px solid #fb923c !important;
+    outline-offset: 2px;
+    border-color: #fb923c !important;
+    box-shadow: 0 0 0 5px rgba(249, 115, 22, .22) !important;
+    position: relative;
+    z-index: 2;
+}
+.formato-compras-card .formato-compras-proveedor-datos input:focus,
+.formato-compras-card .formato-compras-tabla input:focus {
+    background-color: #fff !important;
+    color: #132d46 !important;
+}
+html[data-theme="dark"] .formato-compras-card .formato-compras-proveedor-datos input:focus,
+html[data-theme="dark"] .formato-compras-card .formato-compras-tabla input:focus,
+html[data-theme="dark"] #modal-busqueda-input:focus {
+    background-color: #18283a !important;
+    color: #f3f7fb !important;
+}
+.btn-agregar-articulo { background: #f97316; border-radius: .75rem; color: #fff; }
+.btn-agregar-articulo:hover { background: #ea580c; }
+.btn-guardar-compra { background: #f97316; border-radius: .75rem; color: #fff; }
+.btn-guardar-compra:hover { background: #ea580c; }
+.btn-cancelar-compra { color: #172554; border-color: #172554; }
+#modal-busqueda { position: fixed; inset: 0; z-index: 12000; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(15,23,42,.66); backdrop-filter: blur(5px); }
+#modal-busqueda.modal-busqueda-oculto { display: none; }
+.modal-busqueda-contenido { position: relative; display: flex; flex-direction: column; width: min(1120px, calc(100vw - 32px)); max-height: min(84vh, 760px); gap: 12px; overflow: hidden; padding: 24px; border: 1px solid #d9e0e8; border-top: 4px solid #f97316; border-radius: 8px; background: #fff; box-shadow: 0 24px 70px rgba(15,23,42,.28); }
+#modal-busqueda-titulo { margin: 0; color: #172554; font-size: 1.15rem; font-weight: 750; }
+#modal-busqueda-input { flex: 0 0 auto; width: 100%; min-height: 42px; margin: 0; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 5px; background: #f8fafc; }
+#proveedores-list { margin: 0; }
+.modal-busqueda-cerrar { position: absolute; top: 15px; right: 16px; display: grid; place-items: center; width: 34px; height: 34px; border: 1px solid #dbe2e8; border-radius: 5px; background: #fff; color: #475569; cursor: pointer; font-size: 19px; }
+.modal-busqueda-tabla-wrapper { min-height: 0; overflow: auto; border: 1px solid #dbe2e8; border-radius: 5px; }
+#modal-busqueda-tabla { width: 100%; min-width: 760px; border-collapse: separate; border-spacing: 0; color: #1e293b; }
+#modal-busqueda-tabla th { position: sticky; top: 0; z-index: 1; padding: 11px 12px; background: #172554; color: #fff; text-align: left; font-size: .72rem; font-weight: 700; white-space: nowrap; }
+#modal-busqueda-tabla td { max-width: 280px; padding: 10px 12px; border-bottom: 1px solid #e8edf1; color: #334155; font-size: .78rem; overflow-wrap: anywhere; }
+#modal-busqueda-tabla tbody tr { cursor: pointer; }
+#modal-busqueda-tabla tbody tr:nth-child(even) { background: #f8fafc; }
+#modal-busqueda-tabla tbody tr:hover,
+#modal-busqueda-tabla tbody tr:focus { outline: 0; background: #fff2e8; }
+.compra-code-field { display: flex; align-items: center; gap: 5px; min-width: 150px; }
+.compra-code-field .codigo-articulo { min-width: 0; flex: 1 1 auto; }
+.btn-modal-busqueda { display: inline-grid; flex: 0 0 34px; place-items: center; width: 34px; height: 34px; border: 1px solid #d7dee6; border-radius: 5px; background: #fff; color: #172554; cursor: pointer; }
+.btn-modal-busqueda:hover { border-color: #f97316; background: #fff7ed; color: #c2410c; }
+.btn-modal-busqueda .material-symbols-outlined { font-size: 19px; }
+.formato-compras-proveedor-datos .btn-buscar-proveedor { position: absolute; top: 3px; right: 3px; }
+.formato-compras-totales { font-size: 2.25rem; line-height: 2.5rem; font-weight: 900; color: #172554; letter-spacing: -.05em; }
+
+@media (max-width: 640px) {
+    .modal-busqueda-contenido { width: calc(100vw - 20px); max-height: 88vh; padding: 18px 12px 12px; }
+    #modal-busqueda-titulo { max-width: calc(100% - 42px); font-size: 1rem; }
+    .modal-busqueda-cerrar { top: 10px; right: 10px; }
+    #modal-busqueda-tabla { min-width: 720px; }
+}
+
+@page { size: A4 portrait; margin: 12mm; }
+@media print {
+    html, body { background: #fff !important; color: #111827 !important; }
+    nav, aside, header, .sidebar, .topbar, .btn-agregar-articulo, .btn-quitar-articulo,
+    .formato-compras-acciones, #modal-busqueda, .modal-busqueda-oculto, #help-button,
+    .help-button, script { display: none !important; }
+    .formato-compras-card { width: 100%; margin: 0; padding: 0; border: 0; box-shadow: none; }
+    .formato-compras-proveedor { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8pt; padding: 8pt 0; border: 0; box-shadow: none; }
+    .formato-compras-proveedor-datos { min-width: 0; padding: 6pt; border: 1px solid #d1d5db; background: #fff; }
+    .formato-compras-tabla { width: 100%; border-collapse: collapse; page-break-inside: avoid; }
+    .formato-compras-tabla th { background: #172554 !important; color: #fff !important; border: 1px solid #172554; padding: 7pt; }
+    .formato-compras-tabla td { border: 1px solid #d1d5db; padding: 6pt; }
+    .formato-compras-tabla input { border: 0; background: transparent; padding: 0; }
+    .formato-compras-totales { margin-top: 12pt; color: #172554; }
+}
+</style>
+
+<style>
+/* Animación para el card principal */
+.formato-compras-card {
+    opacity: 0;
+    transform: translateY(60px) scale(0.97);
+    animation: formatoCompraCardIn 0.3s cubic-bezier(.68,-0.55,.27,1.55) forwards;
+    animation-delay: 0.05s;
+    will-change: opacity, transform;
+}
+@keyframes formatoCompraCardIn {
+    0% { opacity: 0; transform: translateY(60px) scale(0.97);}
+    60% { opacity: 1; transform: translateY(-8px) scale(1.03);}
+    100% { opacity: 1; transform: none;}
+}
+
+/* Animación para el título y header */
+.formato-compras-card > .material-symbols-outlined,
+.formato-compras-card > span:not(.material-symbols-outlined) {
+    opacity: 0;
+    transform: translateY(-30px) scale(0.96) skewX(-8deg);
+    animation: formatoCompraTituloIn 0.2s cubic-bezier(.68,-0.55,.27,1.55) forwards;
+    animation-delay: 0.18s;
+    will-change: opacity, transform;
+}
+@keyframes formatoCompraTituloIn {
+    0% { opacity: 0; transform: translateY(-30px) scale(0.96) skewX(-8deg);}
+    60% { opacity: 1; transform: translateY(8px) scale(1.04) skewX(2deg);}
+    100% { opacity: 1; transform: none;}
+}
+
+/* Animación para los bloques de proveedor */
+.formato-compras-proveedor-datos {
+    opacity: 0;
+    transform: translateX(-40px) scale(0.97) rotate(-4deg);
+    animation: formatoCompraProveedorIn 0.2s cubic-bezier(.68,-0.55,.27,1.55) forwards;
+    will-change: opacity, transform;
+}
+.formato-compras-proveedor-datos:nth-child(1) { animation-delay: 0.28s; }
+.formato-compras-proveedor-datos:nth-child(2) { animation-delay: 0.36s; }
+.formato-compras-proveedor-datos:nth-child(3) { animation-delay: 0.44s; }
+.formato-compras-proveedor-datos:nth-child(4) { animation-delay: 0.52s; }
+@keyframes formatoCompraProveedorIn {
+    0% { opacity: 0; transform: translateX(-40px) scale(0.97) rotate(-4deg);}
+    60% { opacity: 1; transform: translateX(8px) scale(1.04) rotate(2deg);}
+    100% { opacity: 1; transform: none;}
+}
+
+/* Animación para la cabecera de artículos */
+.formato-compras-articulos-header {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.97);
+    animation: formatoCompraArtHeaderIn 0.2s cubic-bezier(.68,-0.55,.27,1.55) forwards;
+    animation-delay: 0.6s;
+    will-change: opacity, transform;
+}
+@keyframes formatoCompraArtHeaderIn {
+    0% { opacity: 0; transform: translateY(-20px) scale(0.97);}
+    60% { opacity: 1; transform: translateY(4px) scale(1.02);}
+    100% { opacity: 1; transform: none;}
+}
+
+/* Animación para filas de la tabla de artículos */
+.formato-compras-tabla tbody tr {
+    opacity: 0;
+    transform: translateX(40px) scale(0.97);
+    animation: formatoCompraFilaIn 0.2s cubic-bezier(.68,-0.55,.27,1.55) forwards;
+}
+.formato-compras-tabla tbody tr:nth-child(1) { animation-delay: 0.7s; }
+.formato-compras-tabla tbody tr:nth-child(2) { animation-delay: 0.78s; }
+.formato-compras-tabla tbody tr:nth-child(3) { animation-delay: 0.86s; }
+@keyframes formatoCompraFilaIn {
+    0% { opacity: 0; transform: translateX(40px) scale(0.97);}
+    70% { opacity: 1; transform: translateX(-8px) scale(1.03);}
+    100% { opacity: 1; transform: none;}
+}
+
+/* Animación para el resumen de totales */
+.formato-compras-totales {
+    opacity: 0;
+    transform: scale(0.95) translateY(20px);
+    animation: formatoCompraTotalesIn 0.2s cubic-bezier(.68,-0.55,.27,1.55) forwards;
+    animation-delay: 1.1s;
+    will-change: opacity, transform;
+}
+@keyframes formatoCompraTotalesIn {
+    0% { opacity: 0; transform: scale(0.95) translateY(20px);}
+    60% { opacity: 1; transform: scale(1.04) translateY(-4px);}
+    100% { opacity: 1; transform: none;}
+}
+
+/* Animación para los botones de acción */
+.formato-compras-acciones button {
+    opacity: 0;
+    transform: scale(0.92) rotate(-8deg);
+    animation: formatoCompraBtnIn 0.15s cubic-bezier(.68,-0.55,.27,1.55) forwards;
+    will-change: opacity, transform;
+}
+.formato-compras-acciones button:nth-child(1) { animation-delay: 1.25s; }
+.formato-compras-acciones button:nth-child(2) { animation-delay: 1.33s; }
+@keyframes formatoCompraBtnIn {
+    0% { opacity: 0; transform: scale(0.92) rotate(-8deg);}
+    60% { opacity: 1; transform: scale(1.06) rotate(2deg);}
+    100% { opacity: 1; transform: none;}
+}
+
+/* Animación para el modal de búsqueda */
+#modal-busqueda .modal-busqueda-contenido {
+    opacity: 0;
+    transform: scale(0.95) translateY(30px);
+    animation: formatoCompraModalIn 0.1s cubic-bezier(.68,-0.55,.27,1.55) forwards;
+    will-change: opacity, transform;
+}
+#modal-busqueda:not(.modal-busqueda-oculto) .modal-busqueda-contenido {
+    animation-delay: 0.1s;
+}
+@keyframes formatoCompraModalIn {
+    0% { opacity: 0; transform: scale(0.95) translateY(30px);}
+    60% { opacity: 1; transform: scale(1.04) translateY(-4px);}
+    100% { opacity: 1; transform: none;}
+}
+</style>
+<style>
+.formato-compras-card {
+    background: rgba(255,255,255,0.98);
+    border-radius: 24px;
+    border: 1px solid rgba(13,110,253,0.12);
+    box-shadow: 0 26px 90px rgba(15,40,65,0.10);
+    padding: 2rem 2rem;
+    margin: 2rem 0.4rem;
+    max-width: 100%;
+    min-width: unset;
+    transition: margin 0.3s, max-width 0.3s;
+}
+.formato-compras-header {
+    display: flex;
+    align-items: center;
+    gap: 0.7em;
+    font-size: 1.7em;
+    font-weight: 700;
+    color: #0f2a48;
+    margin-bottom: 1.8rem;
+}
+.icon-lg {
+    font-size: 2.2em;
+    color: #0d6efd;
+}
+.formato-compras-proveedor {
+    display: flex;
+    gap: 1.5em;
+    flex-wrap: wrap;
+    margin-bottom: 2em;
+}
+.formato-compras-proveedor-datos {
+    display: flex;
+    align-items: center;
+    gap: 0.8em;
+    background: #f8fbff;
+    border: 1px solid rgba(13,110,253,0.14);
+    border-radius: 14px;
+    padding: 0.9em 1.1em;
+    min-width: 220px;
+    flex: 1 1 220px;
+}
+.formato-compras-proveedor-datos label {
+    font-size: 0.95em;
+    color: #0d6efd;
+    font-weight: 700;
+    margin-bottom: 0.25em;
+    display: block;
+}
+.formato-compras-proveedor-datos input[type="text"],
+.formato-compras-proveedor-datos input[type="date"] {
+    border: 1px solid rgba(13,110,253,0.14);
+    border-radius: 12px;
+    padding: 0.55em 0.9em;
+    width: 100%;
+    font-size: 1em;
+    background: #ffffff;
+    margin-top: 0.15em;
+}
+.formato-compras-articulos {
+    margin-bottom: 2em;
+}
+.formato-compras-articulos-header {
+    display: flex;
+    align-items: center;
+    gap: 0.65em;
+    font-size: 1.25em;
+    color: #0d6efd;
+    font-weight: 700;
+    margin-bottom: 1em;
+}
+.formato-compras-tabla {
+    width: 100%;
+    border-collapse: separate;
+    background: #ffffff;
+}
+.formato-compras-tabla th, .formato-compras-tabla td {
+    padding: 0.9em 0.85em;
+    text-align: left;
+    border-bottom: 1px solid rgba(13,110,253,0.12);
+}
+.formato-compras-tabla th {
+    background: #172554;
+    color: #fff;
+    font-weight: 700;
+    font-size: 1em;
+}
+.formato-compras-tabla tbody tr:hover {
+    background: #fff7ed;
+}
+.formato-compras-tabla input[type="text"],
+.formato-compras-tabla input[type="number"] {
+    width: 100%;
+    border: 1px solid rgba(13,110,253,0.14);
+    border-radius: 10px;
+    padding: 0.4em 0.65em;
+    font-size: 1em;
+    background: #f8fbff;
+}
+.btn-agregar-articulo {
+    background: #0d6efd;
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    padding: 0.35em;
+    cursor: pointer;
+    font-size: 1.3em;
+    transition: background 0.2s;
+}
+.btn-agregar-articulo:hover {
+    background: #0a58ca;
+}
+html[data-theme="dark"] .formato-compras-card {
+    background: rgba(8, 14, 26, 0.94);
+    border-color: rgba(255,255,255,0.12);
+    box-shadow: 0 28px 100px rgba(0,0,0,0.55);
+    color: #e8f4ff;
+}
+html[data-theme="dark"] .formato-compras-proveedor-datos {
+    background: rgba(255,255,255,0.05);
+    border-color: rgba(255,255,255,0.12);
+}
+html[data-theme="dark"] .formato-compras-articulos-header {
+    color: #90caf9;
+}
+html[data-theme="dark"] .formato-compras-tabla {
+    background: rgba(10,18,34,0.96);
+}
+html[data-theme="dark"] .formato-compras-tabla th {
+    background: #172554;
+    color: #eaf4ff;
+}
+html[data-theme="dark"] .formato-compras-tabla td {
+    color: #e8f4ff;
+    border-color: rgba(255,255,255,0.10);
+}
+html[data-theme="dark"] .formato-compras-tabla tbody tr:hover {
+    background: rgba(249,115,22,0.12);
+}
+html[data-theme="dark"] .formato-compras-tabla input[type="text"],
+html[data-theme="dark"] .formato-compras-tabla input[type="number"] {
+    background: rgba(255,255,255,0.06);
+    color: #eef4ff;
+    border-color: rgba(255,255,255,0.12);
+}
+html[data-theme="dark"] .formato-compras-totales {
+    color: #dbeeff;
+}
+html[data-theme="dark"] .btn-guardar-compra {
+    background: #0d6efd;
+    color: #fff;
+}
+html[data-theme="dark"] .btn-cancelar-compra {
+    background: rgba(255,255,255,0.06);
+    color: #e8f4ff;
+    border-color: rgba(255,255,255,0.18);
+}
+html[data-theme="dark"] #modal-busqueda {
+    background: rgba(1, 9, 22, 0.72);
+}
+html[data-theme="dark"] #modal-busqueda .modal-busqueda-contenido {
+    background: rgba(8, 18, 34, 0.98);
+    border: 1px solid rgba(0, 178, 255, 0.18);
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55);
+}
+html[data-theme="dark"] .modal-busqueda-cerrar {
+    color: #8ec7ff;
+}
+html[data-theme="dark"] #modal-busqueda-titulo {
+    color: #eff6ff;
+}
+html[data-theme="dark"] #modal-busqueda-input {
+    background: rgba(255,255,255,0.08);
+    color: #eff6ff;
+    border-color: rgba(255,255,255,0.16);
+}
+html[data-theme="dark"] #modal-busqueda-input::placeholder {
+    color: rgba(255,255,255,0.5);
+}
+html[data-theme="dark"] .modal-busqueda-tabla-wrapper {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+}
+html[data-theme="dark"] #modal-busqueda-tabla th {
+    background: rgba(255,255,255,0.05);
+    color: #d2e6ff;
+    border-color: rgba(255,255,255,0.10);
+}
+html[data-theme="dark"] #modal-busqueda-tabla td {
+    background: transparent;
+    color: #d8e8ff;
+    border-color: rgba(255,255,255,0.08);
+}
+html[data-theme="dark"] #modal-busqueda-tabla tbody tr:nth-child(even) td {
+    background: rgba(255,255,255,0.02);
+}
+html[data-theme="dark"] #modal-busqueda-tabla tr:hover, html[data-theme="dark"] #modal-busqueda-tabla tr:focus {
+    background: rgba(0, 178, 255, 0.12);
+}
+.formato-compras-totales {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 1em;
+    margin: 1.5em 0;
+    font-size: 1.3em;
+    font-weight: 600;
+    color: #1976d2;
+}
+.formato-compras-total-valor {
+    font-size: 1.4em;
+    color: #2d3748;
+    font-weight: 700;
+}
+.formato-compras-acciones {
+    display: flex;
+    gap: 1em;
+    justify-content: flex-end;
+    margin-top: 1em;
+}
+.btn-guardar-compra, .btn-cancelar-compra {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    border: none;
+    border-radius: 8px;
+    padding: 0.7em 1.5em;
+    font-weight: 500;
+    font-size: 1em;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.btn-guardar-compra {
+    background: #1976d2;
+    color: #fff;
+}
+.btn-guardar-compra:hover {
+    background: #125ea7;
+}
+.btn-cancelar-compra {
+    background: #f5f7fa;
+    color: #1976d2;
+    border: 1px solid #1976d2;
+}
+.btn-cancelar-compra:hover {
+    background: #e3f2fd;
+}
+/* Modal búsqueda */
+#modal-busqueda {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(9, 30, 66, 0.24);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+#modal-busqueda.modal-busqueda-oculto {
+    display: none;
+}
+.modal-busqueda-contenido {
+    background: rgba(252, 254, 255, 0.99);
+    border: 1px solid rgba(16, 50, 92, 0.08);
+    border-radius: 18px;
+    box-shadow: 0 18px 48px rgba(15, 23, 42, 0.12);
+    padding: 2em 2em 1.5em 2em;
+    min-width: 420px;
+    max-width: 95vw;
+    width: clamp(520px, 70vw, 1000px);
+    position: relative;
+    animation: modalFadeIn 0.2s;
+    overflow: hidden; /* evitar scrolls horizontales dentro del contenedor */
+}
+@keyframes modalFadeIn {
+    from { transform: scale(0.95); opacity: 0;}
+    to { transform: scale(1); opacity: 1;}
+}
+.modal-busqueda-cerrar {
+    position: absolute;
+    top: 1em;
+    right: 1em;
+    cursor: pointer;
+    color: #0d47a1;
+    font-size: 2em;
+}
+#modal-busqueda-titulo {
+    margin-bottom: 1em;
+    color: #0d4caf;
+    font-weight: 700;
+    font-size: 1.2em;
+}
+#modal-busqueda-input {
+    width: 100%;
+    padding: 0.9em 1.1em;
+    border-radius: 12px;
+    border: 1px solid rgba(77, 96, 129, 0.18);
+    background: #f8fbff;
+    color: #10233d;
+    margin-bottom: 1em;
+    font-size: 1em;
+}
+#modal-busqueda-input::placeholder {
+    color: rgba(16, 35, 61, 0.42);
+}
+.modal-busqueda-tabla-wrapper {
+    max-height: 360px;
+    overflow-y: auto;
+    overflow-x: hidden; /* impedir barra horizontal */
+    border-radius: 16px;
+    background: #f8fbff;
+    border: 1px solid rgba(13, 110, 253, 0.08);
+}
+#modal-busqueda-tabla {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed; /* ayuda a evitar desbordes horizontales */
+}
+#modal-busqueda-tabla th, #modal-busqueda-tabla td {
+    padding: 0.75em 0.9em;
+    border-bottom: 1px solid rgba(16, 34, 60, 0.08);
+    font-size: 0.98em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis; /* recortar texto largo en celdas en lugar de generar scroll horizontal */
+}
+#modal-busqueda-tabla th {
+    background: #e9f3ff;
+    color: #0d4caf;
+    font-weight: 700;
+}
+#modal-busqueda-tabla td {
+    background: #ffffff;
+    color: #10233d;
+}
+#modal-busqueda-tabla tbody tr:nth-child(even) td {
+    background: #f6f9ff;
+}
+#modal-busqueda-tabla tr {
+    cursor: pointer;
+    transition: background 0.18s ease, transform 0.18s ease;
+}
+#modal-busqueda-tabla tr:hover, #modal-busqueda-tabla tr:focus {
+    background: rgba(13, 110, 253, 0.08);
+    outline: none;
+}
+@media (max-width: 1200px) {
+    .formato-compras-card {
+        margin: 2rem 1.2rem;
+        max-width: calc(100vw - 48px);
+        min-width: unset;
+        padding: 2rem 1.5rem;
+    }
+}
+@media (max-width: 900px) {
+    .formato-compras-card {
+        margin: 1.2rem 0.9rem;
+        max-width: calc(100vw - 24px);
+        min-width: unset;
+        padding: 1.2rem 1rem;
+    }
+    .formato-compras-proveedor {
+        flex-direction: column;
+        gap: 1em;
+    }
+    .formato-compras-acciones {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
+.formato-compras-card { background: #fff; }
+.formato-compras-proveedor { display: block; padding: 1.25rem; margin-bottom: 1.5rem; }
+.formato-compras-proveedor > .grid { display: grid; grid-template-columns: 1fr; gap: 1.25rem; }
+.formato-compras-proveedor-datos { display: block; min-width: 0; }
+.formato-compras-tabla th { background: #172554; color: #fff; border-bottom: 2px solid #f97316; padding: .75rem 1.25rem; }
+.formato-compras-tabla td { padding: .75rem 1.25rem; }
+.formato-compras-totales { font-size: 1.875rem; line-height: 2.25rem; font-weight: 900; color: #172554; letter-spacing: -.025em; justify-content: flex-end; }
+.btn-guardar-compra { background: #172554; color: #fff; border-radius: .5rem; padding: .625rem 1.5rem; font-weight: 600; transition: all .3s; }
+.btn-guardar-compra:hover { background: #1e3a8a; transform: translateY(-.25rem); box-shadow: 0 20px 25px -5px rgba(30,58,138,.2); }
+.formato-compras-proveedor-datos input[type="date"] { padding-left: 2.5rem; padding-right: 2.5rem; }
+input[type="date"]::-webkit-calendar-picker-indicator { margin-right: .15rem; }
+.formato-compras-proveedor-datos input[type="text"], .formato-compras-proveedor-datos input[type="date"] { padding-left: 2.75rem; padding-right: 1rem; }
+@media (min-width: 768px) { .formato-compras-proveedor > .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; } }
+@media (min-width: 1024px) { .formato-compras-proveedor > .grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.25rem; } }
+</style>
+<style>
+.purchase-shell {
+    --purchase-surface: #132235;
+    --purchase-surface-raised: #172a40;
+    --purchase-field: #0f1c2b;
+    --purchase-line: rgba(190, 211, 229, .14);
+    --purchase-text: #edf3f8;
+    --purchase-muted: #94a8ba;
+    --purchase-orange: #f18445;
+    width: min(1480px, calc(100% - 56px));
+    margin: 30px auto 46px;
+    padding: clamp(20px, 3vw, 38px);
+    border: 1px solid var(--purchase-line);
+    border-radius: 16px;
+    background: linear-gradient(145deg, #14263a, #101d2d 68%);
+    box-shadow: 0 24px 64px rgba(2, 9, 17, .28);
+    color: var(--purchase-text);
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+}
+.purchase-heading { display: flex; align-items: center; gap: 17px; margin-bottom: 27px; }
+.purchase-heading-icon { display: grid; width: 54px; height: 54px; flex: 0 0 54px; place-items: center; border: 1px solid rgba(241,132,69,.3); border-radius: 12px; background: rgba(241,132,69,.12); color: var(--purchase-orange); font-size: 26px; }
+.purchase-eyebrow { margin: 0 0 4px; color: #79c3c4; font-size: 10px; font-weight: 800; letter-spacing: .12em; }
+.purchase-heading h1 { margin: 0; color: var(--purchase-text); font: 700 25px/1.2 'DM Sans', sans-serif; letter-spacing: 0; }
+.purchase-subtitle { margin: 5px 0 0; color: var(--purchase-muted); font-size: 13px; }
+.purchase-document-mark { margin-left: auto; border: 1px solid var(--purchase-line); border-radius: 5px; padding: 7px 10px; color: #b8c8d5; font-size: 9px; font-weight: 800; letter-spacing: .1em; }
+.purchase-shell .formato-compras-proveedor { display: block; margin: 0 0 22px; border: 1px solid var(--purchase-line); border-radius: 11px; background: rgba(9, 19, 31, .36); padding: 20px; box-shadow: none; }
+.purchase-shell .formato-compras-proveedor > .grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 15px; }
+.purchase-shell .formato-compras-proveedor-datos { display: block; min-width: 0; border: 0; border-radius: 0; background: transparent; padding: 0; }
+.purchase-shell .formato-compras-proveedor-datos label { margin-bottom: 7px; color: #c6d3dd; font-size: 11px; font-weight: 700; }
+.purchase-shell .formato-compras-proveedor-datos > .relative { position: relative; }
+.purchase-shell .formato-compras-proveedor-datos input { height: 42px; margin: 0; border: 1px solid var(--purchase-line); border-radius: 7px; background: var(--purchase-field); color: var(--purchase-text); padding-top: 0; padding-bottom: 0; font-size: 12px; }
+.purchase-shell .formato-compras-proveedor-datos input::placeholder, .purchase-shell .formato-compras-tabla input::placeholder { color: #71879a; }
+.purchase-shell .formato-compras-proveedor-datos input:focus, .purchase-shell .formato-compras-tabla input:focus { outline: 0; border-color: var(--purchase-orange) !important; box-shadow: 0 0 0 3px rgba(241,132,69,.15) !important; }
+.purchase-shell .formato-compras-proveedor-datos .absolute { color: #8195a7; }
+.purchase-shell .formato-compras-proveedor-datos .btn-buscar-proveedor { top: 4px; right: 4px; width: 34px; height: 34px; border: 0; border-radius: 5px; background: #176b88; color: #effbff; }
+.purchase-shell .formato-compras-proveedor-datos .btn-buscar-proveedor:hover { background: #21819e; color: white; }
+.purchase-items { overflow: hidden; margin: 0; border: 1px solid var(--purchase-line); border-radius: 11px; background: rgba(9, 19, 31, .25); }
+.purchase-shell .formato-compras-articulos-header { display: flex; align-items: center; gap: 12px; margin: 0; border-bottom: 1px solid var(--purchase-line); padding: 17px 20px; color: var(--purchase-text); }
+.purchase-section-icon { display: grid; width: 36px; height: 36px; flex: 0 0 36px; place-items: center; border-radius: 8px; background: rgba(35,139,149,.16); color: #71c6c2; font-size: 19px; }
+.purchase-shell .formato-compras-articulos-header h2 { margin: 0; color: var(--purchase-text); font: 700 14px 'DM Sans', sans-serif; }
+.purchase-shell .formato-compras-articulos-header p { margin: 3px 0 0; color: var(--purchase-muted); font-size: 11px; font-weight: 400; }
+.purchase-table-wrap { overflow-x: auto; }
+.purchase-shell .formato-compras-tabla { min-width: 930px; border-collapse: collapse; background: transparent; color: var(--purchase-text); }
+.purchase-shell .formato-compras-tabla th { border: 0; border-bottom: 1px solid rgba(94,174,190,.32); background: #174861; color: #e7f4f5; padding: 13px 15px; font-size: 10px; letter-spacing: .08em; }
+.purchase-shell .formato-compras-tabla td { border-color: var(--purchase-line); padding: 12px 14px; }
+.purchase-shell .formato-compras-tabla tbody tr { opacity: 1 !important; transform: none !important; animation: none !important; }
+.purchase-shell .formato-compras-tabla tbody tr:hover { background: rgba(93,166,179,.07); }
+.purchase-shell .formato-compras-tabla input.table-field { min-height: 36px; border: 1px solid var(--purchase-line); border-radius: 6px; background: var(--purchase-field); color: var(--purchase-text); padding: 0 9px; font-size: 12px; }
+.purchase-shell .formato-compras-tabla input[readonly] { color: #a8bac8; }
+.purchase-shell .btn-modal-busqueda { border-color: var(--purchase-line); background: #1a6a87; color: white; }
+.purchase-shell .btn-modal-busqueda:hover { border-color: #64b7c0; background: #21819e; color: white; }
+.purchase-shell .btn-agregar-articulo, .purchase-shell .btn-quitar-articulo { display: inline-grid; width: 34px; height: 34px; place-items: center; border: 1px solid var(--purchase-line); border-radius: 7px; background: #18324a; color: #c9d8e4; padding: 0; transition: background .16s, border-color .16s, color .16s; }
+.purchase-shell .btn-agregar-articulo { border-color: rgba(241,132,69,.38); background: rgba(241,132,69,.14); color: #ffad76; }
+.purchase-shell .btn-agregar-articulo:hover { background: var(--purchase-orange); color: #172536; }
+.purchase-shell .btn-quitar-articulo:hover { border-color: #d06a62; background: rgba(208,106,98,.14); color: #ffaaa0; }
+.purchase-footer { display: flex; align-items: end; justify-content: space-between; gap: 22px; margin-top: 21px; border-top: 1px solid var(--purchase-line); padding-top: 19px; }
+.purchase-shell .formato-compras-totales { display: grid; gap: 3px; justify-content: start; margin: 0; color: var(--purchase-muted); font-size: 11px; font-weight: 700; line-height: 1.4; letter-spacing: 0; }
+.purchase-shell .formato-compras-total-valor { color: var(--purchase-text); font: 700 27px/1.2 'DM Sans', sans-serif; font-variant-numeric: tabular-nums; }
+.purchase-shell .formato-compras-acciones { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 9px; margin: 0; }
+.cost-policy-control select { width: 205px; min-height: 42px; border: 1px solid var(--purchase-line); border-radius: 6px; background: var(--purchase-surface-raised); color: #d8e5ed; padding: 0 29px 0 11px; font-size: 11px; font-weight: 600; }
+.cost-policy-control select:focus { outline: 2px solid rgba(113,198,194,.4); outline-offset: 1px; }
+.purchase-shell .btn-cancelar-compra, .purchase-shell .btn-guardar-compra { display: inline-flex; min-height: 42px; align-items: center; justify-content: center; gap: 8px; border: 1px solid var(--purchase-line); border-radius: 6px; padding: 0 15px; font-size: 12px; font-weight: 700; text-decoration: none; cursor: pointer; transition: transform .16s, background .16s, border-color .16s; }
+.purchase-shell .btn-cancelar-compra { background: transparent; color: #c0cfda; }
+.purchase-shell .btn-cancelar-compra:hover { border-color: rgba(192,207,218,.4); background: rgba(255,255,255,.04); }
+.purchase-shell .btn-guardar-compra { border-color: #e8793f; background: #e8793f; color: #172536; }
+.purchase-shell .btn-guardar-compra:hover { border-color: #ff9b62; background: #ff9b62; transform: translateY(-1px); box-shadow: 0 7px 18px rgba(232,121,63,.18); }
+.purchase-shell .formato-compras-acciones button { opacity: 1 !important; transform: none !important; animation: none !important; }
+#modal-busqueda { padding: 20px; background: rgba(4, 11, 20, .74); }
+.modal-busqueda-contenido { width: min(860px, calc(100vw - 40px)); max-height: min(82vh, 700px); gap: 13px; border: 1px solid var(--purchase-line); border-top: 3px solid var(--purchase-orange); border-radius: 10px; background: #132235; padding: 22px; color: #edf3f8; box-shadow: 0 28px 80px rgba(0,0,0,.42); animation: none !important; opacity: 1 !important; transform: none !important; }
+#modal-busqueda-titulo { margin: 0; color: #edf3f8; font-size: 17px; font-weight: 700; }
+#modal-busqueda-input { min-height: 42px; border: 1px solid var(--purchase-line); border-radius: 6px; background: #0f1c2b; color: #edf3f8; padding: 0 12px; }
+.modal-busqueda-cerrar { top: 16px; right: 16px; border: 1px solid var(--purchase-line); border-radius: 6px; background: #172a40; color: #bdccd8; }
+.modal-busqueda-tabla-wrapper { max-height: min(48vh, 390px); overflow: auto; border: 1px solid var(--purchase-line); border-radius: 7px; }
+#modal-busqueda-tabla { min-width: 720px; border-collapse: collapse; color: #e5edf3; }
+#modal-busqueda-tabla th { background: #174861; color: #e7f4f5; font-size: 10px; letter-spacing: .06em; }
+#modal-busqueda-tabla td { border-color: var(--purchase-line); color: #c8d5df; font-size: 12px; }
+#modal-busqueda-tabla tbody tr:nth-child(even) td { background: rgba(255,255,255,.025); }
+#modal-busqueda-tabla tbody tr:hover, #modal-busqueda-tabla tbody tr:focus { background: rgba(113,198,194,.12); }
+#proveedores-list { color: var(--purchase-muted); }
+.purchase-shell .formato-compras-proveedor-datos,
+.purchase-shell .formato-compras-articulos-header,
+.purchase-shell .formato-compras-tabla tbody tr,
+.purchase-shell .formato-compras-totales,
+.purchase-shell .formato-compras-acciones button { animation: none !important; opacity: 1 !important; transform: none !important; }
+html[data-theme="light"] .purchase-shell, html:not([data-theme="dark"]) .purchase-shell { --purchase-line: #dce4e8; --purchase-text: #1a2c3a; --purchase-muted: #697d8a; --purchase-surface: #fff; --purchase-surface-raised: #f4f7f8; --purchase-field: #f7f9fa; border-color: #dce4e8; background: linear-gradient(145deg, #fff, #f6f9fa 72%); box-shadow: 0 20px 55px rgba(23,49,65,.09); }
+html[data-theme="light"] .purchase-shell .formato-compras-proveedor, html:not([data-theme="dark"]) .purchase-shell .formato-compras-proveedor { background: #f8fafb; }
+html[data-theme="light"] .purchase-shell .formato-compras-proveedor-datos label, html:not([data-theme="dark"]) .purchase-shell .formato-compras-proveedor-datos label { color: #435866; }
+html[data-theme="light"] .purchase-shell .formato-compras-proveedor-datos input, html:not([data-theme="dark"]) .purchase-shell .formato-compras-proveedor-datos input, html[data-theme="light"] .purchase-shell .formato-compras-tabla input.table-field, html:not([data-theme="dark"]) .purchase-shell .formato-compras-tabla input.table-field { color: #243947; }
+html[data-theme="light"] .purchase-shell .formato-compras-articulos-header h2, html:not([data-theme="dark"]) .purchase-shell .formato-compras-articulos-header h2 { color: #1a2c3a; }
+html[data-theme="light"] .purchase-shell .formato-compras-total-valor, html:not([data-theme="dark"]) .purchase-shell .formato-compras-total-valor { color: #1a2c3a; }
+html[data-theme="light"] .cost-policy-control select, html:not([data-theme="dark"]) .cost-policy-control select { color: #344b59; }
+html[data-theme="light"] .purchase-shell .purchase-heading, html:not([data-theme="dark"]) .purchase-shell .purchase-heading { background: transparent !important; color: #183044 !important; box-shadow: none !important; }
+html[data-theme="light"] .purchase-shell .purchase-heading h1, html:not([data-theme="dark"]) .purchase-shell .purchase-heading h1 { color: #183044 !important; }
+html[data-theme="light"] .purchase-shell .purchase-eyebrow, html:not([data-theme="dark"]) .purchase-shell .purchase-eyebrow { color: #24777a !important; }
+html[data-theme="light"] .purchase-shell .purchase-subtitle, html:not([data-theme="dark"]) .purchase-shell .purchase-subtitle { color: #5b7180 !important; }
+html[data-theme="light"] .purchase-shell .purchase-document-mark, html:not([data-theme="dark"]) .purchase-shell .purchase-document-mark { border-color: #cbd8de; color: #526b79 !important; }
+html[data-theme="light"] .purchase-shell .btn-cancelar-compra, html:not([data-theme="dark"]) .purchase-shell .btn-cancelar-compra { border-color: #cbd7dd; color: #425968 !important; }
+html[data-theme="light"] .purchase-shell .btn-guardar-compra, html:not([data-theme="dark"]) .purchase-shell .btn-guardar-compra { color: #2c211a !important; }
+html[data-theme="light"] .purchase-shell .formato-compras-articulos-header p, html:not([data-theme="dark"]) .purchase-shell .formato-compras-articulos-header p { color: #687d8b !important; }
+@media (max-width: 900px) {
+    .purchase-shell { width: calc(100% - 28px); margin: 18px auto 32px; padding: 20px; }
+    .purchase-shell .formato-compras-proveedor > .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .purchase-footer { align-items: stretch; flex-direction: column; }
+    .purchase-shell .formato-compras-acciones { justify-content: flex-start; }
+}
+@media (max-width: 600px) {
+    .purchase-shell { width: calc(100% - 20px); margin: 10px auto 24px; padding: 16px; border-radius: 11px; }
+    .purchase-heading { align-items: flex-start; gap: 11px; margin-bottom: 20px; }
+    .purchase-heading-icon { width: 42px; height: 42px; flex-basis: 42px; font-size: 21px; }
+    .purchase-heading h1 { font-size: 21px; }
+    .purchase-document-mark { display: none; }
+    .purchase-shell .formato-compras-proveedor { padding: 14px; }
+    .purchase-shell .formato-compras-proveedor > .grid { grid-template-columns: 1fr; gap: 13px; }
+    .purchase-shell .formato-compras-articulos-header { padding: 14px; }
+    .purchase-shell .formato-compras-acciones { display: grid; grid-template-columns: 1fr 1fr; }
+    .cost-policy-control { grid-column: 1 / -1; }
+    .cost-policy-control select { width: 100%; }
+    .purchase-shell .btn-cancelar-compra, .purchase-shell .btn-guardar-compra { width: 100%; padding: 0 9px; }
+    .modal-busqueda-contenido { width: calc(100vw - 20px); max-height: 88vh; padding: 18px 12px 12px; }
+    #modal-busqueda-tabla { min-width: 680px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .purchase-shell *, .purchase-shell *::before, .purchase-shell *::after, .modal-busqueda-contenido { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+</style>
+{% endblock %}
+{% block help_content %}
+<div>
+    <h4>Ayuda: Formato de Compras (registro rápido)</h4>
+    <p>Usa esta página para registrar compras y actualizar costos del inventario.</p>
+    <ul>
+        <li><strong>Proveedor:</strong> Selecciona o crea el proveedor antes de agregar artículos.</li>
+        <li><strong>Autocompletar:</strong> Escribe el <em>Código</em> y presiona <kbd>Enter</kbd> o <kbd>Tab</kbd> para autocompletar. Presiona <kbd>F2</kbd> para búsqueda manual.</li>
+        <li><strong>Añadir fila:</strong> El botón <em>Agregar</em> inserta una nueva fila solo si la fila actual es válida.</li>
+        <li><strong>Costos:</strong> El valor en <em>Costo</em> se aplicará a la ficha del producto; se mostrará una advertencia si editas costos.</li>
+    </ul>
+    <p>Validaciones clave:</p>
+    <ol>
+        <li>Debe existir proveedor antes de guardar.</li>
+        <li>Cada artículo necesita código, cantidad &gt; 0 y costo válido.</li>
+        <li>No se permiten artículos duplicados en la misma compra.</li>
+    </ol>
+</div>
+{% endblock %}

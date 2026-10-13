@@ -1,0 +1,360 @@
+{% extends 'base/pan_con_queso.html' %}
+{% load static %}
+
+{% block arroz_con_pollo %}
+<section class="panel-section providers-dashboard">
+    <div class="panel-heading">
+        <div>
+            <h2>Proveedores</h2>
+            <p>Controla proveedores, búsqueda y últimas entradas.</p>
+        </div>
+        <div class="panel-actions">
+            <form class="search-bar" method="get" action="{% url 'proveedores' %}" role="search">
+                <label class="sr-only" for="buscar-proveedor-dashboard">Buscar proveedores</label>
+                <input id="buscar-proveedor-dashboard" type="search" name="q" placeholder="RIF, nombre, teléfono o correo" value="{{ request.GET.q }}">
+                <button type="submit" class="btn btn-primary">Buscar</button>
+            </form>
+            <div class="action-buttons">
+                <a href="{% url 'addProveedor' %}" class="btn btn-primary">Nuevo proveedor</a>
+                <a href="{% url 'Proveedor' %}" class="btn btn-secondary">Lista completa</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="metric-grid">
+        <div class="metric-card">
+            <span>Proveedores registrados</span>
+            <strong>{{ proveedores_nuevos }}</strong>
+        </div>
+        <div class="metric-card">
+            <span>Coincidencias</span>
+            <strong>{{ proveedores.paginator.count }}</strong>
+        </div>
+        <div class="metric-card">
+            <span>En esta página</span>
+            <strong>{{ proveedores|length }}</strong>
+        </div>
+    </div>
+
+    <div class="table-card">
+        <div class="table-card-header">
+            <div>
+                <h3>Registro de proveedores</h3>
+                <p>Revisa y administra los proveedores activos.</p>
+            </div>
+        </div>
+        <div class="table-scroll">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>RIF</th>
+                        <th>Teléfono</th>
+                        <th>Email</th>
+                        <th>Dirección</th>
+                        <th>Fecha registro</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if proveedores %}
+                        {% for r in proveedores %}
+                        <tr>
+                            <td>{{ r.nombre }}</td>
+                            <td>{{ r.cedula }}</td>
+                            <td>{{ r.telefono }}</td>
+                            <td>{{ r.email }}</td>
+                            <td>{{ r.direccion }}</td>
+                            <td>{{ r.Fecha_registro }}</td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="6" class="empty-state">No hay proveedores registrados.</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+            <div class="pagination">
+                {% if proveedores.has_previous %}
+                    <a href="?page=1{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">&laquo; Primera</a>
+                    <a href="?page={{ proveedores.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">Anterior</a>
+                {% endif %}
+                <span class="page-label">Página {{ proveedores.number }} de {{ proveedores.paginator.num_pages }}</span>
+                {% if proveedores.has_next %}
+                    <a href="?page={{ proveedores.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">Siguiente</a>
+                    <a href="?page={{ proveedores.paginator.num_pages }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">Última &raquo;</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+.panel-section {
+    padding: 24px;
+    background: rgba(255,255,255,0.025);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 24px;
+    box-shadow: 0 16px 42px rgba(0,0,0,0.08);
+}
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 10px 16px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s;
+    text-decoration: none;
+    font-weight: 700;
+}
+.btn-primary {
+    background: #2563eb;
+    color: #fff;
+    box-shadow: 0 8px 18px rgba(37,99,235,0.18);
+}
+.btn-primary:hover {
+    background: #1d4ed8;
+}
+.btn-secondary {
+    background: rgba(255,255,255,0.1);
+    color: #f5f9ff;
+    border-color: rgba(255,255,255,0.12);
+}
+.btn-secondary:hover {
+    background: rgba(255,255,255,0.16);
+}
+.panel-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 22px;
+    padding: 6px 0 8px;
+}
+.panel-heading h2 {
+    margin: 0 0 8px;
+    font-size: 2rem;
+}
+.panel-actions {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex: 1 1 620px;
+    min-width: 0;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+}
+.search-bar {
+    display: flex;
+    gap: 10px;
+    width: min(100%, 390px);
+    min-width: 240px;
+}
+.search-bar input {
+    min-width: 0;
+    flex: 1;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(255,255,255,0.08);
+    color: #f5f9ff;
+    padding: 12px 14px;
+}
+.action-buttons {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+.metric-grid {
+    display: grid;
+    gap: 18px;
+    grid-template-columns: repeat(3, minmax(180px, 1fr));
+    margin-bottom: 24px;
+}
+.metric-card {
+    padding: 22px 24px;
+    border-radius: 18px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+}
+.metric-card span {
+    display: block;
+    color: rgba(255,255,255,0.72);
+    margin-bottom: 12px;
+}
+.metric-card strong {
+    font-size: 2rem;
+    color: #fff;
+}
+.table-card {
+    padding: 22px;
+    border-radius: 16px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.1);
+}
+.table-card-header {
+    margin-bottom: 20px;
+}
+.table-scroll {
+    overflow-x: auto;
+    border: 1px solid rgba(255,255,255,0.09);
+    border-radius: 14px;
+}
+.data-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    min-width: 760px;
+    color: #f4f6f9;
+}
+.data-table th,
+.data-table td {
+    padding: 14px 16px;
+    text-align: left;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.data-table thead {
+    background: rgba(0,178,255,0.18);
+}
+.data-table th {
+    color: #e9f7ff;
+    font-weight: 700;
+}
+.empty-state {
+    text-align: center;
+    color: rgba(255,255,255,0.7);
+}
+@media(max-width:1024px) {
+    .metric-grid { grid-template-columns: 1fr; }
+    .panel-heading { align-items: stretch; }
+    .panel-actions { justify-content: flex-start; }
+}
+@media(max-width:640px) {
+    .panel-section { padding: 8px 0 22px; }
+    .panel-actions, .search-bar, .action-buttons { width: 100%; }
+    .search-bar { min-width: 0; }
+    .action-buttons > * { flex: 1 1 auto; }
+    .table-card { padding: 14px; }
+}
+
+html[data-theme="light"] .panel-section {
+    background: rgba(255,255,255,0.54);
+    border-color: rgba(148,163,184,0.16);
+    box-shadow: 0 14px 36px rgba(15,23,42,0.045);
+}
+html[data-theme="light"] .search-bar input {
+    background: #ffffff;
+    border-color: rgba(148,163,184,0.35);
+    color: #0f172a;
+}
+html[data-theme="light"] .search-bar input::placeholder {
+    color: rgba(15,23,42,0.45);
+}
+html[data-theme="light"] .btn-secondary {
+    background: #f8fafc;
+    color: #0f172a;
+    border: 1px solid rgba(148,163,184,0.25);
+}
+html[data-theme="light"] .metric-card {
+    background: #f8fbff;
+    border: 1px solid rgba(148,163,184,0.18);
+    box-shadow: 0 16px 40px rgba(15,23,42,0.06);
+}
+html[data-theme="light"] .metric-card span {
+    color: #475569;
+}
+html[data-theme="light"] .metric-card strong {
+    color: #0f172a;
+}
+html[data-theme="light"] .table-card {
+    background: rgba(255,255,255,0.62);
+    border: 1px solid rgba(148,163,184,0.2);
+    box-shadow: 0 12px 28px rgba(15,23,42,0.045);
+}
+html[data-theme="light"] .table-scroll {
+    border-color: rgba(148,163,184,0.2);
+}
+html[data-theme="light"] .table-card-header h3,
+html[data-theme="light"] .panel-heading h2 {
+    color: #0f172a;
+}
+html[data-theme="light"] .table-card-header p,
+html[data-theme="light"] .panel-heading p {
+    color: #475569;
+}
+html[data-theme="light"] .data-table {
+    color: #0f172a;
+}
+html[data-theme="light"] .data-table thead {
+    background: #00a2f7;
+}
+html[data-theme="light"] .data-table th {
+    color: #ffffff;
+}
+html[data-theme="light"] .data-table tbody tr:nth-child(odd) td {
+    background: #f8fbff;
+}
+html[data-theme="light"] .data-table tbody tr:hover td {
+    background: #eff6ff;
+}
+@media(max-width:640px) {
+    .panel-section { padding: 16px 12px 20px; border-radius: 18px; }
+    .table-card { padding: 14px; }
+}
+html[data-theme="light"] .empty-state {
+    color: #475569;
+}
+
+.providers-dashboard { padding:24px; border:1px solid var(--admin-line,#d8e2e9); border-radius:10px; background:var(--admin-surface,#fff); color:var(--admin-text,#193247); box-shadow:var(--admin-shadow,0 12px 32px rgba(18,43,61,.07)); }
+.providers-dashboard .panel-heading { align-items:flex-end; margin-bottom:18px; }
+.providers-dashboard .panel-heading h2 { margin:0; color:var(--admin-text,#193247); font:750 25px/1.2 'DM Sans','Segoe UI',sans-serif; letter-spacing:0; }
+.providers-dashboard .panel-heading p { margin:5px 0 0; color:var(--admin-muted,#647b8b); font-size:12px; }
+.providers-dashboard .panel-actions { flex-basis:auto; gap:8px; }
+.providers-dashboard .search-bar { min-width:270px; gap:0; }
+.providers-dashboard .search-bar input { min-height:40px; border:1px solid var(--admin-line-strong,#cbd8df); border-right:0; border-radius:5px 0 0 5px; background:var(--admin-surface-soft,#f4f7f9); color:var(--admin-text,#193247); padding:0 11px; font-size:11px; }
+.providers-dashboard .btn.btn-primary { min-height:40px; border:1px solid #176b78!important; border-radius:5px; background:#176b78!important; background-image:none!important; color:#fff!important; padding:0 12px; font-size:11px; box-shadow:none!important; }
+.providers-dashboard .search-bar .btn.btn-primary { border-radius:0 5px 5px 0; }
+.providers-dashboard .btn.btn-primary:hover { background:#115762!important; transform:translateY(-1px); }
+.providers-dashboard .btn.btn-secondary { min-height:40px; border:1px solid var(--admin-line-strong,#cbd8df)!important; border-radius:5px; background:var(--admin-surface,#fff)!important; background-image:none!important; color:var(--admin-text,#345366)!important; padding:0 12px; font-size:11px; box-shadow:none!important; }
+.providers-dashboard .metric-grid { grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin-bottom:14px; }
+.providers-dashboard .metric-card { min-width:0; border:1px solid var(--admin-line,#d8e2e9); border-radius:7px; background:var(--admin-surface,#fff)!important; padding:15px 16px; box-shadow:none!important; }
+.providers-dashboard .metric-card span { margin-bottom:6px; color:var(--admin-muted,#647b8b)!important; font-size:10px; font-weight:700; }
+.providers-dashboard .metric-card strong { color:var(--admin-text,#193247)!important; font:700 21px/1.2 'DM Sans','Segoe UI',sans-serif; font-variant-numeric:tabular-nums; }
+.providers-dashboard .table-card { padding:0; border:1px solid var(--admin-line,#d8e2e9); border-radius:8px; background:var(--admin-surface,#fff)!important; box-shadow:none!important; }
+.providers-dashboard .table-card-header { margin:0; border-bottom:1px solid var(--admin-line,#d8e2e9); padding:13px 15px; }
+.providers-dashboard .table-card-header h3 { margin:0; color:var(--admin-text,#193247)!important; font-size:12px; }
+.providers-dashboard .table-card-header p { margin:4px 0 0; color:var(--admin-muted,#647b8b)!important; font-size:11px; }
+.providers-dashboard .table-scroll { border:0; border-radius:0; }
+.providers-dashboard .data-table { min-width:850px; color:var(--admin-text,#193247); }
+.providers-dashboard .data-table th { background:var(--admin-table-head,#eaf1f5)!important; color:var(--admin-text,#193247)!important; border-color:var(--admin-line-strong,#cbd8df)!important; padding:11px 12px; font-size:9px; letter-spacing:.06em; text-transform:uppercase; }
+.providers-dashboard .data-table td { color:var(--admin-text,#344b5b)!important; border-color:var(--admin-line,#e3eaee)!important; padding:11px 12px; font-size:11px; }
+.providers-dashboard .data-table tbody tr:nth-child(odd) td { background:var(--admin-surface,#fff)!important; }
+.providers-dashboard .data-table tbody tr:nth-child(even) td { background:var(--admin-surface-soft,#f7f9fa)!important; }
+.providers-dashboard .data-table tbody tr:hover td { background:rgba(23,107,120,.06)!important; }
+.providers-dashboard .empty-state { padding:25px; color:var(--admin-muted,#647b8b)!important; }
+.providers-dashboard .pagination { justify-content:flex-end; }
+.providers-dashboard .pagination a, .providers-dashboard .pagination .page-label { min-height:33px; border:1px solid var(--admin-line-strong,#cbd8df); border-radius:5px; background:var(--admin-surface,#fff)!important; background-image:none!important; color:var(--admin-text,#193247)!important; padding:0 10px; font-size:10px; }
+html[data-theme="dark"] .providers-dashboard { --admin-surface:#101d2b; --admin-surface-soft:#142435; --admin-line:#2a3b4d; --admin-line-strong:#3a5064; --admin-table-head:#1a3043; --admin-text:#e8f0f6; --admin-muted:#a6b7c5; }
+html[data-theme="dark"] .providers-dashboard .data-table td { color:#dce6ed!important; }
+@media(max-width:1024px) { .providers-dashboard .panel-heading { align-items:flex-start; } .providers-dashboard .panel-actions { flex-basis:100%; justify-content:flex-start; } }
+@media(max-width:640px) { .providers-dashboard { padding:16px!important; } .providers-dashboard .panel-actions,.providers-dashboard .search-bar,.providers-dashboard .action-buttons { width:100%; } .providers-dashboard .search-bar { min-width:0; } .providers-dashboard .action-buttons>* { flex:1 1 auto; } .providers-dashboard .metric-grid { grid-template-columns:1fr 1fr; } .providers-dashboard .metric-card:last-child { grid-column:1/-1; } .providers-dashboard .table-card { padding:0; } }
+
+</style>
+{% endblock %}
+
+{% block help_content %}
+<div>
+    <h4>Ayuda: Proveedores</h4>
+    <p>Gestiona los proveedores registrados y encuentra su información de contacto, dirección y estado en un solo lugar.</p>
+    <ul>
+        <li>Utiliza la búsqueda para localizar proveedores por nombre, RIF o teléfono.</li>
+        <li>Selecciona <strong>Nuevo proveedor</strong> para registrar un proveedor y mantener actualizado el catálogo de compras.</li>
+        <li>La lista muestra los proveedores activos con sus datos más relevantes.</li>
+    </ul>
+</div>
+{% endblock %}

@@ -1,0 +1,403 @@
+﻿<!doctype html>
+{% load static %}
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Comprobante interno {{ factura.numero }}</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+    @page {
+      size: letter portrait;
+      margin: 12mm;
+      @bottom-center {
+        content: element(footer);
+      }
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+      line-height: 1.5;
+      color: #182a2e;
+      background: #ffffff;
+    }
+
+    .container {
+      width: 100%;
+      max-width: none;
+      margin: 0 auto;
+      padding: 0;
+    }
+
+    .header {
+      display: table;
+      width: 100%;
+      margin-bottom: 26px;
+      border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 18px;
+    }
+
+    .header-left,
+    .header-right {
+      display: table-cell;
+      vertical-align: top;
+    }
+
+    .header-left {
+      width: 55%;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-logo {
+      width: 72px;
+      height: auto;
+      display: block;
+    }
+
+    .brand-name {
+      font-size: 20px;
+      font-weight: 700;
+      color: #182a2e;
+      margin-bottom: 4px;
+    }
+
+    .brand-meta {
+      font-size: 10px;
+      color: #334155;
+      font-weight: 500;
+      margin-bottom: 2px;
+    }
+
+    .header-right {
+      width: 45%;
+      text-align: right;
+      padding-left: 18px;
+    }
+
+    .invoice-label {
+      display: block;
+      color: #007f86;
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: 0;
+      margin-bottom: 12px;
+    }
+
+    .control-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .control-table td {
+      padding: 4px 0;
+      font-size: 11px;
+      color: #334155;
+      vertical-align: top;
+    }
+
+    .control-table .label {
+      color: #64748b;
+      font-weight: 600;
+      padding-right: 10px;
+      white-space: nowrap;
+    }
+
+    .badge {
+      display: inline-block;
+      background: #dcfce7;
+      color: #166534;
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+    }
+
+    .client-box {
+      width: 100%;
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 18px;
+      margin-bottom: 24px;
+    }
+
+    .notice {
+      margin: 0 0 16px;
+      padding: 10px 12px;
+      border: 1px solid #d6a63b;
+      border-left: 4px solid #d97706;
+      background: #fff8e7;
+      color: #26363a;
+      font-size: 10px;
+    }
+
+    .notice strong { color: #a85c00; }
+
+    .client-row {
+      display: table;
+      width: 100%;
+    }
+
+    .client-column {
+      display: table-cell;
+      width: 50%;
+      vertical-align: top;
+      padding: 0 10px;
+    }
+
+    .client-column:last-child {
+      text-align: right;
+    }
+
+    .section-title {
+      font-size: 11px;
+      color: #1e3a8a;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    .detail {
+      font-size: 12px;
+      color: #334155;
+      margin-bottom: 8px;
+    }
+
+    .detail strong {
+      font-weight: 600;
+    }
+
+    .items {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 18px;
+      table-layout: fixed;
+    }
+
+    .items thead th {
+      background: #ffffff;
+      color: #475569;
+      padding: 7px 5px;
+      text-align: left;
+      font-size: 8px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 2px solid #0f172a;
+    }
+
+    .items tbody td {
+      padding: 7px 5px;
+      font-size: 8px;
+      color: #334155;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .items tbody tr:nth-child(odd) {
+      background: #ffffff;
+    }
+
+    .items tbody tr:nth-child(even) {
+      background: #f8fafc;
+    }
+
+    .col-code {
+      width: 9%;
+      text-align: left;
+    }
+
+    .col-desc {
+      width: 27%;
+      text-align: left;
+    }
+
+    .col-qty {
+      width: 7%;
+      text-align: center;
+    }
+
+    .col-price,
+    .col-discount,
+    .col-base,
+    .col-tax,
+    .col-sub {
+      width: 10%;
+      text-align: right;
+    }
+
+    .col-rate { width: 7%; text-align: right; }
+
+    .tax-summary { width: 58%; margin: 12px 0 14px auto; border-collapse: collapse; }
+    .tax-summary th,.tax-summary td { padding: 6px 8px; border-bottom: 1px solid #dbe4e6; font-size: 9px; text-align: right; }
+    .tax-summary th:first-child,.tax-summary td:first-child { text-align: left; }
+
+    .totals {
+      width: 58%;
+      margin-left: auto;
+      border-collapse: collapse;
+    }
+
+    .totals td {
+      padding: 8px 10px;
+      font-size: 12px;
+      color: #334155;
+    }
+
+    .totals .label {
+      color: #64748b;
+      font-weight: 500;
+    }
+
+    .totals .value {
+      text-align: right;
+      font-weight: 700;
+    }
+
+    .totals .total-label {
+      font-size: 14px;
+      color: #334155;
+      font-weight: 700;
+    }
+
+    .totals .grand-total {
+      font-size: 18px;
+      font-weight: 800;
+      color: #334155;
+      padding-top: 10px;
+      border-top: 2px solid #334155;
+    }
+
+    .reconciliation { margin: 0 0 12px auto; width: 58%; padding: 8px; border: 1px solid #d6a63b; background: #fff8e7; font-size: 9px; }
+
+    .footer {
+      font-size: 8px;
+      color: #94a3b8;
+      text-align: center;
+      font-style: italic;
+      padding-top: 12px;
+      display: block;
+    }
+  </style>
+  {% include 'reportes/pdf_design.html' %}
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="header-left">
+        <div class="brand">
+              <img src="{{ request.scheme }}://{{ request.get_host }}{% static 'img/logo.png' %}" alt="FerreElectri Plus" class="brand-logo" style="max-height:60px;">
+              <div>
+                <div class="brand-name">FERREELECTRI PLUS</div>
+                  <div class="brand-meta">RIF: V-12847449-4</div>
+                <div class="brand-meta">Dirección: Calle 7, Coloncito, Estado Táchira.</div>
+                <div class="brand-meta">Teléfono: 0424-7362445</div>
+              </div>
+            </div>
+      </div>
+      <div class="header-right">
+        <span class="invoice-label">COMPROBANTE INTERNO</span>
+        <table class="control-table">
+          <tr>
+            <td class="label">Registro interno:</td>
+            <td>{{ factura.numero }}</td>
+          </tr>
+          <tr>
+            <td class="label">Número de control:</td>
+            <td>Pendiente de imprenta digital autorizada</td>
+          </tr>
+          <tr>
+            <td class="label">Rango asignado:</td>
+            <td>No informado</td>
+          </tr>
+          <tr>
+            <td class="label">Imprenta digital:</td>
+            <td>No configurada</td>
+          </tr>
+          <tr>
+            <td class="label">Fecha y hora:</td>
+            <td>{{ factura.fecha|date:"d/m/Y H:i:s" }}</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <p class="notice"><strong>Documento informativo, no fiscal.</strong> No sustituye la factura emitida mediante el medio autorizado por el SENIAT. El número de control y el rango deben ser asignados por una imprenta digital autorizada.</p>
+
+    <div class="client-box">
+      <div class="client-row">
+        <div class="client-column">
+          <div class="section-title">Adquirente del bien:</div>
+          <div class="detail">Nombre / razón social: <strong>{{ razon_social_cliente|default:'No suministrado' }}</strong></div>
+          <div class="detail">Cédula / RIF: <strong>{{ documento_cliente|default:'No suministrado' }}</strong></div>
+          <div class="detail">Domicilio fiscal: <strong>{{ domicilio_cliente|default:'No suministrado' }}</strong></div>
+        </div>
+        <div class="client-column">
+          <div class="section-title">Contacto:</div>
+          <div class="detail">Correo: <strong>{{ factura.cliente.email|default:'-' }}</strong></div>
+          <div class="detail">Teléfono: <strong>{{ factura.cliente.telefono|default:'-' }}</strong></div>
+          <div class="detail">Moneda registrada: <strong>{{ factura.moneda }}</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <table class="items">
+      <thead>
+        <tr>
+          <th class="col-code">Código</th>
+          <th class="col-desc">Descripción</th>
+          <th class="col-qty">Cantidad</th>
+          <th class="col-price">Precio unit.</th>
+          <th class="col-discount">Descuento</th>
+          <th class="col-base">Base</th>
+          <th class="col-rate">IVA %</th>
+          <th class="col-tax">IVA</th>
+          <th class="col-sub">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in detalles %}
+        <tr>
+          <td class="col-code">{{ item.producto.Codigo }}</td>
+          <td class="col-desc">{{ item.producto.Descripcion }}</td>
+          <td class="col-qty">{{ item.cantidad }}</td>
+          <td class="col-price">{{ item.precio|floatformat:2 }}</td>
+          <td class="col-discount">{{ item.importe_descuento|floatformat:2 }}</td>
+          <td class="col-base">{{ item.base_imponible|floatformat:2 }}</td>
+          <td class="col-rate">{{ item.iva|floatformat:2 }}%</td>
+          <td class="col-tax">{{ item.monto_iva|floatformat:2 }}</td>
+          <td class="col-sub">{{ item.total_linea|floatformat:2 }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="9" style="text-align:center; padding: 18px 0; color: #64748b;">No hay productos registrados en esta factura.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <table class="tax-summary">
+      <thead><tr><th>Resumen por alícuota</th><th>Base imponible</th><th>IVA</th></tr></thead>
+      <tbody>{% for grupo in resumen_impuestos %}<tr><td>{{ grupo.alicuota|floatformat:2 }}%</td><td>{{ grupo.base_imponible|floatformat:2 }}</td><td>{{ grupo.monto_iva|floatformat:2 }}</td></tr>{% empty %}<tr><td colspan="3">Sin líneas gravadas registradas</td></tr>{% endfor %}</tbody>
+    </table>
+    {% if total_no_concilia %}<p class="reconciliation">El total registrado no coincide con la suma de las líneas ({{ factura.moneda }} {{ total_calculado|floatformat:2 }}). Revisar antes de emitir el documento fiscal.</p>{% endif %}
+    <table class="totals">
+      <tr><td class="label">Descuentos:</td><td class="value">{{ factura.moneda }} {{ descuento_total|floatformat:2 }}</td></tr>
+      <tr><td class="label">Base imponible:</td><td class="value">{{ factura.moneda }} {{ base_imponible|floatformat:2 }}</td></tr>
+      <tr><td class="label">IVA total:</td><td class="value">{{ factura.moneda }} {{ monto_iva|floatformat:2 }}</td></tr>
+      <tr><td class="label total-label">TOTAL REGISTRADO:</td><td class="value grand-total">{{ factura.moneda }} {{ factura.total|floatformat:2 }}</td></tr>
+    </table>
+  </div>
+
+  <footer class="footer">
+    <em>Representación de consulta. No acredita emisión fiscal ni asignación de control por imprenta autorizada.</em>
+  </footer>
+</body>
+</html>

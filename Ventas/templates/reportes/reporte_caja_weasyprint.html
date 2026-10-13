@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Reporte de Cierre de Ventas</title>
+    <style>
+        @page { size: A4; margin: 28px 32px 28px 32px; }
+        body {
+            font-family: Arial, sans-serif;
+            color: #222;
+            background: #fff;
+            margin: 0;
+            padding: 0;
+        }
+        .header {
+            background: linear-gradient(90deg, #1976d2 60%, #00b2ff 100%);
+            color: #fff;
+            padding: 28px 28px 18px 28px;
+            border-radius: 0 0 18px 18px;
+            text-align: left;
+        }
+        .header-title {
+            font-size: 2.1em;
+            font-weight: bold;
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .header-date {
+            font-size: 1.1em;
+            margin-bottom: 0;
+        }
+        .metrics-table {
+            width: 100%;
+            background: #fff;
+            border-radius: 12px;
+            border: 1.5px solid #e6f7ff;
+            margin: 28px 0 18px 0;
+            font-size: 1.08em;
+        }
+        .metrics-table td {
+            padding: 10px 18px;
+        }
+        .metrics-table tr:not(:last-child) td {
+            border-bottom: 1px solid #e6f7ff;
+        }
+        .metric-label {
+            color: #1976d2;
+            font-weight: 600;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .metric-value {
+            color: #222;
+            font-weight: bold;
+            text-align: right;
+            font-size: 1.1em;
+        }
+        .utilidad {
+            color: #43a047;
+            font-weight: bold;
+        }
+        .perdida {
+            color: #d32f2f;
+            font-weight: bold;
+        }
+        .table-section {
+            margin: 0 0 0 0;
+        }
+        table.ventas {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 14px;
+            background: #fff;
+            border-radius: 10px;
+            overflow: hidden;
+            font-size: 1em;
+        }
+        table.ventas th, table.ventas td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #e6f7ff;
+            text-align: center;
+        }
+        table.ventas th {
+            background: #1976d2;
+            color: #fff;
+            font-size: 1em;
+        }
+        table.ventas tr:last-child td {
+            border-bottom: none;
+        }
+        table.ventas tr:nth-child(even) { background: #f7fafc; }
+        .footer {
+            margin-top: 28px;
+            text-align: center;
+            color: #1976d2;
+            font-size: 1em;
+            border-top: 1px solid #e6f7ff;
+            padding-top: 10px;
+        }
+        .icon {
+            width: 1.2em;
+            height: 1.2em;
+            vertical-align: middle;
+        }
+        .metrics-table .metric-value {
+            min-width: 100px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-title">
+            <!-- Icono caja registradora -->
+            <svg class="icon" viewBox="0 0 24 24" fill="#fff"><path d="M4 20v-2h16v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2zm16-4V8a2 2 0 0 0-2-2h-2V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2H6a2 2 0 0 0-2 2v8zm-6-12v2h-4V4zm-6 4h12v8H6zm2 2v2h2v-2zm4 0v2h2v-2z"/></svg>
+            Reporte de Cierre de Ventas
+        </div>
+        <div class="header-date">
+            {{ fecha }}
+        </div>
+    </div>
+
+    <table class="metrics-table">
+        <tr>
+            <td class="metric-label">
+                <!-- Icono billete -->
+                <svg class="icon" viewBox="0 0 24 24" fill="#1976d2"><path d="M2 6h20v12H2z" fill="#e3f2fd"/><rect x="2" y="6" width="20" height="12" rx="2" fill="none" stroke="#1976d2" stroke-width="1.5"/><circle cx="12" cy="12" r="3" fill="none" stroke="#1976d2" stroke-width="1.5"/><path d="M2 8c1.5 0 2 1.5 2 2s.5 2 2 2 2-1.5 2-2 .5-2 2-2 2 1.5 2 2 .5 2 2 2 2-1.5 2-2 .5-2 2-2" fill="none" stroke="#1976d2" stroke-width="0.5"/></svg>
+                Ventas Totales
+            </td>
+            <td class="metric-value">${{ resumen.ventas|floatformat:2 }}</td>
+        </tr>
+        <tr>
+            <td class="metric-label">
+                <!-- Icono caja -->
+                <svg class="icon" viewBox="0 0 24 24" fill="#00b2ff"><rect x="3" y="7" width="18" height="13" rx="2" fill="#e3f2fd" stroke="#00b2ff" stroke-width="1.5"/><rect x="7" y="3" width="10" height="4" rx="1" fill="#00b2ff" opacity="0.7"/><rect x="9" y="10" width="6" height="2" rx="1" fill="#00b2ff"/></svg>
+                Costo de Ventas
+            </td>
+            <td class="metric-value">${{ resumen.costo_ventas|floatformat:2 }}</td>
+        </tr>
+        <tr>
+            <td class="metric-label">
+                <!-- Icono gráfico -->
+                <svg class="icon" viewBox="0 0 24 24" fill="#43a047"><rect x="4" y="12" width="3" height="7" rx="1" fill="#43a047"/><rect x="10" y="7" width="3" height="12" rx="1" fill="#43a047"/><rect x="16" y="4" width="3" height="15" rx="1" fill="#43a047"/></svg>
+                Utilidad Bruta
+            </td>
+            <td class="metric-value {% if resumen.utilidad >= 0 %}utilidad{% else %}perdida{% endif %}">
+                ${{ resumen.utilidad|floatformat:2 }}
+            </td>
+        </tr>
+        <tr>
+            <td class="metric-label">
+                <!-- Icono lista -->
+                <svg class="icon" viewBox="0 0 24 24" fill="#1976d2"><rect x="4" y="6" width="16" height="2" rx="1" fill="#1976d2"/><rect x="4" y="11" width="16" height="2" rx="1" fill="#1976d2"/><rect x="4" y="16" width="10" height="2" rx="1" fill="#1976d2"/></svg>
+                Transacciones
+            </td>
+            <td class="metric-value">{{ resumen.transacciones }}</td>
+        </tr>
+    </table>
+
+    <div class="table-section">
+        <table class="ventas">
+            <thead>
+                <tr>
+                    <th>N°</th>
+                    <th>Fecha</th>
+                    <th>Cliente</th>
+                    <th>Monto</th>
+                    <th>Costo</th>
+                    <th>Utilidad</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for v in ventas %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ v.fecha|date:"d/m/Y H:i" }}</td>
+                    <td>{{ v.cliente }}</td>
+                    <td>${{ v.total|floatformat:2 }}</td>
+                    <td>${{ v.costo|floatformat:2 }}</td>
+                    <td class="{% if v.utilidad >= 0 %}utilidad{% else %}perdida{% endif %}">
+                        ${{ v.utilidad|floatformat:2 }}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6">No hay ventas en este periodo.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="footer">
+        © {{ now|date:"Y" }} FERREELECTRI PLUS &nbsp;|&nbsp; ferreeelectriplus@gmail.com
+    </div>
+</body>
+</html>

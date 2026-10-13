@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}FerreElectri PLUS | Ferretería eléctrica{% endblock %}
+{% block meta_description %}Compra materiales eléctricos, herramientas y productos de ferretería con stock real.{% endblock %}
+{% block og_title %}FerreElectri PLUS | Ferretería eléctrica{% endblock %}
+{% block og_description %}Productos eléctricos y herramientas con stock real, pagos seguros y soporte técnico.{% endblock %}
+
+{% block content %}
+<div class="w-full flex flex-col p-0 m-0">
+  {% if catalogo_activo %}
+  <style>
+    @keyframes fastSlideInRight {
+      0% { opacity: 0; transform: translateX(50px); }
+      100% { opacity: 1; transform: translateX(0); }
+    }
+    .anim-card {
+      animation: fastSlideInRight 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+      opacity: 0;
+    }
+    @keyframes sidebarFadeInLeft {
+      0% { opacity: 0; transform: translateX(-30px); }
+      100% { opacity: 1; transform: translateX(0); }
+    }
+    .anim-sidebar-first-load {
+      animation: sidebarFadeInLeft 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+    }
+    #catalog-sidebar {
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+    #catalog-sidebar.visible {
+      opacity: 1;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .anim-sidebar-first-load,
+      .anim-card {
+        animation: none;
+        opacity: 1;
+      }
+    }
+  </style>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const referrer = document.referrer || "";
+      const isInternal = referrer.includes("categoria=") || referrer.includes("vista=catalogo");
+      const sidebar = document.getElementById("catalog-sidebar");
+
+      if (sidebar) {
+        if (!isInternal) {
+          sidebar.classList.add("anim-sidebar-first-load");
+          sidebar.classList.add("visible");
+        } else {
+          sidebar.classList.add("visible");
+        }
+      }
+    });
+  </script>
+
+  <div class="flex min-h-screen w-full items-start flex-col gap-8 bg-slate-50 px-4 py-10 dark:bg-slate-950 sm:px-6 lg:flex-row lg:px-12">
+    <aside id="catalog-sidebar" class="sticky top-24 z-20 w-full flex-shrink-0 lg:w-1/4 xl:w-1/5">
+      <h3 class="mb-6 pl-2 text-xs font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">
+        {% if request.GET.categoria %}Filtrando: {{ request.GET.categoria }}{% else %}Catálogo completo{% endif %}
+      </h3>
+
+      <nav class="flex flex-col space-y-2" aria-label="Filtrar por categoría">
+        <a href="?vista=catalogo" class="block w-full rounded-xl border px-5 py-3.5 text-sm font-bold transition-all duration-200 {% if not request.GET.categoria %}border-blue-600 bg-blue-600 text-white shadow-lg shadow-blue-600/30{% else %}border-gray-200 bg-white text-slate-700 hover:bg-slate-100 dark:border-white/5 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800{% endif %}">
+            Todos los productos
+        </a>
+        {% for cat in categorias %}
+        <a href="?categoria={{ cat.slug }}" class="block w-full rounded-xl border px-5 py-3.5 text-sm font-bold transition-all duration-200 {% if request.GET.categoria == cat.slug %}border-blue-600 bg-blue-600 text-white shadow-lg shadow-blue-600/30{% else %}border-gray-200 bg-white text-slate-700 hover:bg-slate-100 dark:border-white/5 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800{% endif %}">
+            {{ cat.name }}
+        </a>
+        {% endfor %}
+      </nav>
+    </aside>
+
+    <section class="z-10 w-full lg:w-3/4 xl:w-4/5" aria-labelledby="filtered-products-title">
+        <h2 id="filtered-products-title" class="sr-only">{% if request.GET.categoria %}Productos de la categoría {{ request.GET.categoria }}{% else %}Catálogo completo{% endif %}</h2>
+        {% if productos %}
+        <div id="productos-grid" class="product-grid grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
+          {% for producto in productos %}
+          <div class="anim-card" style="animation-delay: calc({{ forloop.counter }} * 40ms);">
+            <a href="{% url 'producto_detalle' producto.Codigo %}" class="product-card group flex cursor-pointer flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-md transition-all duration-300 hover:-translate-y-1 hover:border-orange-500 hover:shadow-xl dark:border-slate-800 dark:bg-slate-900">
+              <div class="relative aspect-square overflow-hidden bg-white p-6"><img src="{% if producto.Imagen %}{{ producto.Imagen.url }}{% else %}{% static 'img/default-product.png' %}{% endif %}" alt="{{ producto.Descripcion }}" class="h-full w-full object-contain transition-transform duration-500 group-hover:scale-105"></div>
+              <div class="flex flex-1 flex-col justify-between bg-gray-50 p-5 dark:bg-slate-900"><span class="mb-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-gray-400">{% if producto.Cantidad > 0 %}Stock Disponible{% else %}Agotado{% endif %}</span><h3 class="mb-3 line-clamp-2 text-sm font-bold text-slate-900 dark:text-white">{{ producto.Descripcion }}</h3><p class="text-2xl font-black text-orange-500">${{ producto.Precio|default:'0.00'|floatformat:2 }}</p></div>
+            </a>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="anim-card rounded-2xl border border-dashed border-gray-300 bg-white p-12 text-center dark:border-slate-700 dark:bg-slate-900/50">
+          <p class="text-lg font-semibold text-slate-500 dark:text-slate-400">No hay productos disponibles en esta vista.</p>
+        </div>
+        {% endif %}
+      </section>
+    </div>
+  {% else %}
+  <section id="inicio" class="fade-in-element relative mt-0 flex min-h-[calc(100vh-70px)] w-full items-center justify-center overflow-hidden bg-white dark:bg-slate-950 opacity-0 translate-y-10 transition-all duration-700 ease-out">
+    <div class="grid w-full max-w-7xl grid-cols-1 items-center gap-12 px-6 md:grid-cols-2 md:px-12">
+      <div>
+        <span class="mb-4 block text-sm font-bold uppercase tracking-widest text-orange-500">FerreElectri PLUS</span>
+        <h1 class="mb-6 text-5xl font-black leading-tight text-slate-900 dark:text-white md:text-7xl">Todo lo que tu obra necesita, <span class="text-orange-500">en un solo lugar.</span></h1>
+        <p class="max-w-2xl text-lg leading-8 text-slate-600 dark:text-slate-400">Materiales eléctricos, herramientas y ferretería con stock real y atención técnica para comprar con confianza.</p>
+        <div class="mt-8 flex flex-wrap gap-3">
+          <a href="?vista=catalogo" class="inline-flex items-center rounded-xl bg-orange-500 px-5 py-3 font-bold text-white transition hover:bg-orange-600">Ver productos <i class="fa-solid fa-arrow-right ml-2" aria-hidden="true"></i></a>
+          <button type="button" data-search-toggle class="inline-flex items-center rounded-xl border border-slate-300 px-5 py-3 font-bold text-slate-700 transition hover:border-orange-400 hover:text-orange-500 dark:border-white/25 dark:text-white dark:hover:text-orange-400">Buscar producto <i class="fa-solid fa-magnifying-glass ml-2" aria-hidden="true"></i></button>
+        </div>
+      </div>
+      <div class="hero-mascot-stage relative flex min-h-[420px] items-center justify-center" aria-label="FerreBot, asistente de FerreElectri PLUS"></div>
+    </div>
+  </section>
+
+  <section id="categorias" class="fade-in-element w-full px-4 py-12 opacity-0 translate-y-10 transition-all duration-700 ease-out md:px-12">
+    <span class="text-xs font-bold uppercase tracking-[0.24em] text-orange-500">Explora por tipo</span>
+    <h2 class="mt-2 text-3xl font-black text-slate-900 dark:text-white">Categorías destacadas</h2>
+    <div class="group/board mt-6 grid w-full grid-cols-2 gap-6 px-4 py-12 md:grid-cols-4 lg:grid-cols-5">
+      {% for cat in categorias %}
+      <a href="?categoria={{ cat.slug }}" class="category-card group relative flex h-[248px] w-full flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white transition-all duration-300 ease-out hover:z-10 hover:-translate-y-1 hover:border-orange-500/80 hover:shadow-lg dark:border-white/5 dark:bg-slate-900 md:h-[290px]" aria-label="Ver categoría {{ cat.name }}">
+        <div class="relative flex h-[65%] w-full items-center justify-center overflow-hidden border-none bg-gray-100 outline-none ring-0 dark:bg-slate-800">
+          {% if cat.imagen_representativa_url %}
+            <img src="{{ cat.imagen_representativa_url }}" alt="Imagen de {{ cat.name }}" class="absolute inset-0 z-10 m-0 h-full w-full border-none p-0 object-cover opacity-85 outline-none ring-0 transition-transform duration-500 ease-out group-hover:scale-105">
+          {% else %}
+            <div class="category-placeholder relative z-10 flex h-full w-full items-center justify-center border-none bg-gray-100 outline-none ring-0 dark:bg-slate-800">
+              <svg class="h-12 w-12 text-blue-700 dark:text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+            </div>
+          {% endif %}
+          <div class="pointer-events-none absolute inset-0 z-20 border-none bg-gradient-to-t from-slate-950/55 via-slate-950/5 to-transparent outline-none ring-0 transition-opacity duration-300 group-hover:opacity-80"></div>
+          <div class="absolute inset-0 z-20 border-none bg-orange-500/0 outline-none ring-0 transition-colors duration-500 group-hover:bg-orange-500/10"></div>
+        </div>
+        <div class="relative z-30 flex h-[35%] w-full flex-col items-center justify-center border-none bg-gray-50 p-4 outline-none ring-0 dark:bg-slate-950">
+          <h3 class="text-center text-base font-black uppercase tracking-[0.15em] text-slate-900 transition-colors duration-300 group-hover:text-orange-500 dark:text-white dark:group-hover:text-orange-400 md:text-lg">{{ cat.name }}</h3>
+          <span class="mt-2 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Explorar</span>
+        </div>
+      </a>
+      {% empty %}<p class="text-slate-500">Explora nuestro catálogo completo.</p>{% endfor %}
+    </div>
+  </section>
+
+  <section id="seleccion-tienda" class="home-picks-section fade-in-element opacity-0 translate-y-10 transition-all duration-700 ease-out">
+    <div class="home-picks-grid">
+      <section id="promociones" class="home-picks-panel" data-home-picks-panel aria-labelledby="promociones-title">
+        <div class="home-picks-heading">
+          <div>
+            <span class="home-picks-kicker">Ofertas activas</span>
+            <h2 id="promociones-title">Promociones</h2>
+          </div>
+          {% if promociones|length > 3 %}
+          <button type="button" class="home-picks-toggle" data-home-picks-toggle aria-expanded="false" aria-controls="promociones-grid" title="Presiona aquí para ver más" data-show-more="Ver más" data-show-less="Ver menos">
+            <span class="home-picks-toggle-label">Ver más</span><span class="material-symbols-outlined" aria-hidden="true">expand_more</span>
+          </button>
+          {% endif %}
+        </div>
+        {% if promociones %}
+        <div id="promociones-grid" class="home-picks-products">
+          {% for producto in promociones %}
+          <a href="{% url 'producto_detalle' producto.Codigo %}" class="product-card home-pick-card{% if forloop.counter > 3 %} home-pick-card-more{% endif %}">
+            <div class="home-pick-image"><img src="{% if producto.Imagen %}{{ producto.Imagen.url }}{% else %}{% static 'img/default-product.png' %}{% endif %}" alt="{{ producto.Descripcion }}" loading="lazy"></div>
+            <div class="home-pick-info"><span class="home-pick-meta promotion-meta">Promoción</span><h3>{{ producto.Descripcion }}</h3><p>${{ producto.Precio|default:'0.00'|floatformat:2 }}</p></div>
+          </a>
+          {% endfor %}
+        </div>
+        {% else %}<p class="home-picks-empty">No hay promociones activas por ahora.</p>{% endif %}
+      </section>
+
+      <section id="mas-vendidos" class="home-picks-panel" data-home-picks-panel aria-labelledby="mas-vendidos-title">
+        <div class="home-picks-heading">
+          <div>
+            <span class="home-picks-kicker">Ventas confirmadas</span>
+            <h2 id="mas-vendidos-title">Más vendidos</h2>
+          </div>
+          {% if populares|length > 3 %}
+          <button type="button" class="home-picks-toggle" data-home-picks-toggle aria-expanded="false" aria-controls="mas-vendidos-grid" title="Presiona aquí para ver más" data-show-more="Ver más" data-show-less="Ver menos">
+            <span class="home-picks-toggle-label">Ver más</span><span class="material-symbols-outlined" aria-hidden="true">expand_more</span>
+          </button>
+          {% endif %}
+        </div>
+        {% if populares %}
+        <div id="mas-vendidos-grid" class="home-picks-products">
+          {% for producto in populares %}
+          <a href="{% url 'producto_detalle' producto.Codigo %}" class="product-card home-pick-card{% if forloop.counter > 3 %} home-pick-card-more{% endif %}">
+            <div class="home-pick-image"><img src="{% if producto.Imagen %}{{ producto.Imagen.url }}{% else %}{% static 'img/default-product.png' %}{% endif %}" alt="{{ producto.Descripcion }}" loading="lazy"></div>
+            <div class="home-pick-info"><span class="home-pick-meta">{{ producto.unidades_vendidas }} unidades vendidas</span><h3>{{ producto.Descripcion }}</h3><p>${{ producto.Precio|default:'0.00'|floatformat:2 }}</p></div>
+          </a>
+          {% endfor %}
+        </div>
+        {% else %}<p class="home-picks-empty">La selección aparecerá aquí a medida que se confirmen ventas.</p>{% endif %}
+      </section>
+    </div>
+  </section>
+  {% endif %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const revealItems = document.querySelectorAll('.fade-in-element, .product-card');
+  if (!('IntersectionObserver' in window)) {
+    revealItems.forEach((item) => item.classList.add('opacity-100', 'translate-y-0'));
+    return;
+  }
+  const observer = new IntersectionObserver((entries, currentObserver) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+      entry.target.classList.add('opacity-100', 'translate-y-0');
+      currentObserver.unobserve(entry.target);
+    });
+  }, { threshold: 0.12 });
+  revealItems.forEach((item) => observer.observe(item));
+});
+
+document.addEventListener('click', function (event) {
+  const button = event.target && event.target.closest
+    ? event.target.closest('[data-home-picks-toggle]')
+    : null;
+  if (!button) return;
+
+  const panel = button.closest('[data-home-picks-panel]');
+  if (!panel) return;
+  const expanded = button.getAttribute('aria-expanded') !== 'true';
+  panel.classList.toggle('is-expanded', expanded);
+  button.setAttribute('aria-expanded', String(expanded));
+  button.querySelector('.home-picks-toggle-label').textContent = expanded ? button.dataset.showLess : button.dataset.showMore;
+  button.querySelector('.material-symbols-outlined').textContent = expanded ? 'expand_less' : 'expand_more';
+});
+</script>
+{% endblock %}

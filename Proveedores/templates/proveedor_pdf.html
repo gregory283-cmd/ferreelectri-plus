@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Ficha de Proveedor</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #fff;
+            color: #222;
+            margin: 0;
+            padding: 0;
+        }
+        .pdf-container {
+            width: 90%;
+            max-width: 600px;
+            margin: 30px auto;
+            border: 2px solid #00b2ff;
+            padding: 24px 28px;
+        }
+        .pdf-title {
+            color: #00b2ff;
+            text-align: center;
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 24px;
+            border-bottom: 1px solid #00b2ff;
+            padding-bottom: 10px;
+            letter-spacing: 1px;
+        }
+        .pdf-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 0 auto 20px auto;
+        }
+        .pdf-table td {
+            padding: 10px 4px;
+            vertical-align: middle;
+            font-size: 1.08em;
+        }
+        .pdf-label {
+            color: #00b2ff;
+            font-weight: bold;
+            width: 170px;
+            padding-right: 10px;
+            text-align: right;
+            font-size: 1em;
+        }
+        .pdf-value {
+            color: #222;
+            font-size: 1em;
+        }
+        .pdf-icon {
+            font-size: 1.2em;
+            margin-right: 7px;
+            vertical-align: middle;
+        }
+        .pdf-footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #888;
+            font-size: 0.95em;
+            border-top: 1px solid #eee;
+            padding-top: 10px;
+            letter-spacing: 1px;
+        }
+    </style>
+    {% include 'reportes/pdf_design.html' %}
+</head>
+<body>
+    <div class="pdf-container">
+        <div class="pdf-title">Ficha de Proveedor</div>
+        <table class="pdf-table">
+            <tr>
+                <td class="pdf-label"><span class="pdf-icon">&#128100;</span>Nombre:</td>
+                <td class="pdf-value">{{ proveedor.nombre }}</td>
+            </tr>
+            <tr>
+                <td class="pdf-label"><span class="pdf-icon">&#128221;</span>Cédula:</td>
+                <td class="pdf-value">{{ proveedor.cedula }}</td>
+            </tr>
+            <tr>
+                <td class="pdf-label"><span class="pdf-icon">&#128222;</span>Teléfono:</td>
+                <td class="pdf-value">{{ proveedor.telefono }}</td>
+            </tr>
+            <tr>
+                <td class="pdf-label"><span class="pdf-icon">&#127968;</span>Dirección:</td>
+                <td class="pdf-value">{{ proveedor.direccion }}</td>
+            </tr>
+            <tr>
+                <td class="pdf-label"><span class="pdf-icon">&#9993;</span>Email:</td>
+                <td class="pdf-value">{{ proveedor.email }}</td>
+            </tr>
+            <tr>
+                <td class="pdf-label"><span class="pdf-icon">&#9200;</span>Registro:</td>
+                <td class="pdf-value">{{ proveedor.Fecha_registro }}</td>
+            </tr>
+        </table>
+        <div class="pdf-footer">
+            Reporte generado por FERREELECTRI PLUS — {{ now|date:"d/m/Y H:i" }}
+        </div>
+    </div>
+</body>
+</html>

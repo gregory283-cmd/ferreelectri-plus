@@ -1,0 +1,214 @@
+{% extends 'base/pan_con_queso.html' %}
+{% load static %}
+
+{% block arroz_con_pollo %}
+    <style>
+        {% comment %}
+        :root {
+            color-scheme: dark;
+            font-family: 'Inter', Arial, sans-serif;
+            background: radial-gradient(circle at top left, rgba(56,189,248,0.16), transparent 24%),
+                        radial-gradient(circle at bottom right, rgba(16,185,129,0.12), transparent 22%),
+                        #0f172a;
+            color: #e2e8f0;
+        }
+        * { box-sizing: border-box; }
+        body { margin: 0; min-height: 100vh; }
+        .page-shell { width: calc(100% - 20px); max-width: none; margin: 0 auto; padding: 12px 10px; min-width: 0; }
+        .panel { width: 100%; max-width: none; background: rgba(15,23,42,0.94); border: 1px solid rgba(255,255,255,0.06); border-radius: 32px; box-shadow: 0 32px 80px rgba(15,23,42,0.35); backdrop-filter: blur(24px); overflow: hidden; margin: 0 auto; }
+        .panel-header { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: space-between; padding: 32px 36px 24px; }
+        .page-title { margin: 0; color: #f8fafc; font-size: clamp(1.8rem, 2.4vw, 2.6rem); letter-spacing: -0.03em; }
+        .page-subtitle { margin: 8px 0 0; color: #cbd5e1; font-size: 0.95rem; max-width: 720px; }
+        .quick-actions { display: flex; flex-wrap: wrap; gap: 0.9rem; align-items: center; }
+        .btn-pill { display: inline-flex; align-items: center; gap: 0.6rem; border-radius: 999px; padding: 0.95rem 1.2rem; font-weight: 700; font-size: 0.95rem; border: 1px solid rgba(148,163,184,0.2); transition: all 0.2s ease; text-decoration: none; }
+        .btn-pill.primary { color: #0f172a; background: #38bdf8; }
+        .btn-pill.secondary { color: #e2e8f0; background: rgba(148,163,184,0.16); }
+        .btn-pill:hover { transform: translateY(-1px); box-shadow: 0 18px 48px rgba(56,189,248,0.18); }
+        .metrics-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; padding: 0 36px; margin-top: 20px; }
+        .metric-card { background: rgba(15,23,42,0.82); border: 1px solid rgba(148,163,184,0.12); border-radius: 24px; padding: 22px 24px; backdrop-filter: blur(16px); display: flex; justify-content: space-between; align-items: center; gap: 14px; }
+        .metric-label { color: #94a3b8; font-size: 0.85rem; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 700; margin-bottom: 6px; }
+        .metric-value { color: #f8fafc; font-size: 2rem; font-weight: 800; line-height: 1; }
+        .metric-note { color: #cbd5e1; font-size: 0.95rem; }
+        .filter-bar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; padding: 28px 36px 0; }
+        .filter-tabs { display: flex; flex-wrap: wrap; gap: 10px; }
+        .filter-tab { padding: 0.95rem 1.3rem; border-radius: 999px; border: 1px solid rgba(148,163,184,0.16); color: #cbd5e1; text-decoration: none; font-size: 0.95rem; transition: all 0.2s ease; }
+        .filter-tab.active { background: rgba(56,189,248,0.14); color: #38bdf8; border-color: rgba(56,189,248,0.28); }
+        .filter-tab:hover { background: rgba(255,255,255,0.08); }
+        .search-box { display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(148,163,184,0.12); border-radius: 18px; padding: 12px 16px; width: min(100%, 380px); }
+        .search-box input { width: 100%; background: transparent; border: none; outline: none; color: #f8fafc; font-size: 0.95rem; }
+        .search-box i { color: #38bdf8; }
+        .content-block { padding: 24px 36px 32px; }
+        .table-wrapper { width: 100%; overflow-x: auto; }
+        table { width: 100%; border-collapse: separate; border-spacing: 0 18px; min-width: 1000px; }
+        thead th { text-align: left; color: #cbd5e1; font-size: 0.85rem; letter-spacing: 0.12em; text-transform: uppercase; padding: 16px 18px; background: transparent; border-bottom: 1px solid rgba(148,163,184,0.14); }
+        tbody tr { background: rgba(15,23,42,0.85); transition: all 0.25s ease; box-shadow: 0 10px 40px rgba(15,23,42,0.18); border-radius: 20px; }
+        tbody tr:hover { transform: translateY(-2px); background: rgba(51,65,85,0.96); }
+        tbody td { padding: 18px 18px; vertical-align: middle; color: #e2e8f0; border: none; }
+        .badge { display: inline-flex; align-items: center; gap: 0.35rem; border-radius: 999px; padding: 0.65rem 0.9rem; font-size: 0.85rem; font-weight: 700; }
+        .badge-pending { background: rgba(245,158,11,0.16); color: #f59e0b; }
+        .badge-approved { background: rgba(16,185,129,0.16); color: #10b981; }
+        .badge-rejected { background: rgba(239,68,68,0.16); color: #ef4444; }
+        .badge-default { background: rgba(148,163,184,0.14); color: #cbd5e1; }
+        .action-group { display: inline-flex; gap: 0.5rem; flex-wrap: wrap; }
+        .icon-btn { width: 42px; height: 42px; border-radius: 14px; border: 1px solid rgba(148,163,184,0.16); background: rgba(255,255,255,0.04); color: #e2e8f0; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease; }
+        .icon-btn:hover { transform: translateY(-1px); background: rgba(255,255,255,0.12); border-color: rgba(56,189,248,0.28); }
+        .icon-btn.approve { color: #10b981; }
+        .icon-btn.reject { color: #ef4444; }
+        .icon-btn.view { color: #38bdf8; }
+        .icon-btn[disabled] { opacity: 0.45; cursor: not-allowed; }
+        .tooltip { position: relative; }
+        .tooltip span { position: absolute; bottom: 130%; left: 50%; transform: translateX(-50%); white-space: nowrap; background: rgba(15,23,42,0.96); color: #f8fafc; padding: 0.45rem 0.7rem; border-radius: 999px; font-size: 0.78rem; opacity: 0; pointer-events: none; transition: opacity 0.2s ease; z-index: 10; }
+        .tooltip:hover span { opacity: 1; }
+        .pagination { display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-top: 24px; flex-wrap: wrap; }
+        .pagination a, .pagination span { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; height: 44px; border-radius: 14px; border: 1px solid rgba(148,163,184,0.12); color: #cbd5e1; text-decoration: none; padding: 0 14px; font-size: 0.95rem; }
+        .pagination .active { background: rgba(56,189,248,0.16); border-color: rgba(56,189,248,0.28); color: #38bdf8; }
+        .pagination .disabled { opacity: 0.45; cursor: not-allowed; }
+        @media (max-width: 992px) {
+            .metrics-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .page-title { font-size: 2rem; }
+            .filter-bar { flex-direction: column; align-items: stretch; }
+            .search-box { width: 100%; }
+            .table-wrapper { overflow-x: scroll; }
+        }
+        {% endcomment %}
+    </style>
+    <link rel="stylesheet" href="{% static 'css/admin-orders.css' %}?v=20261010-search-bcv">
+    <main class="orders-workspace">
+    <div class="page-shell">
+        <div class="panel">
+            <div class="panel-header">
+                <div>
+                    <span class="orders-eyebrow"><i class="fas fa-layer-group" aria-hidden="true"></i> OPERACIONES · PEDIDOS</span>
+                    <h1 class="page-title">Historial Global de Pedidos</h1>
+                    <p class="page-subtitle">Revisa cada solicitud, valida el estado y accede a la ficha completa del cliente.</p>
+                </div>
+                <div class="quick-actions">
+                    <a href="{% url 'admin_dashboard' %}" class="btn-pill secondary"><i class="fas fa-arrow-left" aria-hidden="true"></i> Panel</a>
+                    <a href="{% url 'admin_historial_pedidos' %}{% if request.GET.estado or request.GET.q %}?{% if request.GET.estado %}estado={{ request.GET.estado|urlencode }}{% endif %}{% if request.GET.estado and request.GET.q %}&amp;{% endif %}{% if request.GET.q %}q={{ request.GET.q|urlencode }}{% endif %}{% endif %}" class="btn-pill primary"><i class="fas fa-rotate" aria-hidden="true"></i> Actualizar</a>
+                </div>
+            </div>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <span class="metric-icon icon-total"><i class="fas fa-receipt" aria-hidden="true"></i></span>
+                    <div>
+                        <div class="metric-label">Pedidos registrados</div>
+                        <div class="metric-value">{{ orders_total }}</div>
+                    </div>
+                    <div class="metric-note">En todas las páginas</div>
+                </div>
+                <div class="metric-card">
+                    <span class="metric-icon icon-pending"><i class="fas fa-hourglass-half" aria-hidden="true"></i></span>
+                    <div>
+                        <div class="metric-label">Por revisar</div>
+                        <div class="metric-value">{{ orders_pending }}</div>
+                    </div>
+                    <div class="metric-note">Pedidos pendientes de decisión</div>
+                </div>
+                <div class="metric-card">
+                    <span class="metric-icon icon-approved"><i class="fas fa-circle-check" aria-hidden="true"></i></span>
+                    <div>
+                        <div class="metric-label">Aprobados</div>
+                        <div class="metric-value">{{ orders_approved }}</div>
+                    </div>
+                    <div class="metric-note">Pagados o enviados</div>
+                </div>
+                <div class="metric-card">
+                    <span class="metric-icon icon-customers"><i class="fas fa-users" aria-hidden="true"></i></span>
+                    <div>
+                        <div class="metric-label">Clientes únicos</div>
+                        <div class="metric-value">{{ orders_customers }}</div>
+                    </div>
+                    <div class="metric-note">Compradores con pedidos</div>
+                </div>
+            </div>
+            <div class="orders-context-line"><span class="status-dot"></span> Último pedido <strong>{% if orders_latest_date %}{{ orders_latest_date|date:'d M Y · H:i' }}{% else %}Sin pedidos{% endif %}</strong><span class="context-divider"></span><span>{{ pedidos.paginator.count }} resultado{{ pedidos.paginator.count|pluralize }} en esta vista</span></div>
+            {% if messages %}
+                {% for message in messages %}
+                    {% if 'admin-action' in message.tags %}
+                        <div class="admin-message admin-message-{{ message.level_tag }}" role="status">{{ message }}</div>
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+            <div class="filter-bar">
+                <div class="filter-tabs">
+                    <a href="?" class="filter-tab {% if not request.GET.estado %}active{% endif %}">Todos <span>{{ orders_total }}</span></a>
+                    <a href="?estado=pendiente" class="filter-tab {% if request.GET.estado == 'pendiente' %}active{% endif %}">Pendientes <span>{{ orders_pending }}</span></a>
+                    <a href="?estado=aprobado" class="filter-tab {% if request.GET.estado == 'aprobado' %}active{% endif %}">Aprobados <span>{{ orders_approved }}</span></a>
+                    <a href="?estado=cancelado" class="filter-tab {% if request.GET.estado == 'cancelado' %}active{% endif %}">Rechazados <span>{{ orders_rejected }}</span></a>
+                </div>
+                <form method="get" class="search-box" action="{% url 'historial_pedidos_admin' %}">
+                    {% if request.GET.estado %}<input type="hidden" name="estado" value="{{ request.GET.estado }}">{% endif %}
+                    <label class="search-label" for="order-search"><span class="material-symbols-outlined" aria-hidden="true">manage_search</span> Buscar pedidos</label>
+                    <div class="search-field">
+                        <span class="material-symbols-outlined search-field-icon" aria-hidden="true">search</span>
+                        <input id="order-search" type="search" name="q" placeholder="Número, cliente o correo" value="{{ request.GET.q|default:'' }}" autocomplete="off">
+                        <button class="search-submit" type="submit"><span>Buscar</span><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></button>
+                    </div>
+                </form>
+            </div>
+            <div class="content-block">
+                <div class="orders-list" aria-label="Pedidos encontrados">
+                    {% for pedido in pedidos %}
+                    <article class="order-card" style="--row-index: {{ forloop.counter0 }}">
+                        <div class="order-card-heading">
+                            <a class="order-reference" href="{% url 'detalle_pedido_admin' pedido.id %}">Pedido #{{ pedido.id }}<span>Ver ficha completa <i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i></span></a>
+                            {% if pedido.estado == 'pendiente' %}
+                                <span class="badge badge-pending"><i class="fas fa-hourglass-half" aria-hidden="true"></i> Pendiente</span>
+                            {% elif pedido.estado == 'pagado' %}
+                                <span class="badge badge-approved"><i class="fas fa-check-circle" aria-hidden="true"></i> Pagado</span>
+                            {% elif pedido.estado == 'enviado' %}
+                                <span class="badge badge-approved"><i class="fas fa-truck-fast" aria-hidden="true"></i> Enviado</span>
+                            {% elif pedido.estado == 'cancelado' %}
+                                <span class="badge badge-rejected"><i class="fas fa-times-circle" aria-hidden="true"></i> Rechazado</span>
+                            {% else %}
+                                <span class="badge badge-default">{{ pedido.estado|capfirst }}</span>
+                            {% endif %}
+                        </div>
+                        <div class="customer-cell"><span class="customer-avatar">{{ pedido.cliente.first_name|default:pedido.cliente.username|slice:':1'|upper }}</span><span><strong>{{ pedido.cliente.get_full_name|default:pedido.cliente.email }}</strong><small>{{ pedido.cliente.email }}</small></span></div>
+                        <div class="order-card-meta">
+                            <div><span>Solicitado</span><time datetime="{{ pedido.fecha_creacion|date:'c' }}">{{ pedido.fecha_creacion|date:'d/m/Y · H:i' }}</time></div>
+                            <div><span>Total del pedido</span><strong class="order-total">$ {{ pedido.total|floatformat:2 }}</strong></div>
+                        </div>
+                        <div class="action-group">
+                            {% if perms.dashboard.verify_order_payments %}
+                            <form method="post" action="{% url 'aprobar_pedido' pedido.id %}">
+                                {% csrf_token %}
+                                <button type="submit" class="icon-btn approve" title="Aprobar y facturar" aria-label="Aprobar pedido {{ pedido.id }}" data-confirm="¿Aprobar el pedido #{{ pedido.id }} y generar su factura?" {% if pedido.estado != 'pendiente' %}disabled{% endif %}>
+                                    <i class="fas fa-check" aria-hidden="true"></i><span class="action-label">Aprobar y facturar</span>
+                                </button>
+                            </form>
+                            <form method="post" action="{% url 'rechazar_pedido' pedido.id %}">
+                                {% csrf_token %}
+                                <button type="submit" class="icon-btn reject" title="Rechazar pedido" aria-label="Rechazar pedido {{ pedido.id }}" data-confirm="¿Rechazar el pedido #{{ pedido.id }}? Esta acción no se puede deshacer." {% if pedido.estado != 'pendiente' %}disabled{% endif %}>
+                                    <i class="fas fa-xmark" aria-hidden="true"></i><span class="action-label">Rechazar</span>
+                                </button>
+                            </form>
+                            {% endif %}
+                            <a href="{% url 'detalle_pedido_admin' pedido.id %}" class="icon-btn view" title="Ver ficha completa" aria-label="Ver ficha del pedido {{ pedido.id }}">
+                                <i class="fas fa-eye" aria-hidden="true"></i><span class="action-label">Abrir ficha</span>
+                            </a>
+                        </div>
+                    </article>
+                    {% empty %}
+                    <div class="orders-empty"><span class="material-symbols-outlined" aria-hidden="true">inbox</span><strong>No hay pedidos para mostrar</strong><span>Prueba otro estado o ajusta la búsqueda.</span></div>
+                    {% endfor %}
+                </div>
+                <div class="pagination">
+                    {% if pedidos.has_previous %}
+                        <a href="?page={{ pedidos.previous_page_number }}{% if request.GET.estado %}&estado={{ request.GET.estado }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q|urlencode }}{% endif %}">Anterior</a>
+                    {% else %}
+                        <span class="disabled">Anterior</span>
+                    {% endif %}
+                    <span class="active">{{ pedidos.number }}</span>
+                    {% if pedidos.has_next %}
+                        <a href="?page={{ pedidos.next_page_number }}{% if request.GET.estado %}&estado={{ request.GET.estado }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q|urlencode }}{% endif %}">Siguiente</a>
+                    {% else %}
+                        <span class="disabled">Siguiente</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    </main>
+    <script src="{% static 'js/admin-orders.js' %}?v=20261010-order-polish"></script>
+{% endblock %}

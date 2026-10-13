@@ -1,0 +1,2183 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>{% block title %}{{ racismo|default:'FerreElectri PLUS' }}{% endblock %}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/estilos.css' %}">
+    <style>
+        :root {
+            --azul-principal: #0d6efd;
+            --azul-secundario: #1976d2;
+            --azul-oscuro: #081c3b;
+            --amarillo-acento: #ffca28;
+            --amarillo-soft: #fff8e1;
+            --verde-acento: #43e97b;
+            --fondo-glass: rgba(255,255,255,0.22);
+            --borde-glass: rgba(13,110,253,0.18);
+            --sombra-glass: 0 14px 48px rgba(13,110,253,0.14);
+            --fondo-panel: linear-gradient(135deg, #e8f5ff 0%, #fff9e0 100%);
+            --fondo-panel-hover: linear-gradient(135deg, #f3faff 0%, #fff8df 100%);
+            --fuente: 'Inter', 'Poppins', Arial, sans-serif;
+            --page-bg: linear-gradient(180deg, #e9f5ff 0%, #fef7df 100%);
+            --body-bg: #eff7ff;
+            --text-primary: #081f3d;
+            --text-secondary: #4a6d96;
+            --text-muted: #5f6c78;
+            --surface: rgba(255,255,255,0.94);
+            --surface-soft: rgba(255,255,255,0.80);
+            --input-bg: rgba(255,255,255,0.92);
+            --panel-border: rgba(13,110,253,0.16);
+            --panel-shadow: 0 24px 70px rgba(15,40,65,0.08);
+            --btn-bg: linear-gradient(90deg, var(--azul-principal) 0%, var(--amarillo-acento) 100%);
+            --btn-text: #ffffff;
+            --table-bg: rgba(255,255,255,0.96);
+            --table-row: rgba(227,245,255,0.88);
+            --navbar-bg: linear-gradient(180deg, #0c405e 0%, #075a76 56%, #087a88 100%);
+            --sidebar-shadow: 18px 0 42px rgba(2,48,89,0.13);
+            --card-bg: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+            --card-border: 1px solid rgba(13,110,253,0.14);
+            --primary: var(--azul-principal);
+            --primary-dark: var(--azul-secundario);
+            --border: rgba(13,110,253,0.18);
+            --shadow: 0 24px 70px rgba(15,40,65,0.08);
+            --text: var(--text-primary);
+            --main-color: var(--azul-principal);
+            --text-grey: #7a889a;
+        }
+        .admin-utility-dock {
+            position: fixed;
+            right: 20px;
+            bottom: 20px;
+            z-index: 16000;
+        }
+        .admin-utility-toggle {
+            position: relative;
+            display: grid;
+            place-items: center;
+            width: 54px;
+            height: 54px;
+            padding: 0;
+            border: 1px solid rgba(255,255,255,0.24);
+            border-radius: 18px 18px 5px 18px;
+            background: linear-gradient(145deg, #12375a, #0b1a30);
+            color: #f3f8ff;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.3);
+            cursor: pointer;
+            transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+        }
+        .admin-utility-toggle:hover,
+        .admin-utility-toggle[aria-expanded="true"] {
+            transform: translateY(-2px);
+            border-color: rgba(96,165,250,0.72);
+            box-shadow: 0 16px 36px rgba(0,0,0,0.36);
+        }
+        .admin-utility-toggle .material-symbols-outlined {
+            margin: 0;
+            font-size: 24px;
+        }
+        .admin-utility-hint {
+            position: absolute;
+            right: calc(100% + 10px);
+            top: 50%;
+            width: max-content;
+            max-width: 180px;
+            padding: 8px 11px;
+            border: 1px solid rgba(255,255,255,0.14);
+            border-radius: 10px;
+            background: rgba(8,18,32,0.96);
+            color: #eef4ff;
+            font-size: .8rem;
+            font-weight: 650;
+            box-shadow: 0 8px 22px rgba(0,0,0,0.22);
+            opacity: 0;
+            visibility: hidden;
+            transform: translate(5px,-50%);
+            transition: opacity .18s ease, transform .18s ease, visibility .18s ease;
+            pointer-events: none;
+        }
+        .admin-utility-toggle:hover .admin-utility-hint,
+        .admin-utility-toggle:focus-visible .admin-utility-hint {
+            opacity: 1;
+            visibility: visible;
+            transform: translate(0,-50%);
+        }
+        .admin-utility-panel {
+            position: absolute;
+            right: 0;
+            bottom: calc(100% + 12px);
+            z-index: 1;
+            display: grid;
+            gap: 7px;
+            width: 236px;
+            max-height: 45vh;
+            overflow-y: auto;
+            padding: 9px;
+            border: 1px solid rgba(255,255,255,0.16);
+            border-radius: 15px;
+            background: rgba(8,18,32,0.97);
+            box-shadow: 0 16px 38px rgba(0,0,0,0.32);
+            backdrop-filter: blur(18px);
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transform: translateY(7px) scale(.98);
+            transform-origin: bottom right;
+            transition: opacity .18s ease, transform .18s ease, visibility .18s ease;
+        }
+        .admin-utility-dock.is-open .admin-utility-panel {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+            transform: translateY(0) scale(1);
+        }
+        .admin-utility-dock.is-help-open .admin-utility-panel {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+        .theme-toggle-btn,
+        .utility-credit-link,
+        #help-floating-btn {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 10px;
+            width: 100%;
+            min-height: 40px;
+            padding: 8px 10px;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            background: rgba(255,255,255,0.055);
+            color: rgba(255,255,255,0.92);
+            font: inherit;
+            font-size: .86rem;
+            font-weight: 700;
+            text-decoration: none;
+            cursor: pointer;
+            transition: background .18s ease, border-color .18s ease, transform .18s ease;
+        }
+        .theme-toggle-btn:hover,
+        .utility-credit-link:hover,
+        #help-floating-btn:hover {
+            background: rgba(59,130,246,0.18);
+            border-color: rgba(96,165,250,0.38);
+            transform: translateX(1px);
+        }
+        .utility-credit-link svg { width: 20px; height: 20px; flex: 0 0 auto; }
+        :root[data-theme="light"] {
+            --utility-surface: #ffffff;
+            --utility-raised: #eef4f7;
+            --utility-line: #d6e1e8;
+            --utility-text: #193247;
+            --utility-muted: #587083;
+        }
+        :root[data-theme="dark"] {
+            --utility-surface: #101c2b;
+            --utility-raised: #1a2a3b;
+            --utility-line: #304255;
+            --utility-text: #edf4fb;
+            --utility-muted: #a6b7c8;
+            --navbar-bg: linear-gradient(180deg, #0a111a 0%, #101b27 56%, #142535 100%);
+            --sidebar-shadow: 18px 0 42px rgba(0,0,0,0.32);
+        }
+        .admin-utility-panel,
+        :root[data-theme="light"] .admin-utility-panel,
+        :root[data-theme="dark"] .admin-utility-panel {
+            border-color: var(--utility-line) !important;
+            background: var(--utility-surface) !important;
+            box-shadow: 0 16px 38px rgba(0,0,0,0.24);
+        }
+        .admin-utility-panel .theme-toggle-btn,
+        .admin-utility-panel .utility-credit-link,
+        .admin-utility-panel #help-floating-btn {
+            border-color: var(--utility-line) !important;
+            background: var(--utility-raised) !important;
+            color: var(--utility-text) !important;
+        }
+        .admin-utility-panel .theme-toggle-btn {
+            background: var(--utility-surface) !important;
+            color: var(--utility-text) !important;
+        }
+        .admin-utility-panel .theme-toggle-btn .material-symbols-outlined,
+        .admin-utility-panel .utility-credit-link svg,
+        .admin-utility-panel #help-floating-btn .material-symbols-outlined { color: var(--utility-muted) !important; }
+        :root[data-theme="light"] .admin-utility-panel .theme-toggle-btn,
+        :root[data-theme="light"] .admin-utility-panel .utility-credit-link,
+        :root[data-theme="light"] .admin-utility-panel #help-floating-btn { color: #193247 !important; }
+        :root[data-theme="dark"] .admin-utility-panel .theme-toggle-btn,
+        :root[data-theme="dark"] .admin-utility-panel .utility-credit-link,
+        :root[data-theme="dark"] .admin-utility-panel #help-floating-btn { color: #edf4fb !important; }
+        .admin-utility-panel .theme-toggle-btn:hover,
+        .admin-utility-panel .utility-credit-link:hover,
+        .admin-utility-panel #help-floating-btn:hover {
+            border-color: rgba(72,201,223,.5) !important;
+            background: var(--orders-accent-soft, rgba(72,201,223,.13)) !important;
+            color: var(--utility-text) !important;
+            transform: translateY(-1px);
+        }
+        @media (max-width: 700px) {
+            .admin-utility-dock { right: 14px; bottom: 14px; }
+            .admin-utility-toggle { width: 50px; height: 50px; border-radius: 17px 17px 5px 17px; }
+            .admin-utility-panel { width: min(236px, calc(100vw - 28px)); }
+        }
+        html, body {
+            min-height: 100%;
+            background: var(--page-bg);
+            color: var(--text);
+            font-family: var(--fuente);
+            transition: background 0.25s ease, color 0.25s ease;
+        }
+        body { margin: 0; padding: 0; }
+
+        :root[data-theme="dark"] {
+            --page-bg: #07111f;
+            --body-bg: #07111f;
+            --text-primary: #f5f8ff;
+            --text-secondary: #a7c4ff;
+            --text-muted: #a1b1d3;
+            --surface: rgba(10, 14, 26, 0.96);
+            --surface-soft: rgba(12, 18, 36, 0.92);
+            --input-bg: rgba(255,255,255,0.04);
+            --panel-border: rgba(86,150,255,0.18);
+            --panel-shadow: 0 30px 90px rgba(0, 0, 0, 0.55);
+            --btn-bg: linear-gradient(135deg, #1470ff 0%, #021129 100%);
+            --btn-text: #f8fbff;
+            --table-bg: rgba(10, 14, 26, 0.95);
+            --table-row: rgba(255,255,255,0.03);
+            --navbar-bg: linear-gradient(180deg, #0a111a 0%, #101b27 56%, #142535 100%);
+            --sidebar-shadow: 18px 0 60px rgba(0, 0, 0, 0.48);
+            --card-bg: linear-gradient(180deg, rgba(8, 13, 24, 0.96), rgba(12, 19, 40, 0.96));
+            --card-border: 1px solid rgba(86,150,255,0.16);
+            --primary: var(--main-color);
+            --primary-dark: #7abaff;
+            --border: rgba(255,255,255,0.12);
+            --shadow: 0 24px 80px rgba(0,0,0,0.4);
+            --text: var(--text-primary);
+            --main-color: #7abaff;
+            --text-grey: #94a7c0;
+        }
+        :root[data-theme="dark"] body,
+        :root[data-theme="dark"] html {
+            background: var(--page-bg);
+            color: var(--text-primary);
+        }
+        :root[data-theme="dark"] main,
+        :root[data-theme="dark"] .main-content,
+        :root[data-theme="dark"] .activity-card,
+        :root[data-theme="dark"] .summary-card,
+        :root[data-theme="dark"] .summary-card-modern,
+        :root[data-theme="dark"] .bday-card,
+        :root[data-theme="dark"] .glass-panel,
+        :root[data-theme="dark"] .table-glass,
+        :root[data-theme="dark"] .table-responsive,
+        :root[data-theme="dark"] .chart-container,
+        :root[data-theme="dark"] .dashboard-actions,
+        :root[data-theme="dark"] .dash-cards {
+            background: rgba(8, 18, 35, 0.92) !important;
+            border-color: rgba(255,255,255,0.08) !important;
+            color: var(--text-primary) !important;
+        }
+        :root[data-theme="dark"] .dashboard-actions {
+            background: rgba(0, 121, 179, 0.22) !important;
+            border: 1px solid rgba(255,255,255,0.1) !important;
+            color: var(--text-primary) !important;
+        }
+        :root[data-theme="dark"] .inventario-main,
+        :root[data-theme="dark"] .clientes-main,
+        :root[data-theme="dark"] .proveedores-main,
+        :root[data-theme="dark"] .ventas-main,
+        :root[data-theme="dark"] .compras-main,
+        :root[data-theme="dark"] .inventario-summary-card,
+        :root[data-theme="dark"] .inventario-table-container,
+        :root[data-theme="dark"] .summary-card-modern,
+        :root[data-theme="dark"] .card-single,
+        :root[data-theme="dark"] .chart-container,
+        :root[data-theme="dark"] .glass-panel,
+        :root[data-theme="dark"] .table-responsive,
+        :root[data-theme="dark"] .main-content table,
+        :root[data-theme="dark"] .activity-card table,
+        :root[data-theme="dark"] .form-card,
+        :root[data-theme="dark"] .content-box,
+        :root[data-theme="dark"] .content-wrapper,
+        :root[data-theme="dark"] .panel,
+        :root[data-theme="dark"] .panel-body,
+        :root[data-theme="dark"] .box,
+        :root[data-theme="dark"] .box-body,
+        :root[data-theme="dark"] .container,
+        :root[data-theme="dark"] .table,
+        :root[data-theme="dark"] .dashboard-actions {
+            background: rgba(10, 18, 34, 0.95) !important;
+            border-color: rgba(255,255,255,0.12) !important;
+            color: var(--text-primary) !important;
+        }
+        :root[data-theme="dark"] .inventario-form-search input[type="text"],
+        :root[data-theme="dark"] .main-content input,
+        :root[data-theme="dark"] .main-content textarea,
+        :root[data-theme="dark"] .main-content select,
+        :root[data-theme="dark"] .salir,
+        :root[data-theme="dark"] .inventario-btn-nuevo,
+        :root[data-theme="dark"] .btn-flotante-mov,
+        :root[data-theme="dark"] .report-buttons a {
+            background: rgba(10,18,34,0.90) !important;
+            border-color: rgba(255,255,255,0.12) !important;
+            color: var(--text-primary) !important;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.3) !important;
+        }
+        :root[data-theme="dark"] .inventario-form-search input[type="text"],
+        :root[data-theme="dark"] input,
+        :root[data-theme="dark"] textarea,
+        :root[data-theme="dark"] select {
+            background: rgba(255,255,255,0.05) !important;
+            color: var(--text-primary) !important;
+            border-color: rgba(255,255,255,0.18) !important;
+        }
+        :root[data-theme="dark"] thead tr,
+        :root[data-theme="dark"] th,
+        :root[data-theme="dark"] td,
+        :root[data-theme="dark"] tbody tr {
+            color: var(--text-primary) !important;
+        }
+        :root[data-theme="dark"] tbody tr {
+            background: transparent !important;
+        }
+        :root[data-theme="dark"] tbody tr:nth-child(even) {
+            background: rgba(255,255,255,0.04) !important;
+        }
+        :root[data-theme="dark"] tbody tr:hover {
+            background: rgba(255,255,255,0.08) !important;
+        }
+        :root[data-theme="dark"] .table-responsive {
+            background: transparent !important;
+        }
+        :root[data-theme="dark"] .main-content table tbody tr td,
+        :root[data-theme="dark"] .activity-card table tbody tr td,
+        :root[data-theme="dark"] .tabla-facturas tbody tr td {
+            background: transparent !important;
+            color: var(--text-primary) !important;
+        }
+        :root[data-theme="dark"] .main-content [style*="background: #fff"],
+        :root[data-theme="dark"] .main-content [style*="background:#fff"],
+        :root[data-theme="dark"] .main-content [style*="background-color: #fff"],
+        :root[data-theme="dark"] .main-content [style*="background-color:#fff"],
+        :root[data-theme="dark"] .main-content [style*="background: #ffffff"],
+        :root[data-theme="dark"] .main-content [style*="background:#ffffff"],
+        :root[data-theme="dark"] .main-content [style*="background-color: #ffffff"],
+        :root[data-theme="dark"] .main-content [style*="background-color:#ffffff"],
+        :root[data-theme="dark"] .main-content [style*="background: white"],
+        :root[data-theme="dark"] .main-content [style*="background:white"],
+        :root[data-theme="dark"] .main-content [style*="background-color: white"],
+        :root[data-theme="dark"] .main-content [style*="background-color:white"],
+        :root[data-theme="dark"] .main-content [style*="background: #fffbe7"],
+        :root[data-theme="dark"] .main-content [style*="background:#fffbe7"],
+        :root[data-theme="dark"] .main-content [style*="background: rgba(255,255,255,0.92)"],
+        :root[data-theme="dark"] .main-content [style*="background: rgba(255,255,255,0.97)"],
+        :root[data-theme="dark"] .main-content [style*="background: rgba(255,255,255,0.82)"] {
+            background-color: rgba(10, 18, 34, 0.95) !important;
+            color: var(--text-primary) !important;
+            border-color: rgba(255, 255, 255, 0.12) !important;
+        }
+        /* Refuerza modo oscuro en tarjetas y tablas de las plantillas de inventario y proveedores */
+        :root[data-theme="dark"] .main-content .inventario-summary-card,
+        :root[data-theme="dark"] .main-content .inventario-table-container,
+        :root[data-theme="dark"] .main-content .summary-card-modern,
+        :root[data-theme="dark"] .main-content .card-single,
+        :root[data-theme="dark"] .main-content .chart-container,
+        :root[data-theme="dark"] .main-content .glass-panel,
+        :root[data-theme="dark"] .main-content .dashboard-actions,
+        :root[data-theme="dark"] .main-content .activity-card,
+        :root[data-theme="dark"] .main-content .panel,
+        :root[data-theme="dark"] .main-content .box,
+        :root[data-theme="dark"] .main-content .content-box,
+        :root[data-theme="dark"] .main-content .table-responsive,
+        :root[data-theme="dark"] .main-content table,
+        :root[data-theme="dark"] .help-content,
+        :root[data-theme="dark"] #help-help-modal {
+            background: rgba(10, 18, 34, 0.92) !important;
+            border-color: rgba(255,255,255,0.14) !important;
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28) !important;
+            color: rgba(255,255,255,0.94) !important;
+        }
+        :root[data-theme="dark"] .main-content table,
+        :root[data-theme="dark"] .main-content .table-responsive,
+        :root[data-theme="dark"] .main-content .inventario-table-container {
+            background: rgba(10, 18, 34, 0.92) !important;
+            border-color: rgba(255,255,255,0.16) !important;
+        }
+        :root[data-theme="dark"] .main-content .inventario-summary-card .info h5,
+        :root[data-theme="dark"] .main-content .summary-card-modern .info h5,
+        :root[data-theme="dark"] .main-content h1,
+        :root[data-theme="dark"] .main-content h2,
+        :root[data-theme="dark"] .main-content h3,
+        :root[data-theme="dark"] .main-content h4,
+        :root[data-theme="dark"] .main-content h5,
+        :root[data-theme="dark"] .main-content h6,
+        :root[data-theme="dark"] .main-content p,
+        :root[data-theme="dark"] .main-content span,
+        :root[data-theme="dark"] .main-content label,
+        :root[data-theme="dark"] .help-content,
+        :root[data-theme="dark"] .help-inner,
+        :root[data-theme="dark"] .help-steps {
+            color: rgba(255,255,255,0.94) !important;
+        }
+        :root[data-theme="dark"] .main-content .inventario-summary-card .info small,
+        :root[data-theme="dark"] .main-content .summary-card-modern .info small {
+            color: rgba(255,255,255,0.7) !important;
+        }
+        :root[data-theme="dark"] .main-content table tbody tr td,
+        :root[data-theme="dark"] .main-content table tbody tr th,
+        :root[data-theme="dark"] .main-content .activity-card table tbody tr td,
+        :root[data-theme="dark"] .main-content .tabla-facturas tbody tr td {
+            background: transparent !important;
+            color: rgba(255,255,255,0.90) !important;
+        }
+        :root[data-theme="dark"] .main-content .help-close {
+            background: rgba(255,255,255,0.08) !important;
+            color: #f8fbff !important;
+            border-color: rgba(255,255,255,0.16) !important;
+        }
+        :root[data-theme="dark"] .main-content .help-inner {
+            background: transparent !important;
+        }
+        :root[data-theme="dark"] .main-content .help-content code {
+            color: #d3e7ff !important;
+            background: rgba(255,255,255,0.06) !important;
+        }
+        :root[data-theme="dark"] .main-content .help-steps {
+            background: transparent !important;
+        }
+        :root[data-theme="dark"] .main-content .help-inner p,
+        :root[data-theme="dark"] .main-content .help-inner h3 {
+            color: rgba(255,255,255,0.94) !important;
+        }
+        :root[data-theme="dark"] .main-content .help-inner a {
+            color: #7ad3ff !important;
+        }
+        :root[data-theme="dark"] .main-content .help-inner strong {
+            color: #fff !important;
+        }
+        :root[data-theme="dark"] .inventario-table-container,
+        :root[data-theme="dark"] .summary-card-modern,
+        :root[data-theme="dark"] .card-single,
+        :root[data-theme="dark"] .chart-container,
+        :root[data-theme="dark"] .glass-panel,
+        :root[data-theme="dark"] .dashboard-actions,
+        :root[data-theme="dark"] .activity-card,
+        :root[data-theme="dark"] .panel,
+        :root[data-theme="dark"] .box,
+        :root[data-theme="dark"] .content-box,
+        :root[data-theme="dark"] .table {
+            background: linear-gradient(135deg, rgba(255,255,255,0.04), rgba(10, 18, 34, 0.92)) !important;
+            border: 1px solid rgba(255,255,255,0.08) !important;
+            box-shadow: 0 24px 70px rgba(0,0,0,0.28) !important;
+            backdrop-filter: blur(18px) !important;
+            color: var(--text-primary) !important;
+            border-radius: 22px !important;
+        }
+        :root[data-theme="dark"] .inventario-summary-card .info h5,
+        :root[data-theme="dark"] .inventario-summary-card .info small,
+        :root[data-theme="dark"] .inventario-summary-card .icon,
+        :root[data-theme="dark"] .summary-card-modern .info h5,
+        :root[data-theme="dark"] .summary-card-modern .info small,
+        :root[data-theme="dark"] .chart-container h3,
+        :root[data-theme="dark"] .chart-container p,
+        :root[data-theme="dark"] .glass-panel h3,
+        :root[data-theme="dark"] .glass-panel p,
+        :root[data-theme="dark"] .dashboard-actions h3,
+        :root[data-theme="dark"] .dashboard-actions p,
+        :root[data-theme="dark"] .table-responsive th,
+        :root[data-theme="dark"] .table-responsive td,
+        :root[data-theme="dark"] .main-content h1,
+        :root[data-theme="dark"] .main-content h2,
+        :root[data-theme="dark"] .main-content h3,
+        :root[data-theme="dark"] .main-content h4,
+        :root[data-theme="dark"] .main-content h5,
+        :root[data-theme="dark"] .main-content h6,
+        :root[data-theme="dark"] .main-content p,
+        :root[data-theme="dark"] .main-content span,
+        :root[data-theme="dark"] .main-content label {
+            color: rgba(255,255,255,0.94) !important;
+        }
+        :root[data-theme="dark"] .inventario-summary-card .info h5,
+        :root[data-theme="dark"] .summary-card-modern .info h5 {
+            color: #f8fbff !important;
+        }
+        :root[data-theme="dark"] .inventario-summary-card .info small,
+        :root[data-theme="dark"] .summary-card-modern .info small {
+            color: rgba(255,255,255,0.72) !important;
+        }
+        :root[data-theme="dark"] .inventario-summary-card .icon,
+        :root[data-theme="dark"] .dashboard-actions .icon {
+            background: rgba(255,255,255,0.08) !important;
+            color: #00b2ff !important;
+        }
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: var(--fuente);
+            background: var(--page-bg);
+            min-height: 100vh;
+            color: var(--text-primary);
+            transition: background 0.5s, color 0.5s;
+            overflow-x: hidden;
+        }
+        body, html, input, textarea, select, button, a, p, span, h1, h2, h3, h4, h5, h6, li, td, th {
+            color: var(--text-primary);
+        }
+        a {
+            color: var(--azul-principal);
+            transition: color 0.25s ease;
+        }
+        a:hover {
+            color: var(--azul-secundario);
+        }
+        header:not(.executive-header) {
+            background: var(--navbar-bg) !important;
+            box-shadow: var(--sidebar-shadow) !important;
+        }
+        .sidebar-info,
+        .sidebar-brand div,
+        nav li a,
+        nav li a span {
+            color: rgba(255,255,255,0.92);
+        }
+        nav li a:hover,
+        nav li a.active {
+            background: rgba(255,255,255,0.10);
+            transform: translateX(2px);
+        }
+        .btn-primary {
+            background: var(--btn-bg) !important;
+            color: var(--btn-text) !important;
+            border: 1px solid transparent !important;
+            box-shadow: 0 16px 34px rgba(13,110,253,0.18);
+        }
+        .btn-primary:hover {
+            filter: brightness(1.05);
+            transform: translateY(-1px);
+        }
+        .btn-secondary {
+            background: rgba(255,255,255,0.92) !important;
+            color: var(--text-primary) !important;
+            border: 1px solid rgba(13,110,253,0.14) !important;
+        }
+        .salir {
+            color: var(--text-primary) !important;
+        }
+        .btn-outline {
+            background: transparent !important;
+            color: var(--azul-principal) !important;
+            border: 1px solid var(--azul-principal) !important;
+        }
+        .badge {
+            background: var(--table-row) !important;
+            color: var(--text-primary) !important;
+            border: 1px solid rgba(13,110,253,0.10) !important;
+        }
+        .search-bar input,
+        .form-card input,
+        .form-card select,
+        .form-card textarea,
+        .main-content input,
+        .main-content textarea,
+        .main-content select {
+            background: var(--input-bg) !important;
+            color: var(--text-primary) !important;
+            border-color: rgba(13,110,253,0.16) !important;
+        }
+        html[data-theme="dark"] .btn-secondary {
+            background: rgba(255,255,255,0.06) !important;
+            color: var(--text-primary) !important;
+            border-color: rgba(255,255,255,0.14) !important;
+        }
+        html[data-theme="dark"] .badge {
+            background: rgba(255,255,255,0.05) !important;
+            color: var(--text-primary) !important;
+            border-color: rgba(255,255,255,0.12) !important;
+        }
+        html[data-theme="dark"] .search-bar input,
+        html[data-theme="dark"] .form-card input,
+        html[data-theme="dark"] .form-card select,
+        html[data-theme="dark"] .form-card textarea,
+        html[data-theme="dark"] .main-content input,
+        html[data-theme="dark"] .main-content textarea,
+        html[data-theme="dark"] .main-content select {
+            background: var(--input-bg) !important;
+            color: var(--text-primary) !important;
+            border-color: rgba(255,255,255,0.14) !important;
+        }
+        .sidebar-menu li > a,
+        .sidebar-menu li > a .label,
+        .sidebar-menu li > a .material-symbols-outlined {
+            color: rgba(255,255,255,0.95);
+        }
+        .main-content {
+            position: relative;
+            margin-left: 280px;
+            width: calc(100vw - 280px);
+            max-width: none;
+            padding: 40px 24px 32px 28px;
+            min-height: 100vh;
+            background: var(--surface-soft);
+            animation: fadeInMain 1.2s cubic-bezier(.7,.04,.33,.97);
+            box-sizing: border-box;
+            overflow-x: hidden;
+            color: var(--text);
+        }
+
+        .main-content > * {
+            max-width: 100%;
+            width: 100%;
+        }
+        .chart-canvas-wrapper {
+            width: 100%;
+            max-width: 100%;
+            min-height: 420px;
+            height: 420px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: stretch;
+            justify-content: flex-start;
+            gap: 24px;
+            margin: 0 0 18px 0;
+            background: var(--surface);
+            border-radius: 22px;
+            box-shadow: var(--panel-shadow);
+            padding: 32px 24px 24px 24px;
+        }
+        .chart-panel {
+            background: var(--surface);
+            border-radius: 24px;
+            box-shadow: var(--panel-shadow);
+            padding: 24px;
+            margin-bottom: 32px;
+        }
+        .chart-header {
+            display: flex;
+            align-items: center;
+            gap: 32px;
+            padding: 0 24px;
+            flex-wrap: wrap;
+        }
+        .chart-header-title {
+            color: var(--azul-principal);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 0;
+            font-size: 1.35rem;
+        }
+        .chart-select {
+            margin-left: auto;
+            font-size: 1.08rem;
+            border-radius: 8px;
+            padding: 6px 18px;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            background: var(--surface-soft);
+            color: var(--text-primary);
+        }
+        .glass-panel {
+            background: var(--surface);
+            border-radius: 22px;
+            box-shadow: var(--panel-shadow);
+            border: 1.5px solid var(--panel-border);
+            backdrop-filter: blur(18px) saturate(1.2);
+            padding: 32px 38px;
+            margin-bottom: 38px;
+            transition: box-shadow 0.3s, border 0.3s, background 0.3s;
+            animation: glassPop 1.2s cubic-bezier(.7,.04,.33,.97);
+        }
+        .summary-card-modern {
+            background: var(--card-bg);
+            border-left: var(--card-border);
+            box-shadow: var(--panel-shadow);
+            color: var(--text-primary);
+        }
+        .summary-card-modern .icon {
+            color: var(--azul-principal);
+            background: rgba(230,247,255,0.14);
+        }
+        .btn-modern {
+            background: var(--btn-bg);
+            color: var(--btn-text);
+        }
+        .table-glass {
+            background: var(--glass-bg);
+            border-radius: 18px;
+            box-shadow: var(--panel-shadow);
+        }
+        .table-glass th, .table-glass td {
+            background: transparent;
+            color: var(--text-primary);
+        }
+        .table-glass tr:nth-child(even) {
+            background: var(--table-row);
+        }
+        .table-glass tr:hover {
+            background: rgba(255,255,255,0.12);
+        }
+        .navbar {
+            background: var(--navbar-bg);
+            box-shadow: var(--sidebar-shadow);
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: auto !important;
+            width: 280px !important;
+            height: 100vh !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            z-index: 1100 !important;
+        }
+        .navbar ul {
+            width: 100% !important;
+        }
+        .sidebar-menu li > a {
+            color: rgba(255,255,255,0.95);
+        }
+        .sidebar-menu li > a.active {
+            background: linear-gradient(100deg, rgba(72,201,223,0.18), rgba(255,255,255,0.055));
+            border: 1px solid rgba(105,215,232,0.22);
+            box-shadow: inset 3px 0 0 #48c9df;
+            color: #ffffff;
+        }
+        :root[data-theme="light"] .sidebar-menu li > a.active {
+            background: rgba(255,255,255,.16);
+            border-color: rgba(200,255,248,.42);
+            box-shadow: inset 3px 0 0 #a9f1e5;
+        }
+        :root[data-theme="dark"] .sidebar-menu li > a.active {
+            background: rgba(72,201,223,.12);
+            border-color: rgba(72,201,223,.24);
+            box-shadow: inset 3px 0 0 #48c9df;
+        }
+        .sidebar-menu li.sidebar-caption {
+            margin: 7px 18px 0;
+            padding: 8px 8px 4px;
+            color: rgba(209,226,242,0.56);
+            font-size: .62rem;
+            font-weight: 800;
+            letter-spacing: .1em;
+            pointer-events: none;
+        }
+        .sidebar-menu li > a.active .material-symbols-outlined {
+            background: rgba(72,201,223,0.14);
+            color: #7be0ec;
+        }
+        :root[data-theme="dark"] .sidebar-menu li > a:hover {
+            color: #ffffff;
+        }
+        .main-content .clientes-main,
+        .main-content .proveedores-main,
+        .main-content .inventario-main,
+        .main-content .ventas-main,
+        .main-content .compras-main-card,
+        .main-content .compras-main {
+            margin-left: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+        }
+        @keyframes fadeInMain {
+            from { opacity: 0; transform: translateY(40px);}
+            to { opacity: 1; transform: none;}
+        }
+        .glass-panel {
+            background: var(--fondo-glass);
+            border-radius: 22px;
+            box-shadow: var(--sombra-glass);
+            border: 1.5px solid var(--borde-glass);
+            backdrop-filter: blur(18px) saturate(1.2);
+            padding: 32px 38px;
+            margin-bottom: 38px;
+            transition: box-shadow 0.3s, border 0.3s, background 0.3s;
+            animation: glassPop 1.2s cubic-bezier(.7,.04,.33,.97);
+        }
+        @keyframes glassPop {
+            0% { opacity: 0; transform: scale(0.95);}
+            70% { opacity: 1; transform: scale(1.04);}
+            100% { opacity: 1; transform: scale(1);}
+        }
+        .summary-modern-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            margin-bottom: 48px;
+            width: 100%;
+            align-items: stretch;
+        }
+        .summary-card-modern {
+            background: var(--card-bg);
+            border-radius: 18px;
+            box-shadow: var(--panel-shadow);
+            min-width: 220px;
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            transition: box-shadow 0.28s ease, transform 220ms cubic-bezier(.2,.9,.3,1);
+            border-left: 6px solid rgba(127,214,255,0.9);
+            flex: 1 1 0;
+            max-width: 100%;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            animation: cardIn 0.7s forwards;
+            animation-delay: var(--delay, 0s);
+        }
+        .summary-card-modern:hover {
+            background: rgba(255,255,255,0.16);
+            box-shadow: 0 18px 48px 0 rgba(0,0,0,0.14);
+            transform: translateY(-6px) scale(1.02);
+        }
+        @keyframes cardIn {
+            to { opacity: 1; transform: none;}
+        }
+        .summary-card-modern .icon {
+            font-size: 2.8rem;
+            color: var(--azul-principal);
+            background: rgba(230,247,255,0.18);
+            border-radius: 50%;
+            padding: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px 0 rgba(0,178,255,0.10);
+            animation: iconSpin 1.2s;
+        }
+        @keyframes iconSpin {
+            0% { transform: rotate(-30deg) scale(0.7);}
+            70% { transform: rotate(10deg) scale(1.15);}
+            100% { transform: rotate(0deg) scale(1);}
+        }
+        .summary-card-modern .info h5 {
+            margin: 0;
+                /* animación retrasada para cada link según su orden */
+                .sidebar-menu li > a {
+                    transition-delay: calc(var(--i) * 60ms);
+                }
+            font-size: 2.1rem;
+            font-weight: 700;
+            color: #222;
+        }
+        .summary-card-modern .info small {
+            color: var(--azul-principal);
+            font-size: 1.1rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .section-animate {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s, transform 0.8s;
+        }
+        .section-animate.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .btn-modern {
+            background: var(--btn-bg);
+            color: var(--btn-text);
+            border: none;
+            border-radius: 14px;
+            padding: 13px 32px;
+            font-weight: 700;
+            font-size: 1.13rem;
+            box-shadow: 0 2px 8px 0 rgba(0,178,255,0.11);
+            cursor: pointer;
+            transition: background 0.2s, box-shadow 0.2s, transform 0.15s;
+            outline: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+        .btn-modern:hover, .btn-modern:focus {
+            background: linear-gradient(90deg, var(--azul-secundario) 60%, var(--azul-principal) 100%);
+            box-shadow: 0 8px 32px 0 rgba(0,178,255,0.22);
+            transform: scale(1.05);
+            color: #fff;
+            text-decoration: none;
+        }
+        .table-glass {
+            width: 100%;
+            border-collapse: separate;
+                .sidebar-menu li > a.active {
+                    background: rgba(255,255,255,0.14);
+                    color: #fff;
+                    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04), 0 10px 30px rgba(2,48,89,0.09);
+                    transform: translateX(0);
+                }
+                .sidebar-menu li > a.active .material-symbols-outlined {
+                    transform: translateX(4px) scale(1.06);
+                    box-shadow: 0 10px 26px rgba(2,48,89,0.12);
+                    background: linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.03));
+                    animation: activeIconPulse 1600ms ease-in-out infinite;
+                }
+
+                @keyframes activeIconPulse {
+                    0% { transform: translateX(4px) scale(1.06); }
+                    50% { transform: translateX(6px) scale(1.08); }
+                    100% { transform: translateX(4px) scale(1.06); }
+                }
+
+                /* Texto: sombra sutil y transición de color más marcada */
+                .sidebar-menu li > a { text-shadow: 0 1px 0 rgba(0,0,0,0.12); }
+                .sidebar-menu li > a span.label { transition: opacity 300ms ease, transform 300ms cubic-bezier(.2,.9,.3,1); }
+            border-spacing: 0;
+            background: var(--fondo-glass);
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow: 0 4px 24px 0 rgba(0,178,255,0.07);
+            font-size: 1.05rem;
+            margin-bottom: 38px;
+            backdrop-filter: blur(8px);
+        }
+        .table-glass th, .table-glass td {
+            padding: 13px 18px;
+            text-align: left;
+            border-bottom: 1px solid #e6f7ff;
+            transition: background 0.2s;
+        }
+        .table-glass th {
+            background: linear-gradient(90deg, var(--azul-principal) 80%, var(--azul-secundario) 100%);
+            color: #fff;
+            font-weight: 700;
+            letter-spacing: 1px;
+            font-size: 1.08rem;
+            border-bottom: 2px solid #e6f7ff;
+        }
+        .table-glass tr:nth-child(even) {
+            background: var(--table-row);
+        }
+        .table-glass tr:hover {
+            background: #e6f7ffcc;
+            box-shadow: 0 2px 12px 0 rgba(0,178,255,0.08);
+        }
+        /* Normalizar iconos Material: tamaño, alineación y límites para evitar elementos desproporcionados */
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            font-size: 1.1rem !important;
+            line-height: 1 !important;
+            vertical-align: middle !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            max-width: 3.2rem !important;
+            max-height: 3.2rem !important;
+        }
+        /* Variantes de iconos usados en layout */
+        .icon, .input-icon, .field-icon { font-size: 1.2rem !important; }
+        .icon-lg { font-size: 2rem !important; }
+        /* Asegurar que iconos en la barra lateral respeten el tamaño */
+        .navbar .material-symbols-outlined { font-size: 1.15rem !important; }
+        /* Iconos en botones de acción más pequeños y sin overflow */
+        .btn .material-symbols-outlined, .btn-actualizar .material-symbols-outlined, .btn-eliminar .material-symbols-outlined { font-size: 1rem !important; }
+        /* Evitar backgrounds muy claros aplicados a iconos dentro de paneles que pueden generar bloques visibles */
+        .material-symbols-outlined[style*="background"] { background: transparent !important; padding: 0.15rem !important; border-radius: 6px !important; }
+        /* Forzar paleta legible en modo claro: evita textos blancos y fondos muy oscuros */
+        :root:not([data-theme="dark"]) .glass-panel,
+        :root:not([data-theme="dark"]) .summary-card-modern,
+        :root:not([data-theme="dark"]) .table-glass,
+        :root:not([data-theme="dark"]) .chart-container,
+        :root:not([data-theme="dark"]) .dashboard-actions,
+        :root:not([data-theme="dark"]) .main-content table,
+        :root:not([data-theme="dark"]) .card-single,
+        :root:not([data-theme="dark"]) .tabla-facturas,
+        :root:not([data-theme="dark"]) .tabla-card {
+            background: var(--surface) !important;
+            color: var(--text-primary) !important;
+            border-color: var(--panel-border) !important;
+            box-shadow: var(--panel-shadow) !important;
+        }
+        :root:not([data-theme="dark"]) .table-glass th,
+        :root:not([data-theme="dark"]) .table-glass td,
+        :root:not([data-theme="dark"]) .summary-card-modern .info h5,
+        :root:not([data-theme="dark"]) .summary-card-modern .info small {
+            color: var(--text-primary) !important;
+        }
+        :root:not([data-theme="dark"]) .table-glass th {
+            background: linear-gradient(90deg, rgba(13,110,253,0.07), rgba(0,178,255,0.04)) !important;
+            color: var(--text-primary) !important;
+        }
+        /* Anular elementos inline con color blanco dentro de paneles en modo claro */
+        :root:not([data-theme="dark"]) .glass-panel [style*="color: #fff"],
+        :root:not([data-theme="dark"]) .glass-panel [style*="color:#fff"],
+        :root:not([data-theme="dark"]) .summary-card-modern [style*="color: #fff"],
+        :root:not([data-theme="dark"]) .summary-card-modern [style*="color:#fff"],
+        :root:not([data-theme="dark"]) .table-glass [style*="color: #fff"],
+        :root:not([data-theme="dark"]) .table-glass [style*="color:#fff"] {
+            color: var(--text-primary) !important;
+        }
+        /* Force readable text on dark backgrounds and sync SVG white fills to currentColor */
+        .header-bar, .header-meta, .brand-logo, .table-glass th, th, .btn-primary, .navbar {
+            color: var(--btn-text) !important;
+        }
+        /* Make SVG icons that have hard-coded white adapt to current text color */
+        svg[*|fill="#fff"], svg[*|stroke="#fff"] {
+            fill: currentColor !important;
+            stroke: currentColor !important;
+        }
+        /* Fallback for SVG elements with attributes written without namespace */
+        svg[fill="#fff"], svg[stroke="#fff"] {
+            fill: currentColor !important;
+            stroke: currentColor !important;
+        }
+        /* Global override: if an element has inline color:#fff in light theme, force readable text
+           Exceptions: elements that intentionally use white text on dark bg are redefined below */
+        :root:not([data-theme="dark"]) [style*="color: #fff"],
+        :root:not([data-theme="dark"]) [style*="color:#fff"],
+        :root:not([data-theme="dark"]) [style*="color: #ffffff"],
+        :root:not([data-theme="dark"]) [style*="color:#ffffff"] {
+            color: var(--text-primary) !important;
+        }
+        /* Re-allow white text for known dark-background components */
+        .header-bar, .header-meta, .brand-logo, .navbar, .btn-primary, .table-glass th, th {
+            color: var(--btn-text) !important;
+        }
+        ::-webkit-scrollbar {
+            width: 10px;
+            background: #e6f7ff;
+            border-radius: 8px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #00b2ff 0%, #1976d2 100%);
+            border-radius: 8px;
+        }
+        @media (max-width: 900px) {
+            .main-content { margin-left: 0; padding: 15px; }
+            .summary-modern-row { flex-direction: column; gap: 18px; }
+            .glass-panel { padding: 18px 8vw; }
+            .table-glass th, .table-glass td { font-size: 0.97em; padding: 8px 4px; }
+        }
+
+        /* Sidebar mejorada: degradado azul, bordes suaves, animaciones y sombreado derecho visible */
+        .navbar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            background: linear-gradient(180deg, #01243f 0%, #023a6b 40%, #046cb2 100%);
+            color: #ffffff;
+            padding: 28px 20px;
+            /* Sombra pronunciada hacia la derecha para separar visualmente el contenido */
+            box-shadow: 14px 0 48px rgba(2,48,89,0.14), 6px 0 18px rgba(2,48,89,0.06);
+            border-right: 1px solid rgba(255,255,255,0.06);
+            border-top-right-radius: 28px;
+            border-bottom-right-radius: 28px;
+            overflow: visible;
+            z-index: 1200;
+            transition: box-shadow 280ms ease, transform 220ms ease;
+        }
+        .navbar a img { max-width: 200px; display:block; margin: 8px auto 6px auto; filter: drop-shadow(0 10px 28px rgba(2,48,89,0.18)); }
+        .rif { color: rgba(255,255,255,0.92); font-weight:700; margin-top:8px; font-size:0.95rem; }
+        .hr { border-color: rgba(255,255,255,0.06); margin: 12px 0 18px 0 }
+
+        .sidebar-menu {
+            list-style: none;
+            padding: 6px 8px 0 8px;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .sidebar-menu li { position: relative; }
+        .sidebar-menu li {
+            position: relative;
+            padding: 8px 6px; /* área del módulo más amplia para hover */
+            border-radius: 14px;
+            transition: transform 260ms cubic-bezier(.2,.9,.3,1), box-shadow 260ms ease;
+            will-change: transform;
+        }
+
+        .sidebar-menu li > a {
+            display: flex;
+            justify-content: flex-start;
+            width: 100%;
+            box-sizing: border-box;
+            align-items: center;
+            gap: 12px; /* icono y texto más separados para claridad */
+            color: rgba(255,255,255,0.95);
+            padding: 12px 18px; /* mayor área clicable */
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 700;
+            position: relative;
+            overflow: visible;
+            transform: translateX(-18px); /* desplazamiento inicial ligero */
+            transition: transform 260ms cubic-bezier(.2,.9,.3,1), color 220ms linear, box-shadow 260ms cubic-bezier(.2,.9,.3,1);
+            will-change: transform, box-shadow;
+        }
+        .sidebar-menu li > a .label,
+        .sidebar-menu li > a .material-symbols-outlined {
+            color: inherit !important;
+        }
+        .sidebar-menu li.logout {
+            margin-top: auto;
+        }
+        .sidebar-menu li.logout > a {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            white-space: nowrap;
+            background: rgba(255,255,255,0.08);
+            color: rgba(255,255,255,0.92);
+            border: 1px solid rgba(255,255,255,0.12);
+            box-shadow: none;
+            border-radius: 16px;
+            padding: 10px 14px;
+            font-weight: 600;
+            width: auto;
+            transform: translateX(0);
+            transition: background 220ms ease, border-color 220ms ease, color 220ms ease;
+        }
+        .sidebar-menu li.logout > a::after {
+            display: none;
+        }
+        .sidebar-menu li.logout > a .material-symbols-outlined {
+            width: 32px;
+            height: 32px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255,255,255,0.10);
+            border-radius: 12px;
+            color: inherit;
+            box-shadow: none;
+            font-size: 1.1rem;
+        }
+        .sidebar-menu li.logout > a .label {
+            white-space: nowrap;
+            font-size: 0.95rem;
+            letter-spacing: 0.02em;
+            color: inherit;
+        }
+        .sidebar-menu li.logout > a:hover {
+            background: rgba(255,255,255,0.16);
+            border-color: rgba(255,255,255,0.16);
+        }
+        html[data-theme="light"] .sidebar-menu li.logout > a {
+            background: rgba(255,255,255,0.92) !important;
+            color: var(--azul-principal) !important;
+            border: 1px solid rgba(15,23,42,0.12) !important;
+        }
+        html[data-theme="light"] .sidebar-menu li.logout > a .material-symbols-outlined,
+        html[data-theme="light"] .sidebar-menu li.logout > a .label {
+            color: inherit !important;
+        }
+        html[data-theme="light"] .sidebar-menu li.logout > a:hover {
+            background: rgba(15,23,42,0.1) !important;
+            border-color: rgba(15,23,42,0.16) !important;
+        }
+        .sidebar-menu li.logout .logout-form {
+            margin: 0;
+            width: 100%;
+        }
+        .sidebar-menu li.logout .logout-form .logout-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            padding: 10px 14px;
+            border-radius: 16px;
+            background: inherit;
+            color: inherit;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            font: inherit;
+        }
+        .sidebar-menu li.logout .logout-form .logout-button:hover {
+            background: rgba(255,255,255,0.16);
+        }
+        .sidebar-menu li.logout .logout-form .logout-button .material-symbols-outlined {
+            width: 32px;
+            height: 32px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255,255,255,0.10);
+            border-radius: 12px;
+            color: inherit;
+            box-shadow: none;
+            font-size: 1.1rem;
+        }
+        .sidebar-menu li.logout .logout-form .logout-button .label {
+            white-space: nowrap;
+            font-size: 0.95rem;
+            letter-spacing: 0.02em;
+            color: inherit;
+        }
+        /* Fondo expandible que cubre más ancho en hover (mejora del área activa) */
+        .sidebar-menu li > a::after {
+            content: '';
+            position: absolute;
+            left: 8px;
+            right: 10px;
+            top: 6px;
+            bottom: 6px;
+            background: linear-gradient(90deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+            border-radius: 12px;
+            z-index: -1;
+            transform-origin: left center;
+            transform: scaleX(0);
+            transition: transform 260ms cubic-bezier(.2,.9,.3,1), opacity 220ms ease;
+            opacity: 0;
+            box-shadow: none;
+        }
+        .sidebar-menu li > a .material-symbols-outlined {
+            width: 40px;
+            height: 40px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.05rem;
+            color: rgba(224,246,255,0.98);
+            background: rgba(255,255,255,0.02);
+            border-radius: 10px;
+            margin-right: 6px;
+            transition: transform 260ms cubic-bezier(.2,.9,.3,1), box-shadow 260ms ease, background 260ms ease, color 220ms ease;
+            flex-shrink: 0;
+            will-change: transform;
+        }
+        /* Animación sutil en iconos al aparecer */
+        .sidebar-menu li .material-symbols-outlined.ani-pop { animation: iconPop 520ms cubic-bezier(.2,.9,.3,1); }
+        @keyframes iconPop { 0% { transform: translateX(-8px) scale(.86) rotate(-6deg); opacity:0 } 60% { transform: translateX(6px) scale(1.06) rotate(4deg); opacity:1 } 100% { transform: translateX(0) scale(1) rotate(0) } }
+
+        /* Animación: idle continua removida; se disparará una animación fuerte en "escalera" cada ciertos segundos */
+        .sidebar-menu li .label {
+            display: inline-block;
+            transform-origin: left center;
+            will-change: transform, opacity;
+            color: rgba(255,255,255,0.94);
+            transition: transform 260ms cubic-bezier(.2,.9,.3,1), color 220ms ease, opacity 220ms ease, font-weight 220ms ease;
+        }
+
+        /* Animación fuerte en escalera (se aplica solo cuando .sidebar-menu tiene clase .ladder-animate) */
+        .sidebar-menu.ladder-animate li .label {
+            animation: ladderPulse 1400ms cubic-bezier(.16,1,.3,1) both;
+            font-weight: 900; /* más bold durante la animación */
+            color: #ffffff; /* tono más blanco y fuerte */
+            text-shadow: 0 10px 30px rgba(0,47,63,0.12);
+        }
+        @keyframes ladderPulse {
+            0% { transform: translateY(0) scale(1); opacity: 1 }
+            30% { transform: translateY(-16px) scale(1.40); opacity: 1 }
+            60% { transform: translateY(-8px) scale(1.12); }
+            100% { transform: translateY(0) scale(1); }
+        }
+        /* Stagger delays para el efecto escalera (se ejecutan solo durante ladder-animate) */
+        .sidebar-menu.ladder-animate li:nth-child(1) .label { animation-delay: 0ms }
+        .sidebar-menu.ladder-animate li:nth-child(2) .label { animation-delay: 120ms }
+        .sidebar-menu.ladder-animate li:nth-child(3) .label { animation-delay: 240ms }
+        .sidebar-menu.ladder-animate li:nth-child(4) .label { animation-delay: 360ms }
+        .sidebar-menu.ladder-animate li:nth-child(5) .label { animation-delay: 480ms }
+
+        /* Animación de iluminación en la fila (glow) */
+        .sidebar-menu.ladder-animate li {
+            animation: liGlow 1400ms cubic-bezier(.16,1,.3,1) both;
+        }
+        @keyframes liGlow {
+            0% { box-shadow: none; transform: translateY(0); }
+            30% { box-shadow: 0 18px 48px rgba(3,112,185,0.14); transform: translateY(-4px); }
+            60% { box-shadow: 0 10px 30px rgba(3,112,185,0.10); transform: translateY(-2px); }
+            100% { box-shadow: none; transform: translateY(0); }
+        }
+        /* Stagger delays para liGlow */
+        .sidebar-menu.ladder-animate li:nth-child(1) { animation-delay: 0ms }
+        .sidebar-menu.ladder-animate li:nth-child(2) { animation-delay: 120ms }
+        .sidebar-menu.ladder-animate li:nth-child(3) { animation-delay: 240ms }
+        .sidebar-menu.ladder-animate li:nth-child(4) { animation-delay: 360ms }
+        .sidebar-menu.ladder-animate li:nth-child(5) { animation-delay: 480ms }
+
+        /* Glow adicional en el pseudo-elemento ::after (iluminación de la fila) */
+        .sidebar-menu.ladder-animate li > a::after {
+            animation: afterGlow 1400ms cubic-bezier(.16,1,.3,1) both;
+        }
+        @keyframes afterGlow {
+            0% { opacity: 0; transform: scaleX(0.08); }
+            30% { opacity: 0.36; transform: scaleX(1); }
+            60% { opacity: 0.22; transform: scaleX(1); }
+            100% { opacity: 0; transform: scaleX(0.08); }
+        }
+        /* Stagger delays para afterGlow */
+        .sidebar-menu.ladder-animate li:nth-child(1) > a::after { animation-delay: 0ms }
+        .sidebar-menu.ladder-animate li:nth-child(2) > a::after { animation-delay: 120ms }
+        .sidebar-menu.ladder-animate li:nth-child(3) > a::after { animation-delay: 240ms }
+        .sidebar-menu.ladder-animate li:nth-child(4) > a::after { animation-delay: 360ms }
+        .sidebar-menu.ladder-animate li:nth-child(5) > a::after { animation-delay: 480ms }
+
+        /* Hacer que los iconos también participen de la onda 'escalera' (muevan y escalen) */
+        .sidebar-menu.ladder-animate li .material-symbols-outlined {
+            animation: iconLadder 1400ms cubic-bezier(.16,1,.3,1) both;
+            will-change: transform;
+        }
+        @keyframes iconLadder {
+            0% { transform: translateY(0) scale(1) rotate(0); }
+            30% { transform: translateY(-12px) scale(1.18) rotate(-6deg); }
+            60% { transform: translateY(-6px) scale(1.06) rotate(-3deg); }
+            100% { transform: translateY(0) scale(1) rotate(0); }
+        }
+        /* Delays escalonados para los iconos, igual que las labels */
+        .sidebar-menu.ladder-animate li:nth-child(1) .material-symbols-outlined { animation-delay: 0ms }
+        .sidebar-menu.ladder-animate li:nth-child(2) .material-symbols-outlined { animation-delay: 120ms }
+        .sidebar-menu.ladder-animate li:nth-child(3) .material-symbols-outlined { animation-delay: 240ms }
+        .sidebar-menu.ladder-animate li:nth-child(4) .material-symbols-outlined { animation-delay: 360ms }
+        .sidebar-menu.ladder-animate li:nth-child(5) .material-symbols-outlined { animation-delay: 480ms }
+
+        /* Hover: crece la etiqueta y realza el icono (inmediato) */
+        .sidebar-menu .material-symbols-outlined,
+        .logout-button .material-symbols-outlined,
+        .summary-card-modern .icon {
+            width: 1.5rem;
+            height: 1.5rem;
+            min-width: 1.5rem;
+            min-height: 1.5rem;
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .sidebar-menu li:hover .label {
+            transform: scale(1.18) translateX(6px);
+            color: #ffffff;
+            font-weight: 900;
+            font-size: 0.98em; /* reducir ligeramente el tamaño para evitar overflow */
+            text-shadow: 0 6px 18px rgba(0,47,63,0.10);
+            white-space: nowrap; /* evitar saltos raros */
+        }
+        .sidebar-menu li:hover > a .material-symbols-outlined {
+            transform: translateX(16px) scale(1.22) rotate(-4deg);
+        }
+
+        /* Cuando un item está activo, pausar la animación para evitar competencia visual */
+        .sidebar-menu li > a.active .label { transform: scale(1.08) translateX(6px); font-weight:800; color:#ffffff }
+
+        html[data-theme="light"] .sidebar-menu li .label,
+        html[data-theme="light"] .sidebar-menu li > a .label,
+        html[data-theme="light"] .sidebar-menu li:hover .label,
+        html[data-theme="light"] .sidebar-menu li > a.active .label {
+            color: rgba(255,255,255,0.95) !important;
+            text-shadow: 0 6px 18px rgba(0,47,63,0.10);
+        }
+        html[data-theme="light"] .sidebar-menu li > a .material-symbols-outlined {
+            color: rgba(224,246,255,0.98) !important;
+            background: rgba(255,255,255,0.02) !important;
+        }
+
+        /* Logo: levitación sutil continua + crecimiento durante ladder-animate (ahora con pulso verdoso) */
+        .navbar a img {
+            transition: transform 540ms cubic-bezier(.2,.9,.3,1), filter 540ms ease, box-shadow 540ms ease;
+            animation: logoFloat 9s ease-in-out infinite;
+            will-change: transform;
+            transform-origin: center center;
+        }
+        @keyframes logoFloat { 0% { transform: translateY(0) scale(1); } 50% { transform: translateY(-6px) scale(1.01); } 100% { transform: translateY(0) scale(1); } }
+
+        /* Pulso verde cuando la barra recibe la animación 'ladder-animate' */
+        /* Pulso: solo escala y levitación — sin halo/iluminación para respetar la forma del logo */
+        .navbar.ladder-animate a img {
+            animation: logoFloat 9s ease-in-out infinite, logoPulse 1500ms cubic-bezier(.16,1,.3,1) both;
+        }
+        @keyframes logoPulse {
+            0% { transform: translateY(0) scale(1); }
+            35% { transform: translateY(-8px) scale(1.32); }
+            70% { transform: translateY(-4px) scale(1.08); }
+            100% { transform: translateY(0) scale(1); }
+        }
+        /* Indicador a la izquierda que aparece en hover/activo */
+        .sidebar-menu li > a::before {
+            content: '';
+            position: absolute;
+            left: 10px;
+            top: 8px;
+            bottom: 8px;
+            width: 0px;
+            border-radius: 6px;
+            background: linear-gradient(180deg,#7fd6ff,#c4f0ff);
+            transition: width 260ms cubic-bezier(.2,.9,.3,1), left 260ms cubic-bezier(.2,.9,.3,1), opacity 180ms ease;
+            opacity: 0;
+            will-change: width, opacity;
+            box-shadow: 0 6px 18px rgba(127,214,255,0.08);
+        }
+        /* Hover: usar azul celeste suave (no oscuro) en los cuadros y el indicador */
+        .sidebar-menu li:hover {
+            transform: translateX(6px);
+        }
+        .sidebar-menu li:hover > a {
+            color: #012f3f; /* texto ligeramente oscuro para buen contraste */
+            transform: translateX(2px);
+        }
+        .sidebar-menu li:hover > a::after {
+            transform: scaleX(1);
+            opacity: 1;
+            box-shadow: 0 10px 30px rgba(2,48,89,0.06);
+        }
+        .sidebar-menu li:hover > a::before {
+            width: 10px;
+            left: 8px;
+            opacity: 1;
+            background: linear-gradient(180deg,#7fd6ff,#c4f0ff);
+            box-shadow: 0 0 18px rgba(127,214,255,0.12);
+        }
+        /* Micro-movimiento del icono cuando el módulo está en hover */
+        .sidebar-menu li:hover > a .material-symbols-outlined {
+            transform: translateX(10px) scale(1.08) rotate(-4deg);
+            box-shadow: 0 14px 36px rgba(2,48,89,0.10);
+            background: linear-gradient(180deg, rgba(127,214,255,0.12), rgba(196,240,255,0.06));
+            color: #ffffff; /* iconos blancos al hover */
+        }
+        /* Pequeño pulso cuando el usuario se queda sobre el módulo */
+        .sidebar-menu li:hover > a .material-symbols-outlined { animation: iconHoverPulse 1400ms ease-in-out infinite; }
+        @keyframes iconHoverPulse { 0% { transform: translateX(8px) scale(1.06); } 50% { transform: translateX(10px) scale(1.08); } 100% { transform: translateX(8px) scale(1.06); } }
+        /* Estado activo destacado: cuadro en azul celeste claro */
+        .sidebar-menu li > a.active {
+            background: linear-gradient(90deg, rgba(180,232,255,0.22), rgba(215,245,255,0.14));
+            color: #012f3f;
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04), 0 16px 44px rgba(2,48,89,0.10);
+            transform: translateX(2px);
+        }
+        .sidebar-menu li > a.active::before {
+            width: 10px;
+            left: 8px;
+            opacity: 1;
+            transition: width 260ms cubic-bezier(.2,.9,.3,1), opacity 180ms ease;
+            background: linear-gradient(180deg,#7fd6ff,#c4f0ff);
+            box-shadow: 0 0 18px rgba(127,214,255,0.12);
+        }
+        /* Efecto leve en el icono del item activo */
+        .sidebar-menu li > a.active .material-symbols-outlined {
+            transform: translateX(6px) scale(1.08);
+            box-shadow: 0 14px 36px rgba(2,48,89,0.12);
+            background: linear-gradient(180deg, rgba(127,214,255,0.20), rgba(196,240,255,0.08));
+            color: #ffffff; /* iconos blancos en estado activo */
+        }
+        /* Badge pequeño para iconos o indicadores */
+        .sidebar-menu li .badge {
+            margin-left: auto;
+            background: rgba(255,255,255,0.12);
+            color: rgba(255,255,255,0.95);
+            padding: 4px 8px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            font-weight:700;
+        }
+        @media (max-width: 900px) {
+            .navbar { position: relative; width: 100%; border-radius: 12px; box-shadow:none; }
+            .main-content { margin-left: 0; }
+        }
+        .sidebar-menu svg,
+        .logout-button svg,
+        .summary-card-modern svg,
+        .admin-utility-panel svg,
+        .main-content svg,
+        .profile-card svg {
+            width: 1.5rem;
+            height: 1.5rem;
+            min-width: 1.5rem;
+            min-height: 1.5rem;
+            flex-shrink: 0;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        .summary-card-modern {
+            background: var(--card-bg);
+            box-shadow: var(--panel-shadow);
+            border-left: 6px solid rgba(127,214,255,0.9);
+        }
+        .summary-card-modern:hover {
+            background: rgba(255,255,255,0.16);
+        }
+        .summary-card-modern .icon {
+            background: rgba(230,247,255,0.18);
+            width: 2.5rem;
+            height: 2.5rem;
+            min-width: 2.5rem;
+            min-height: 2.5rem;
+            font-size: 1.35rem;
+            line-height: 1;
+        }
+        .btn-modern {
+            background: var(--btn-bg);
+            color: var(--btn-text);
+        }
+        .table-glass {
+            background: var(--surface);
+            border-radius: 18px;
+            box-shadow: var(--panel-shadow);
+        }
+        .table-glass tr:nth-child(even) {
+            background: var(--table-row);
+        }
+        :root[data-theme="dark"] .main-content [style*="background"],
+        :root[data-theme="dark"] .main-content [style*="background-color"] {
+            background-color: rgba(10, 18, 34, 0.95) !important;
+            color: rgba(255,255,255,0.94) !important;
+            border-color: rgba(255,255,255,0.14) !important;
+            box-shadow: 0 18px 48px rgba(0,0,0,0.32) !important;
+        }
+        :root[data-theme="dark"] .main-content button,
+        :root[data-theme="dark"] .main-content input,
+        :root[data-theme="dark"] .main-content select,
+        :root[data-theme="dark"] .main-content textarea,
+        :root[data-theme="dark"] .main-content .btn-modern,
+        :root[data-theme="dark"] .main-content .action-btn,
+        :root[data-theme="dark"] .main-content .go-index-btn-2,
+        :root[data-theme="dark"] .main-content .table-responsive,
+        :root[data-theme="dark"] .main-content .dashboard-actions,
+        :root[data-theme="dark"] .main-content .form-card,
+        :root[data-theme="dark"] .main-content .content-box,
+        :root[data-theme="dark"] .main-content .panel,
+        :root[data-theme="dark"] .main-content .box {
+            background: rgba(10, 18, 34, 0.96) !important;
+            color: rgba(255,255,255,0.94) !important;
+            border-color: rgba(255,255,255,0.12) !important;
+        }
+        :root[data-theme="dark"] .main-content button,
+        :root[data-theme="dark"] .main-content .btn-modern,
+        :root[data-theme="dark"] .main-content .action-btn,
+        :root[data-theme="dark"] .main-content .go-index-btn-2 {
+            background: linear-gradient(135deg, #2a6cff 0%, #1c3d8a 100%) !important;
+            color: #ffffff !important;
+            border: 1px solid rgba(255,255,255,0.14) !important;
+        }
+        :root[data-theme="dark"] .main-content .action-btn.secondary,
+        :root[data-theme="dark"] .main-content .btn-secondary {
+            background: rgba(255,255,255,0.08) !important;
+            color: #00b2ff !important;
+            border-color: rgba(0,178,255,0.28) !important;
+        }
+        .sidebar-menu li:hover > a {
+            color: #ffffff;
+        }
+        .sidebar-menu li:hover > a .material-symbols-outlined {
+            background: rgba(255,255,255,0.06);
+        }
+    </style>
+    <style>
+        :root[data-theme="dark"] .main-content table,
+        :root[data-theme="dark"] .main-content .table,
+        :root[data-theme="dark"] .main-content .table-responsive {
+            background: var(--table-bg) !important;
+            border: 1px solid rgba(148, 163, 184, .18) !important;
+            border-collapse: separate !important;
+            border-spacing: 0 !important;
+            border-radius: 12px !important;
+            color: var(--text-primary) !important;
+        }
+        :root[data-theme="dark"] .main-content table th,
+        :root[data-theme="dark"] .main-content table td,
+        :root[data-theme="dark"] .main-content .table th,
+        :root[data-theme="dark"] .main-content .table td {
+            border-color: rgba(148, 163, 184, .16) !important;
+            color: var(--text-primary) !important;
+        }
+        :root[data-theme="dark"] .main-content table thead th,
+        :root[data-theme="dark"] .main-content .table thead th {
+            background: rgba(148, 163, 184, .08) !important;
+            color: #dce7f5 !important;
+        }
+        :root[data-theme="dark"] .main-content span.badge-pending { background: rgba(245, 158, 11, .16) !important; border-color: rgba(245, 158, 11, .28) !important; color: #fbbf24 !important; }
+        :root[data-theme="dark"] .main-content span.badge-approved { background: rgba(16, 185, 129, .16) !important; border-color: rgba(16, 185, 129, .28) !important; color: #34d399 !important; }
+        :root[data-theme="dark"] .main-content span.badge-rejected { background: rgba(239, 68, 68, .16) !important; border-color: rgba(239, 68, 68, .28) !important; color: #f87171 !important; }
+        :root[data-theme="dark"] .main-content .admin-order-actions button.approve { background: #059669 !important; border-color: #059669 !important; color: #ffffff !important; }
+        :root[data-theme="dark"] .main-content .admin-order-actions button.reject { background: #dc2626 !important; border-color: #dc2626 !important; color: #ffffff !important; }
+        :root[data-theme="light"] .main-content table,
+        :root[data-theme="light"] .main-content .table,
+        :root[data-theme="light"] .main-content .table-responsive {
+            background: var(--table-bg) !important;
+            border: 1px solid rgba(15, 23, 42, .10) !important;
+            border-collapse: separate !important;
+            border-spacing: 0 !important;
+            border-radius: 12px !important;
+            color: var(--text-primary) !important;
+        }
+        :root[data-theme="light"] .main-content table th,
+        :root[data-theme="light"] .main-content table td,
+        :root[data-theme="light"] .main-content .table th,
+        :root[data-theme="light"] .main-content .table td {
+            border-color: rgba(15, 23, 42, .09) !important;
+            color: var(--text-primary) !important;
+        }
+        :root[data-theme="light"] .main-content table thead th,
+        :root[data-theme="light"] .main-content .table thead th {
+            background: rgba(15, 23, 42, .035) !important;
+            color: #334155 !important;
+        }
+    </style>
+    <link rel="stylesheet" href="{% static 'css/admin-theme.css' %}?v=20261006-responsive">
+</head>
+<body>
+    {% if '/carrito' not in request.path and '/pedido' not in request.path and '/pagar' not in request.path and '/cliente/' not in request.path and '/checkout' not in request.path and '/mis-pedidos' not in request.path or '/admin/pedidos/' in request.path %}
+    <button id="admin-sidebar-toggle" class="admin-sidebar-toggle" type="button" aria-controls="admin-sidebar" aria-expanded="false" aria-label="Abrir menú">
+        <span class="material-symbols-outlined" aria-hidden="true">menu</span>
+    </button>
+    <button id="admin-sidebar-backdrop" class="admin-sidebar-backdrop" type="button" aria-label="Cerrar menú" tabindex="-1"></button>
+    <nav id="admin-sidebar" class="navbar" aria-label="Menú principal">
+        <a href="{% url 'dashboard'%}">
+            <img src="{% static 'img/logo.png' %}" alt="logo de la empresa">
+        </a>
+        <h2 class="rif"><i>V-12847449-4</i></h2>
+        <hr class="hr">
+        <ul class="sidebar-menu">
+            <li class="sidebar-caption" aria-hidden="true">OPERACIONES</li>
+            <li>
+                <a href="{% url 'clientes' %}"{% if request.resolver_match.url_name == 'clientes' %} class="active" aria-current="page"{% endif %}>
+                    <span class="material-symbols-outlined">group</span>
+                    <span class="label">Clientes</span>
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'proveedores' %}"{% if request.resolver_match.url_name == 'proveedores' %} class="active" aria-current="page"{% endif %}>
+                    <span class="material-symbols-outlined">local_shipping</span>
+                    <span class="label">Proveedores</span>
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'inventario' %}"{% if request.resolver_match.url_name == 'inventario' %} class="active" aria-current="page"{% endif %}>
+                    <span class="material-symbols-outlined">inventory_2</span>
+                    <span class="label">Inventario</span>
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'listar_facturas' %}"{% if request.resolver_match.url_name == 'listar_facturas' %} class="active" aria-current="page"{% endif %}>
+                    <span class="material-symbols-outlined">point_of_sale</span>
+                    <span class="label">Ventas</span>
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'listar_compras' %}"{% if request.resolver_match.url_name == 'listar_compras' %} class="active" aria-current="page"{% endif %}>
+                    <span class="material-symbols-outlined">shopping_cart</span>
+                    <span class="label">Compras</span>
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'listar_cxc' %}"{% if request.resolver_match.url_name == 'listar_cxc' %} class="active" aria-current="page"{% endif %}>
+                    <span class="material-symbols-outlined">receipt_long</span>
+                    <span class="label">CxC</span>
+                </a>
+            </li>
+            <li class="logout">
+                <form method="post" action="{% url 'logout' %}" class="logout-form">
+                    {% csrf_token %}
+                    <button type="submit" class="logout-button">
+                        <span class="material-symbols-outlined">logout</span>
+                        <span class="label">Cerrar sesión</span>
+                    </button>
+                </form>
+            </li>
+        </ul>
+    </nav>
+    <div class="admin-utility-dock">
+        <button class="admin-utility-toggle" id="admin-utility-toggle" type="button" aria-label="Abrir herramientas" aria-controls="admin-utility-panel" aria-expanded="false" title="Herramientas">
+            <span class="material-symbols-outlined" aria-hidden="true">tune</span>
+            <span class="admin-utility-hint">Presiona para ver más</span>
+        </button>
+        <div class="admin-utility-panel" id="admin-utility-panel" aria-label="Herramientas del panel">
+            <button class="theme-toggle-btn" type="button" aria-label="Cambiar tema">
+                <span class="material-symbols-outlined theme-icon" aria-hidden="true">dark_mode</span>
+                <span class="theme-label">Modo oscuro</span>
+            </button>
+            <a href="{% url 'admin_creditos' %}" class="utility-credit-link" aria-label="Créditos del sistema" title="Créditos del sistema">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 10a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                </svg>
+                <span>Créditos</span>
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+    // Mostrar mensajes de Django como modales bonitos
+    document.addEventListener('DOMContentLoaded', function() {
+        {% if messages %}
+            {% for message in messages %}
+                Swal.fire({
+                    icon: '{% if message.tags == "error" %}error{% elif message.tags == "success" %}success{% elif message.tags == "warning" %}warning{% else %}info{% endif %}',
+                    title: '{{ message|escapejs }}',
+                    showConfirmButton: {% if message.tags == "success" %}false{% else %}true{% endif %},
+                    timer: {% if message.tags == "success" %}3000{% else %}undefined{% endif %},
+                    timerProgressBar: {% if message.tags == "success" %}true{% else %}false{% endif %},
+                    confirmButtonColor: '#1976d2',
+                    background: '#fafdff',
+                    customClass: {
+                        popup: 'swal2-custom-popup',
+                        title: 'swal2-custom-title',
+                    }
+                });
+            {% endfor %}
+        {% endif %}
+    });
+    </script>
+    <style>
+    .swal2-custom-popup {
+        font-family: 'Inter', 'Poppins', Arial, sans-serif;
+        border-radius: 1.2em;
+        box-shadow: 0 8px 32px 0 rgba(0,178,255,0.18);
+    }
+    .swal2-custom-title {
+        font-weight: 600;
+        color: #1976d2;
+    }
+    </style>
+
+    <script>
+    function revealOnScroll() {
+        const sections = document.querySelectorAll('.section-animate');
+        const trigger = window.innerHeight * 0.92;
+        sections.forEach(sec => {
+            const top = sec.getBoundingClientRect().top;
+            if (top < trigger) sec.classList.add('visible');
+        });
+    }
+    window.addEventListener('scroll', revealOnScroll);
+    window.addEventListener('DOMContentLoaded', revealOnScroll);
+    </script>
+    <!-- Banner para indicar estado de conexión -->
+    <style>
+    #offline-banner { position: fixed; right: 20px; top: 20px; background:#ffcdd2; color:#b00020; padding:10px 14px; border-radius:8px; box-shadow:0 6px 16px rgba(0,0,0,0.08); display:none; z-index:16000; font-weight:700 }
+    #offline-banner .retry { margin-left:10px; background:#fff; color:#b00020; border-radius:6px; padding:4px 8px; cursor:pointer }
+    :root[data-theme="dark"] #admin-sidebar .sidebar-menu li > a.active,
+    :root[data-theme="dark"] #admin-sidebar .sidebar-menu li > a.active .label,
+    :root[data-theme="dark"] #admin-sidebar .sidebar-menu li > a.active .material-symbols-outlined,
+    :root[data-theme="dark"] #admin-sidebar .sidebar-menu li:hover > a,
+    :root[data-theme="dark"] #admin-sidebar .sidebar-menu li:hover > a .label { color:#f4fbff!important; }
+    :root[data-theme="dark"] #admin-sidebar .sidebar-menu li > a.active { background:#164760!important; border-color:#2d718b!important; box-shadow:inset 3px 0 0 #8bdbe4!important; }
+    :root[data-theme="dark"] #admin-sidebar .sidebar-menu li > a.active::before { background:#a4e9ef!important; box-shadow:none!important; }
+    :root[data-theme="dark"] #admin-sidebar .sidebar-menu li > a.active .material-symbols-outlined { background:rgba(255,255,255,.12)!important; }
+    </style>
+    <script>
+        function setTheme(theme) {
+            const root = document.documentElement;
+            if (!root) return;
+
+            const normalized = (theme === 'dark') ? 'dark' : 'light';
+            root.dataset.theme = normalized;
+
+            try {
+                localStorage.setItem('ferrelectri_theme', normalized);
+            } catch (e) {
+                // ignore storage errors
+            }
+
+            const btn = document.querySelector('.theme-toggle-btn');
+            if (btn) {
+                const label = btn.querySelector('.theme-label');
+                const icon = btn.querySelector('.theme-icon');
+                const isDark = normalized === 'dark';
+                if (label) label.textContent = isDark ? 'Modo claro' : 'Modo oscuro';
+                if (icon) icon.textContent = isDark ? 'light_mode' : 'dark_mode';
+                btn.setAttribute('aria-label', isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro');
+            }
+        }
+
+        function toggleTheme() {
+            const current = document.documentElement.dataset.theme;
+            setTheme(current === 'dark' ? 'light' : 'dark');
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            let saved = null;
+            try { saved = localStorage.getItem('ferrelectri_theme'); } catch (e) { saved = null; }
+
+            const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            setTheme(saved || (prefersDark ? 'dark' : 'light'));
+
+            const btn = document.querySelector('.theme-toggle-btn');
+            if (btn) {
+                // evitar listeners duplicados
+                btn.removeEventListener('click', toggleTheme);
+                btn.addEventListener('click', toggleTheme);
+            }
+
+            const utilityDock = document.querySelector('.admin-utility-dock');
+            const utilityToggle = document.getElementById('admin-utility-toggle');
+            if (utilityDock && utilityToggle) {
+                utilityToggle.addEventListener('click', function () {
+                    const isOpen = utilityDock.classList.toggle('is-open');
+                    utilityToggle.setAttribute('aria-expanded', String(isOpen));
+                });
+                document.addEventListener('click', function (event) {
+                    if (!utilityDock.contains(event.target)) {
+                        utilityDock.classList.remove('is-open');
+                        utilityToggle.setAttribute('aria-expanded', 'false');
+                    }
+                });
+                document.addEventListener('keydown', function (event) {
+                    if (event.key === 'Escape') {
+                        utilityDock.classList.remove('is-open', 'is-help-open');
+                        utilityToggle.setAttribute('aria-expanded', 'false');
+                    }
+                });
+            }
+        });
+    </script>
+    <div id="offline-banner">Sin conexión
+        <button class="retry" onclick="tryReconnect()">Reintentar</button>
+    </div>
+    <script>
+    function updateOnlineStatus() {
+        const banner = document.getElementById('offline-banner');
+        if (!navigator.onLine) {
+            banner.style.display = 'block';
+        } else {
+            banner.style.display = 'none';
+        }
+    }
+    window.addEventListener('online', updateOnlineStatus);
+    window.addEventListener('offline', updateOnlineStatus);
+    document.addEventListener('DOMContentLoaded', updateOnlineStatus);
+    function tryReconnect() {
+        if (navigator.onLine) {
+            Swal.fire({ icon:'success', title:'Conexión restaurada' });
+            updateOnlineStatus();
+            return;
+        }
+        // Intentar una petición ligera para comprobar
+        fetch('/', { method: 'HEAD', cache: 'no-store' }).then(r => {
+            if (r.ok) {
+                Swal.fire({ icon:'success', title:'Conexión restaurada' });
+            } else {
+                Swal.fire({ icon:'error', title:'Aún sin conexión' });
+            }
+            updateOnlineStatus();
+        }).catch(() => {
+            Swal.fire({ icon:'error', title:'Aún sin conexión' });
+            updateOnlineStatus();
+        });
+    }
+    </script>
+    <script>
+function animateOnScroll() {
+    // Todas las clases de animación
+    const classes = [
+        'ani-fade-in', 'ani-fade-in-left', 'ani-fade-in-right', 'ani-scale-in', 'ani-rotate-in'
+    ];
+    classes.forEach(cls => {
+        document.querySelectorAll('.' + cls).forEach(el => {
+            const trigger = window.innerHeight * 0.93;
+            const top = el.getBoundingClientRect().top;
+            if (top < trigger) el.classList.add('visible');
+        });
+    });
+}
+window.addEventListener('scroll', animateOnScroll);
+window.addEventListener('DOMContentLoaded', animateOnScroll);
+</script>
+
+    <div class="main-content">
+    {% block arroz_con_pollo %}
+    <div class="summary-card-modern ani-fade-in">
+        <span class="icon material-symbols-outlined ani-scale-in ani-hover-pop">group</span>
+        <div class="info">
+            <h5 class="ani-fade-in-right">2</h5>
+            <small class="ani-fade-in-left"><span class="material-symbols-outlined ani-rotate-in">person</span> Clientes</small>
+        </div>
+    </div>
+    {% endblock %}
+    </div>
+    <!-- Contenedor oculto para el contenido de ayuda específico de cada página -->
+    <div id="help-content-template" style="display:none;">{% block help_content %}{% endblock %}</div>
+
+    <!-- Script de ayuda exclusivo del panel administrativo -->
+    <script src="{% static 'js/help_button.js' %}"></script>
+    <script>
+    (function(){
+        const sidebar = document.getElementById('admin-sidebar');
+        const toggle = document.getElementById('admin-sidebar-toggle');
+        const backdrop = document.getElementById('admin-sidebar-backdrop');
+        if (!sidebar || !toggle || !backdrop) return;
+
+        const mobileQuery = window.matchMedia('(max-width: 900px)');
+        function setSidebarOpen(isOpen) {
+            document.body.classList.toggle('admin-sidebar-open', isOpen);
+            toggle.setAttribute('aria-expanded', String(isOpen));
+            toggle.setAttribute('aria-label', isOpen ? 'Cerrar menú' : 'Abrir menú');
+            toggle.querySelector('.material-symbols-outlined').textContent = isOpen ? 'close' : 'menu';
+            backdrop.tabIndex = isOpen ? 0 : -1;
+        }
+
+        toggle.addEventListener('click', function(){
+            setSidebarOpen(!document.body.classList.contains('admin-sidebar-open'));
+        });
+        backdrop.addEventListener('click', function(){ setSidebarOpen(false); });
+        sidebar.querySelectorAll('a').forEach(function(link){
+            link.addEventListener('click', function(){
+                if (mobileQuery.matches) setSidebarOpen(false);
+            });
+        });
+        document.addEventListener('keydown', function(event){
+            if (event.key === 'Escape') setSidebarOpen(false);
+        });
+        mobileQuery.addEventListener('change', function(){ setSidebarOpen(false); });
+
+        document.querySelectorAll('.main-content table').forEach(function(table){
+            if (table.closest('.admin-table-scroll, .table-responsive, .table-scroll, [class*="table-wrap"]')) return;
+            const wrapper = document.createElement('div');
+            wrapper.className = 'admin-table-scroll';
+            table.parentNode.insertBefore(wrapper, table);
+            wrapper.appendChild(table);
+        });
+
+        document.addEventListener('DOMContentLoaded', function(){
+            document.querySelector('.sidebar-menu')?.classList.remove('ladder-animate');
+            document.querySelector('.navbar')?.classList.remove('ladder-animate');
+        });
+    })();
+    </script>
+</body>
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</html>
+
+<!-- Global login modal markup + JS -->
+<script>
+// Global login modal helpers (inserted at end so DOM exists)
+(function(){
+    if (typeof document === 'undefined') return;
+    const modalHtml = `
+    <div id="globalLoginModal" style="display:none; position:fixed; inset:0; z-index:20000; align-items:center; justify-content:center; background:rgba(0,0,0,0.45)">
+        <div style="background:#fff;border-radius:14px;padding:22px;min-width:320px;max-width:520px;box-shadow:0 30px 60px rgba(0,0,0,0.6);">
+            <button id="globalLoginClose" style="float:right;border:none;background:none;font-size:20px">&times;</button>
+            <h3 style="margin-top:6px;color:#0d6efd">Acceder / Continuar como cliente</h3>
+            <div style="display:flex;gap:8px;margin:12px 0 20px 0;justify-content:center;">
+                <button type="button" id="globalTabCliente" class="btn-main" style="padding:8px 14px;">Cliente (email)</button>
+                <button type="button" id="globalTabCuenta" class="btn-main" style="padding:8px 14px;">Cuenta (usuario)</button>
+            </div>
+            <form id="globalClienteQuickForm" style="display:block;text-align:center;margin-bottom:8px;">
+                <label for="globalClienteEmailInput" class="modal-label">Correo electrónico:</label>
+                <input type="email" id="globalClienteEmailInput" name="email" class="modal-input" style="width:90%;margin-top:6px;" required>
+                <div style="margin-top:12px;"><button type="button" id="globalClienteSubmit" class="btn-main modal-btn">Continuar como cliente</button></div>
+            </form>
+            <form id="globalAuthForm" style="display:none;text-align:center;margin-bottom:8px;">
+                <label for="globalAuthUsername" class="modal-label">Usuario o correo:</label>
+                <input type="text" id="globalAuthUsername" name="username" class="modal-input" style="width:90%;margin-top:6px;" required>
+                <label for="globalAuthPassword" class="modal-label" style="margin-top:8px;">Contraseña:</label>
+                <input type="password" id="globalAuthPassword" name="password" class="modal-input" style="width:90%;margin-top:6px;" required>
+                <div style="margin-top:12px;"><button type="button" id="globalAuthSubmit" class="btn-main modal-btn">Iniciar sesión</button></div>
+            </form>
+            <div id="globalLoginError" style="display:none;color:#d90429;margin-top:8px;text-align:center"></div>
+        </div>
+    </div>`;
+
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+    window.pendingAddAction = null;
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    function showGlobalLoginTab(tab) {
+        document.getElementById('globalClienteQuickForm').style.display = tab === 'cliente' ? 'block' : 'none';
+        document.getElementById('globalAuthForm').style.display = tab === 'cuenta' ? 'block' : 'none';
+        document.getElementById('globalLoginError').style.display = 'none';
+    }
+
+    function openGlobalLoginModal(action) {
+        window.pendingAddAction = action || null;
+        document.getElementById('globalLoginModal').style.display = 'flex';
+        showGlobalLoginTab('cliente');
+        // Inicializar Google One Tap sólo al abrir el modal (evita prompt global en carga)
+        try { initGoogleOneTap(); } catch(e) {}
+    }
+
+    function closeGlobalLoginModal(cancel = false) {
+        const el = document.getElementById('globalLoginModal');
+        if (el) el.style.display = 'none';
+        if (cancel) {
+            window.pendingAddAction = null;
+        }
+    }
+
+    async function submitGlobalClienteQuick() {
+        const email = document.getElementById('globalClienteEmailInput').value.trim();
+        if (!email) { document.getElementById('globalLoginError').innerText = 'Introduce un correo válido.'; document.getElementById('globalLoginError').style.display = 'block'; return; }
+        const url = "{% url 'cliente_login' %}";
+        const csrftoken = getCookie('csrftoken');
+        const formData = new FormData(); formData.append('email', email);
+        try {
+            const nextValue = (window.pendingAddAction && window.pendingAddAction.next) ? window.pendingAddAction.next : window.location.pathname;
+            if (nextValue) {
+                formData.append('next', nextValue);
+            }
+        } catch(e) {
+            formData.append('next', window.location.pathname);
+        }
+        try {
+            const resp = await fetch(url, { method: 'POST', body: formData, headers: {'X-CSRFToken': csrftoken, 'X-Requested-With': 'XMLHttpRequest'} });
+            const data = await resp.json();
+            if (data.ok) {
+                if (window.pendingAddAction && window.pendingAddAction.type === 'open_quantity') {
+                    handlePendingAfterLogin();
+                    return;
+                }
+                closeGlobalLoginModal();
+                if (data.next) { window.location.href = data.next; return; }
+                handlePendingAfterLogin();
+            } else {
+                document.getElementById('globalLoginError').innerText = data.errors || 'Correo no registrado'; document.getElementById('globalLoginError').style.display = 'block';
+            }
+        } catch (e) {
+            document.getElementById('globalLoginError').innerText = 'Error de red.'; document.getElementById('globalLoginError').style.display = 'block';
+        }
+    }
+
+    async function submitGlobalAuthForm() {
+        const username = document.getElementById('globalAuthUsername').value.trim();
+        const password = document.getElementById('globalAuthPassword').value;
+        if (!username || !password) { document.getElementById('globalLoginError').innerText = 'Usuario y contraseña requeridos'; document.getElementById('globalLoginError').style.display = 'block'; return; }
+        const url = "{% url 'login' %}";
+        const csrftoken = getCookie('csrftoken');
+        const formData = new FormData(); formData.append('username', username); formData.append('password', password);
+        try {
+            const nextValue = (window.pendingAddAction && window.pendingAddAction.next) ? window.pendingAddAction.next : window.location.pathname;
+            formData.append('next', nextValue);
+        } catch(e) {
+            formData.append('next', window.location.pathname);
+        }
+        try {
+            const resp = await fetch(url, { method: 'POST', body: formData, headers: {'X-CSRFToken': csrftoken, 'X-Requested-With': 'XMLHttpRequest'} });
+            const data = await resp.json();
+            if (data.ok) {
+                if (window.pendingAddAction && window.pendingAddAction.type === 'open_quantity') {
+                    handlePendingAfterLogin();
+                    return;
+                }
+                closeGlobalLoginModal();
+                if (data.next) { window.location.href = data.next; return; }
+                handlePendingAfterLogin();
+            } else {
+                document.getElementById('globalLoginError').innerText = JSON.stringify(data.errors) || 'Credenciales inválidas'; document.getElementById('globalLoginError').style.display = 'block';
+            }
+        } catch (e) {
+            document.getElementById('globalLoginError').innerText = 'Error de red.'; document.getElementById('globalLoginError').style.display = 'block';
+        }
+    }
+
+    function handlePendingAfterLogin() {
+        const a = window.pendingAddAction;
+        if (!a) { location.reload(); return; }
+        if (a.type === 'submit_form' && a.formId) {
+            const f = document.getElementById(a.formId);
+            if (f) { f.submit(); return; }
+        }
+        // Para evitar bucles por la variable de plantilla estática `user.is_authenticated`,
+        // guardamos la acción pendiente y recargamos la página para que el servidor
+        // renderice el estado autenticado correctamente. Al recargar, hay un handler
+        // que ejecutará la acción pendiente (abrir modal / enviar formulario).
+        if (a.type === 'open_quantity') {
+            try { localStorage.setItem('ferrelectri_pending_action', JSON.stringify(a)); } catch(e) {}
+            location.reload();
+            return;
+        }
+        // Si la acción pendiente tiene una URL de destino, ir a ella
+        if (a.next) {
+            try { localStorage.removeItem('ferrelectri_pending_action'); } catch(e) {}
+            window.location.href = a.next;
+            return;
+        }
+        location.reload();
+    }
+
+    // Attach handlers
+    document.addEventListener('click', function(e){
+        if (e.target && e.target.id === 'globalLoginClose') closeGlobalLoginModal();
+        if (e.target && e.target.id === 'globalTabCliente') showGlobalLoginTab('cliente');
+        if (e.target && e.target.id === 'globalTabCuenta') showGlobalLoginTab('cuenta');
+        if (e.target && e.target.id === 'globalClienteSubmit') submitGlobalClienteQuick();
+        if (e.target && e.target.id === 'globalAuthSubmit') submitGlobalAuthForm();
+    });
+
+    // Expose opener
+    window.openGlobalLoginModal = openGlobalLoginModal;
+})();
+</script>
+
+<!-- Google Identity Services (One Tap) -->
+{% if not request.user.is_authenticated and request.is_secure %}
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<div id="g_id_onload"
+    data-client_id="{{ GOOGLE_CLIENT_ID }}"
+    data-callback="handleCredentialResponse"
+    data-auto_prompt="false"
+    data-cancel_on_tap_outside="true">
+</div>
+<div class="g_id_signin"
+    data-type="standard"
+    data-size="large"
+    data-theme="outline"
+    data-text="continue_with"
+    data-shape="rectangular">
+</div>
+{% endif %}
+<script>
+window.GOOGLE_CLIENT_ID = "{{ GOOGLE_CLIENT_ID }}";
+function handleCredentialResponse(response) {
+    if (!response || !response.credential) return;
+    fetch("{% url 'google_auth_api' %}", {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({credential: response.credential})
+    }).then(function (result) {
+        return result.json().then(function (data) {
+            if (!result.ok || data.status !== 'success') throw new Error(data.error || 'google_auth_failed');
+            window.location.href = data.redirect || '/';
+        });
+    }).catch(function (error) { console.error('Google One Tap:', error); });
+}
+function initGoogleOneTap() {
+    // El nuevo estándar de Google Identity Services usa el markup <div id="g_id_onload">.
+    // Mantener esta función para compatibilidad con otras llamadas existentes.
+    return;
+}
+</script>
+
+<script>
+// Ejecutar acción pendiente almacenada en localStorage tras recarga (si existe)
+document.addEventListener('DOMContentLoaded', function() {
+    try {
+        const pending = localStorage.getItem('ferrelectri_pending_action');
+        if (!pending) return;
+        const a = JSON.parse(pending);
+        localStorage.removeItem('ferrelectri_pending_action');
+        if (a.type === 'open_quantity' && typeof window.abrirModal === 'function') {
+            // abrir modal de cantidad con los datos guardados
+            window.abrirModal(a.productoId, a.productoNombre, a.stockMax);
+            return;
+        }
+        if (a.type === 'submit_form' && a.formId) {
+            const f = document.getElementById(a.formId);
+            if (f) { f.submit(); }
+        }
+    } catch (e) {
+        try { localStorage.removeItem('ferrelectri_pending_action'); } catch (err) {}
+    }
+});
+</script>

@@ -1,0 +1,322 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ producto.Descripcion }} | FerreElectri PLUS{% endblock %}
+
+{% block content %}
+<main class="fade-enter min-h-[calc(100vh-80px)] w-full bg-slate-50 px-4 py-10 dark:bg-slate-950 sm:px-8 lg:px-12">
+    <div id="product-detail-page" class="w-full">
+        <a href="/?vista=catalogo" class="mb-8 inline-flex items-center text-sm font-bold uppercase tracking-widest text-slate-500 transition-colors hover:text-blue-600">
+            &larr; Volver al catálogo
+        </a>
+
+        <div class="grid grid-cols-1 items-start gap-12 lg:grid-cols-2 xl:gap-20">
+            <section class="flex flex-col space-y-6" aria-labelledby="product-title">
+                <div id="main-image-container" class="relative flex h-[50vh] max-h-[500px] w-full items-center justify-center overflow-hidden rounded-[2rem] border border-gray-200 bg-white p-8 shadow-sm dark:border-white/5 dark:bg-slate-900">
+                    {% if producto.Imagen %}
+                    <img id="product-main-image" src="{{ producto.Imagen.url }}" alt="{{ producto.Descripcion }}" class="h-full w-full object-contain drop-shadow-xl transition-transform duration-500 hover:scale-105">
+                    {% else %}
+                    <img id="product-main-image" src="{% static 'img/default-product.png' %}" alt="Imagen no disponible para {{ producto.Descripcion }}" class="h-full w-full object-contain drop-shadow-xl transition-transform duration-500 hover:scale-105">
+                    {% endif %}
+                </div>
+
+                <div>
+                    <h2 class="mb-4 text-xs font-black uppercase tracking-widest text-slate-400">Similares{% if producto.Categoria %} en {{ producto.Categoria.name }}{% endif %}</h2>
+                    <div class="scrollbar-hide flex space-x-4 overflow-x-auto pb-4">
+                        {% for similar in productos_similares %}
+                        <a href="{% url 'producto_detalle' similar.Codigo %}" class="h-24 w-24 flex-shrink-0 rounded-xl border border-gray-200 bg-white p-2 opacity-70 transition-all hover:border-blue-500 hover:opacity-100 dark:border-white/5 dark:bg-slate-900">
+                            {% if similar.Imagen %}
+                            <img src="{{ similar.Imagen.url }}" alt="{{ similar.Descripcion }}" class="h-full w-full object-contain">
+                            {% else %}
+                            <img src="{% static 'img/default-product.png' %}" alt="Imagen no disponible" class="h-full w-full object-contain">
+                            {% endif %}
+                        </a>
+                        {% empty %}
+                        <p class="text-sm text-slate-500">No hay productos similares disponibles.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </section>
+
+            <section class="flex flex-col justify-start" aria-labelledby="product-title">
+                {% if producto.Cantidad > 0 %}
+                <span class="mb-4 inline-block w-max rounded-full bg-green-100 px-3 py-1 text-xs font-black uppercase tracking-widest text-green-700 dark:bg-green-900/30 dark:text-green-400">Stock disponible</span>
+                {% else %}
+                <span class="mb-4 inline-block w-max rounded-full bg-red-100 px-3 py-1 text-xs font-black uppercase tracking-widest text-red-700 dark:bg-red-900/30 dark:text-red-400">Agotado</span>
+                {% endif %}
+
+                <div class="product-title-row">
+                    <h1 id="product-title" class="mb-2 text-4xl font-black leading-tight text-slate-900 dark:text-white lg:text-5xl">{{ producto.Descripcion }}</h1>
+                    <button type="button" class="product-ai-action" data-ai-question="Háblame del producto {{ producto.Descripcion|escape }} que estoy viendo. Indica solo los datos que conoces con certeza y aclara qué especificaciones no aparecen en la ficha." aria-label="Consultar información de {{ producto.Descripcion }}">
+                        <i class="fa-solid fa-comment-dots" aria-hidden="true"></i>
+                        Consultar información
+                    </button>
+                </div>
+                <p class="mb-8 font-mono text-sm text-slate-500">CÓDIGO: {{ producto.Codigo }}</p>
+
+                <div class="mb-8 grid grid-cols-2 gap-4 rounded-2xl border border-gray-100 bg-slate-100 p-6 dark:border-white/5 dark:bg-slate-900/50">
+                    <div>
+                        <p class="mb-1 text-xs uppercase tracking-wider text-slate-400">Categoría</p>
+                        <p class="font-bold text-slate-800 dark:text-slate-200">{{ producto.Categoria.name|default:'General' }}</p>
+                    </div>
+                    <div>
+                        <p class="mb-1 text-xs uppercase tracking-wider text-slate-400">Existencia</p>
+                        <p class="font-bold text-slate-800 dark:text-slate-200">{{ producto.Cantidad }} unidades</p>
+                    </div>
+                </div>
+
+                {% if producto.Cantidad > 0 %}
+                <form id="add-to-cart-form" action="{% url 'agregar_al_carrito' producto.Codigo %}" method="post" onsubmit="addToCartChoreography(event)">
+                    {% csrf_token %}
+                    <div class="mb-8">
+                        <h2 class="mb-4 text-sm font-black uppercase tracking-widest text-slate-900 dark:text-white">Presentación</h2>
+                        <div id="presentation-options" class="flex w-full flex-row flex-wrap gap-3">
+                            {% for presentation in producto.presentations %}
+                            <label class="cursor-pointer">
+                                <input type="radio" name="presentation_choice" value="{{ forloop.counter0 }}" class="peer sr-only" {% if forloop.first %}checked{% endif %}>
+                                <span class="block rounded-xl border-2 border-gray-200 px-5 py-3 font-bold text-slate-600 transition-all peer-checked:border-blue-600 peer-checked:bg-blue-50 peer-checked:text-blue-700 dark:border-slate-700 dark:text-slate-400 dark:peer-checked:bg-blue-900/20 dark:peer-checked:text-blue-400">
+                                    {{ presentation.type|default:'Unidad' }}{% if presentation.factor %} · {{ presentation.factor }} {{ presentation.unit|default:'unidades' }}{% endif %}
+                                </span>
+                            </label>
+                            {% empty %}
+                            <label class="cursor-pointer">
+                                <input type="radio" name="presentation_choice" value="0" class="peer sr-only" checked>
+                                <span class="block rounded-xl border-2 border-blue-600 bg-blue-50 px-5 py-3 font-bold text-blue-700 dark:bg-blue-900/20 dark:text-blue-400">Por unidad</span>
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <input type="hidden" id="presentationType" name="presentation_type" value="Unidad">
+                    <input type="hidden" id="presentationFactor" name="presentation_factor" value="1">
+                    <input type="hidden" id="cantidad" name="cantidad" value="1">
+                    <input type="hidden" id="presentationQuantity" name="presentation_quantity" value="1">
+
+                    <div class="mb-8 flex items-end justify-between gap-6">
+                        <div>
+                            <h2 class="mb-4 text-sm font-black uppercase tracking-widest text-slate-900 dark:text-white">Cantidad</h2>
+                            <div class="flex w-max items-center rounded-xl border border-gray-200 bg-slate-100 p-1 dark:border-slate-800 dark:bg-slate-900">
+                                <button type="button" data-quantity-change="-1" class="flex h-10 w-10 items-center justify-center text-xl font-bold text-slate-600 transition hover:text-blue-600">&minus;</button>
+                                <output id="quantity-display" class="w-12 text-center text-lg font-black text-slate-900 dark:text-white">1</output>
+                                <button type="button" data-quantity-change="1" class="flex h-10 w-10 items-center justify-center text-xl font-bold text-slate-600 transition hover:text-blue-600">&plus;</button>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="mb-1 text-xs uppercase tracking-wider text-slate-400">Precio total</p>
+                            <p id="total-price" class="text-4xl font-black text-orange-500">$0.00</p>
+                        </div>
+                    </div>
+
+                    <button id="add-to-cart-button" type="submit" class="add-cart-button group relative w-full overflow-hidden rounded-2xl bg-blue-600 py-5 text-lg font-black uppercase tracking-widest text-white shadow-[0_15px_30px_rgba(37,99,235,0.3)] transition-all hover:-translate-y-1 hover:bg-blue-700">
+                        <span class="add-cart-button-label relative z-10 flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-cart-shopping" aria-hidden="true"></i>
+                            Añadir al carrito
+                        </span>
+                        <span class="add-cart-button-progress" aria-hidden="true">
+                            <span class="add-cart-progress-copy">Armando tu pedido</span>
+                            <span class="add-cart-motion">
+                                <i class="fa-solid fa-warehouse add-cart-warehouse"></i>
+                                <i class="fa-solid fa-box add-cart-package"></i>
+                                <i class="fa-solid fa-cart-shopping add-cart-trolley"></i>
+                                <i class="fa-solid fa-sparkles add-cart-sparkle"></i>
+                            </span>
+                        </span>
+                    </button>
+                </form>
+                {% endif %}
+            </section>
+        </div>
+    </div>
+</main>
+
+{{ producto.presentations|json_script:'presentations-data' }}
+<style>
+    .fade-enter { animation: fadeInPage .5s cubic-bezier(.2,.8,.2,1) forwards; }
+    @keyframes fadeInPage {
+        from { opacity: 0; transform: translateY(15px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes cartBump {
+        0% { transform: scale(1); }
+        40% { transform: scale(1.3) translateY(-2px); color: #2563eb; }
+        100% { transform: scale(1); }
+    }
+    .anim-cart-bump {
+        animation: cartBump .5s cubic-bezier(.2,.8,.2,1);
+    }
+    .add-cart-button { isolation: isolate; min-height: 68px; }
+    .add-cart-button-label,
+    .add-cart-button-progress,
+    .add-cart-button-success { transition: opacity .22s ease, transform .22s ease; }
+    .add-cart-button-progress,
+    .add-cart-button-success { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 20px; opacity: 0; transform: translateY(8px) scale(.97); pointer-events: none; }
+    .add-cart-button-progress { flex-direction: row-reverse; }
+    .add-cart-progress-copy { font-size: 1rem; font-weight: 900; text-align: left; text-shadow: 0 1px 8px rgba(255,255,255,.18); }
+    .add-cart-motion { --cart-travel: 166px; --package-travel: -30px; position: relative; display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; width: 220px; height: 48px; }
+    .add-cart-warehouse { position: absolute; right: 0; bottom: 7px; z-index: 0; color: #d8eaff; font-size: 1.55rem; filter: drop-shadow(0 0 7px rgba(191,219,254,.35)); }
+    .add-cart-trolley { position: absolute; left: 0; bottom: 3px; z-index: 2; font-size: 2.25rem; transform-origin: 55% 75%; filter: drop-shadow(0 3px 4px rgba(0,0,0,.22)); }
+    .add-cart-package { position: absolute; z-index: 3; right: 0; top: 7px; font-size: 1.5rem; color: #ffe27a; opacity: 0; filter: drop-shadow(0 3px 4px rgba(0,0,0,.25)); }
+    .add-cart-sparkle { position: absolute; z-index: 4; top: 0; right: 49px; color: #fff4b5; opacity: 0; font-size: 1.15rem; }
+    .add-cart-button.is-adding { cursor: progress; background: linear-gradient(105deg, #123b9d, #2563eb 48%, #1686e8); box-shadow: 0 18px 42px rgba(37,99,235,.48), inset 0 1px 0 rgba(255,255,255,.3); }
+    .add-cart-button.is-adding .add-cart-button-label { opacity: 0; transform: translateY(-8px) scale(.97); }
+    .add-cart-button.is-adding .add-cart-button-progress { opacity: 1; transform: translateY(0) scale(1); }
+    .add-cart-button.is-adding .add-cart-warehouse { animation: warehouseReady 3.3s ease-out 1 both; }
+    .add-cart-button.is-adding .add-cart-trolley { animation: cartToWarehouse 3.3s cubic-bezier(.18,.85,.24,1) 1 both; }
+    .add-cart-button.is-adding .add-cart-package { animation: packageIntoCart 3.3s cubic-bezier(.22,.72,.28,1) 1 both; }
+    .add-cart-button.is-adding .add-cart-sparkle { animation: cartSparkle 3.3s ease-out 1 both; }
+    .add-cart-button.is-added { background: linear-gradient(105deg, #07865f, #10a879); box-shadow: 0 15px 34px rgba(16,168,121,.3); }
+    .add-cart-button.is-added .add-cart-button-label { opacity: 0; transform: scale(.92); }
+    .add-cart-button.is-added .add-cart-button-success { opacity: 1; transform: translateY(0) scale(1); }
+    .add-cart-success-icon { display: grid; place-items: center; width: 30px; height: 30px; border: 1px solid rgba(255,255,255,.55); border-radius: 50%; background: rgba(255,255,255,.16); animation: cartSuccessPop .42s cubic-bezier(.2,.8,.2,1) both; }
+    @keyframes warehouseReady {
+        0%, 18% { filter: drop-shadow(0 0 3px rgba(191,219,254,.2)); }
+        24%, 80% { filter: drop-shadow(0 0 13px rgba(191,219,254,.85)); }
+        100% { filter: drop-shadow(0 0 7px rgba(191,219,254,.4)); }
+    }
+    @keyframes cartToWarehouse {
+        0%, 5% { opacity: .72; transform: translateX(0) scale(.86); }
+        19% { opacity: 1; transform: translateX(var(--cart-travel)) scale(1.08); }
+        25%, 100% { opacity: 1; transform: translateX(var(--cart-travel)) scale(1); }
+    }
+    @keyframes packageIntoCart {
+        0%, 24% { opacity: 0; transform: translate(0, 0) rotate(-16deg) scale(.55); }
+        31% { opacity: 1; transform: translate(0, -2px) rotate(-8deg) scale(.88); }
+        66% { opacity: 1; transform: translate(var(--package-travel), 3px) rotate(4deg) scale(.92); }
+        76%, 100% { opacity: 1; transform: translate(var(--package-travel), 3px) rotate(0) scale(.7); }
+    }
+    @keyframes cartSparkle {
+        0%, 64% { opacity: 0; transform: scale(.35) rotate(-25deg); }
+        74% { opacity: 1; transform: scale(1.35) rotate(10deg); }
+        94%, 100% { opacity: 0; transform: scale(.55) rotate(30deg); }
+    }
+    @keyframes cartSuccessPop {
+        from { opacity: 0; transform: scale(.45) rotate(-35deg); }
+        to { opacity: 1; transform: scale(1) rotate(0); }
+    }
+    @media (max-width: 480px) {
+        .add-cart-button-progress { gap: 8px; }
+        .add-cart-progress-copy { font-size: .75rem; }
+        .add-cart-motion { --cart-travel: 84px; --package-travel: -28px; width: 136px; }
+        .add-cart-warehouse { font-size: 1.35rem; }
+        .add-cart-trolley { font-size: 1.9rem; }
+        .add-cart-package { font-size: 1.25rem; }
+        .add-cart-sparkle { right: 38px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .fade-enter { animation: none; }
+        .anim-cart-bump { animation: none; }
+        .add-cart-button *, .add-cart-success-icon { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const form = document.getElementById('add-to-cart-form');
+    const image = document.getElementById('product-main-image');
+    const quantity = document.getElementById('presentationQuantity');
+    const quantityDisplay = document.getElementById('quantity-display');
+    const presentationType = document.getElementById('presentationType');
+    const presentationFactor = document.getElementById('presentationFactor');
+    const amount = document.getElementById('total-price');
+    const badge = document.getElementById('cart-counter-badge');
+    const cartIcon = document.getElementById('nav-cart-icon');
+    const presentations = JSON.parse(document.getElementById('presentations-data').textContent || '[]');
+    const basePrice = Number(String('{{ producto.Precio|default:"0.00" }}').replace(',', '.')) || 0;
+    let requestInFlight = false;
+
+    function activePresentation() {
+        const selected = document.querySelector('input[name="presentation_choice"]:checked');
+        const index = Number(selected ? selected.value : 0);
+        return presentations[index] || { type: 'Unidad', factor: 1, unit: 'unidades' };
+    }
+
+    function updatePrice() {
+        const selected = activePresentation();
+        const factor = Number(selected.factor || 1) || 1;
+        const count = Math.max(1, Number(quantity.value || 1));
+        quantity.value = count;
+        quantityDisplay.textContent = count;
+        presentationType.value = selected.type || 'Unidad';
+        presentationFactor.value = factor;
+        document.getElementById('cantidad').value = count * factor;
+        amount.textContent = '$' + (basePrice * count * factor).toFixed(2);
+    }
+
+    document.querySelectorAll('input[name="presentation_choice"]').forEach((radio) => radio.addEventListener('change', updatePrice));
+    document.querySelectorAll('[data-quantity-change]').forEach((button) => button.addEventListener('click', () => {
+        quantity.value = Math.max(1, Number(quantity.value || 1) + Number(button.dataset.quantityChange));
+        updatePrice();
+    }));
+    updatePrice();
+
+    window.addToCartChoreography = async function (event) {
+        event.preventDefault();
+        if (requestInFlight || !image || !cartIcon || !form) return;
+        requestInFlight = true;
+        updatePrice();
+        const button = document.getElementById('add-to-cart-button');
+        const originalButtonHTML = button.innerHTML;
+        const originalBadgeCount = Math.max(0, Number.parseInt(badge?.textContent || '0', 10) || 0);
+        button.disabled = true;
+
+        button.classList.remove('is-added');
+        button.classList.add('is-adding');
+        button.setAttribute('aria-busy', 'true');
+        button.setAttribute('aria-label', 'Agregando producto al carrito');
+        button.innerHTML = '<span class="add-cart-button-progress"><span class="add-cart-progress-copy">¡Vamos al almacén!</span><span class="add-cart-motion" aria-hidden="true"><i class="fa-solid fa-warehouse add-cart-warehouse"></i><i class="fa-solid fa-box add-cart-package"></i><i class="fa-solid fa-cart-shopping add-cart-trolley"></i><i class="fa-solid fa-sparkles add-cart-sparkle"></i></span></span>';
+        const progressCopy = button.querySelector('.add-cart-progress-copy');
+        const progressCopyTimer = window.setTimeout(() => {
+            progressCopy.textContent = '¡Cargando tu carrito!';
+            button.setAttribute('aria-label', 'Cargando el producto en el carrito');
+        }, 800);
+
+        const minimumAnimationTime = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 350 : 3350;
+        const animationDelay = new Promise((resolve) => window.setTimeout(resolve, minimumAnimationTime));
+        const request = fetch(form.action, {
+            method: 'POST',
+            body: new FormData(form),
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            credentials: 'same-origin'
+        }).then(async (response) => {
+            if (!response.ok) throw new Error('No se pudo agregar el producto');
+            const data = await response.json().catch(() => null);
+            const serverCount = data && (data.count ?? data.total_items);
+            const nextCount = Number.isFinite(Number(serverCount)) ? Number(serverCount) : originalBadgeCount + 1;
+            if (badge) badge.textContent = String(nextCount);
+            cartIcon.classList.remove('anim-cart-bump');
+            void cartIcon.offsetWidth;
+            cartIcon.classList.add('anim-cart-bump');
+            return data;
+        });
+
+        try {
+            await Promise.all([request, animationDelay]);
+            window.clearTimeout(progressCopyTimer);
+            button.classList.remove('is-adding');
+            button.classList.add('is-added');
+            button.removeAttribute('aria-busy');
+            button.setAttribute('aria-label', 'Producto añadido al carrito');
+            button.innerHTML = '<span class="add-cart-button-success"><span class="add-cart-success-icon"><i class="fa-solid fa-check" aria-hidden="true"></i></span> ¡En el carrito!</span>';
+            window.setTimeout(() => {
+                button.innerHTML = originalButtonHTML;
+                button.classList.remove('is-added');
+                button.removeAttribute('aria-label');
+                button.disabled = false;
+                requestInFlight = false;
+            }, 2500);
+        } catch (error) {
+            window.clearTimeout(progressCopyTimer);
+            if (badge) badge.textContent = String(originalBadgeCount);
+            cartIcon.classList.remove('anim-cart-bump');
+            button.classList.remove('is-adding', 'is-added');
+            button.removeAttribute('aria-busy');
+            button.removeAttribute('aria-label');
+            button.innerHTML = originalButtonHTML;
+            button.disabled = false;
+            requestInFlight = false;
+            window.alert('No se pudo agregar el producto al carrito.');
+        }
+    };
+});
+</script>
+{% endblock %}

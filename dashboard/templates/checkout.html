@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Checkout seguro | FerreElectri PLUS{% endblock %}
+{% block body_class %}theme-dark checkout-page{% endblock %}
+
+{% block content %}
+<div class="checkout-shell">
+  <div class="checkout-heading">
+    <div>
+      <h1>Finaliza tu compra con total seguridad</h1>
+      <p>Elige un método de pago, confirma tus datos de entrega y reserva el stock de forma atómica antes de cerrar la orden.</p>
+    </div>
+  </div>
+
+  {% if messages %}
+    {% for message in messages %}
+    <div role="status" class="checkout-notice {% if 'error' in message.tags %}checkout-notice-error{% elif 'success' in message.tags %}checkout-notice-success{% else %}checkout-notice-info{% endif %}">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+  {% if checkout_errors %}
+  <div role="alert" aria-live="assertive" class="checkout-notice checkout-notice-error">
+    <p><strong>No se pudo enviar el pedido.</strong> Revisa estos datos:</p>
+    <ul>{% for error in checkout_errors %}<li>{{ error }}</li>{% endfor %}</ul>
+  </div>
+  {% endif %}
+
+  <form id="checkoutForm" class="checkout-layout" method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <div class="checkout-main-column">
+      <section class="checkout-card" aria-labelledby="contactTitle">
+        <div class="checkout-card-heading">
+          <div class="checkout-step">01</div>
+          <div>
+            <h2 id="contactTitle">Datos de envío</h2>
+            <p>Los usamos para coordinar la entrega y la verificación de pago.</p>
+          </div>
+        </div>
+
+        <div class="checkout-fields-grid">
+          <label class="checkout-field">
+            <span>Nombre</span>
+            <input type="text" value="{{ cliente.nombre|default:'Visitante' }}" readonly>
+          </label>
+          <label class="checkout-field">
+            <span>Correo</span>
+            <input type="email" value="{{ cliente.email|default:'' }}" readonly>
+          </label>
+          <label class="checkout-field">
+            <span>Teléfono</span>
+            <input name="telefono" type="tel" value="{{ checkout_post_data.telefono|default:cliente.telefono }}" placeholder="0414 000 0000" required>
+          </label>
+          <label class="checkout-field">
+            <span>Dirección de entrega</span>
+            <input name="direccion" type="text" value="{{ checkout_post_data.direccion|default:cliente.direccion }}" placeholder="Ciudad, sector y dirección" required>
+          </label>
+        </div>
+      </section>
+
+      <section class="checkout-card" aria-labelledby="paymentTitle">
+        <div class="checkout-card-heading">
+          <div class="checkout-step">02</div>
+          <div>
+            <h2 id="paymentTitle">Método de pago premium</h2>
+            <p>Selecciona una opción y habilita sus campos específicos sin recargas.</p>
+          </div>
+        </div>
+
+        <div class="payment-methods" role="tablist" aria-label="Métodos de pago">
+          <button type="button" class="payment-method is-selected" data-payment-method="PAGO_MOVIL" role="tab" aria-selected="true">
+            <div><i class="fa-solid fa-mobile-screen-button"></i></div>
+            <div>
+              <strong>Pago Móvil</strong>
+              <span>Venezuela</span>
+            </div>
+          </button>
+          <button type="button" class="payment-method" data-payment-method="BINANCE" role="tab" aria-selected="false">
+            <div><i class="fa-brands fa-bitcoin"></i></div>
+            <div>
+              <strong>Binance Pay</strong>
+              <span>USDT · Test</span>
+            </div>
+          </button>
+          <button type="button" class="payment-method" data-payment-method="PAYPAL" role="tab" aria-selected="false">
+            <div><i class="fa-brands fa-paypal"></i></div>
+            <div>
+              <strong>PayPal / Tarjeta</strong>
+              <span>Internacional</span>
+            </div>
+          </button>
+        </div>
+
+        <input type="hidden" name="metodo" id="paymentMethod" value="{{ checkout_method|default:'PAGO_MOVIL' }}">
+
+        <div class="payment-panel is-visible" data-payment-panel="PAGO_MOVIL">
+          <div class="checkout-fields-grid">
+            <label class="checkout-field">
+              <span>Banco de origen</span>
+              <select name="banco" class="w-full bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-600 rounded-xl px-3 py-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
+                <option value="" class="bg-white dark:bg-slate-800 text-slate-900 dark:text-white" {% if not payment_form.banco.value %}selected{% endif %}>Selecciona tu banco</option>
+                <option value="Banesco" class="bg-white dark:bg-slate-800 text-slate-900 dark:text-white" {% if payment_form.banco.value == 'Banesco' %}selected{% endif %}>Banesco</option>
+                <option value="Mercantil" class="bg-white dark:bg-slate-800 text-slate-900 dark:text-white" {% if payment_form.banco.value == 'Mercantil' %}selected{% endif %}>Mercantil</option>
+                <option value="BBVA Provincial" class="bg-white dark:bg-slate-800 text-slate-900 dark:text-white" {% if payment_form.banco.value == 'BBVA Provincial' %}selected{% endif %}>BBVA Provincial</option>
+                <option value="Bancamiga" class="bg-white dark:bg-slate-800 text-slate-900 dark:text-white" {% if payment_form.banco.value == 'Bancamiga' %}selected{% endif %}>Bancamiga</option>
+                <option value="Banco de Venezuela" class="bg-white dark:bg-slate-800 text-slate-900 dark:text-white" {% if payment_form.banco.value == 'Banco de Venezuela' %}selected{% endif %}>Banco de Venezuela</option>
+                <option value="BNC" class="bg-white dark:bg-slate-800 text-slate-900 dark:text-white" {% if payment_form.banco.value == 'BNC' %}selected{% endif %}>BNC</option>
+                <option value="Banco del Tesoro" class="bg-white dark:bg-slate-800 text-slate-900 dark:text-white" {% if payment_form.banco.value == 'Banco del Tesoro' %}selected{% endif %}>Banco del Tesoro</option>
+                <option value="100% Banco" class="bg-white dark:bg-slate-800 text-slate-900 dark:text-white" {% if payment_form.banco.value == '100% Banco' %}selected{% endif %}>100% Banco</option>
+                <option value="Otro banco" class="bg-white dark:bg-slate-800 text-slate-900 dark:text-white" {% if payment_form.banco.value == 'Otro banco' %}selected{% endif %}>Otro banco</option>
+              </select>
+              {% if payment_form.banco.errors %}<span class="mt-1 block text-sm font-semibold text-red-300">{{ payment_form.banco.errors }}</span>{% endif %}
+            </label>
+            <label class="checkout-field">
+              <span>Cédula del pagador</span>
+              <input name="cedula_pagador" type="text" value="{{ payment_form.cedula_pagador.value|default:'' }}" placeholder="V-12345678" inputmode="numeric" class="w-full bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-600 rounded-xl px-3 py-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
+              {% if payment_form.cedula_pagador.errors %}<span class="mt-1 block text-sm font-semibold text-red-300">{{ payment_form.cedula_pagador.errors }}</span>{% endif %}
+            </label>
+            <label class="checkout-field" style="grid-column: 1 / -1;">
+              <span>Número de referencia</span>
+              <input name="referencia" type="text" value="{{ payment_form.referencia.value|default:checkout_post_data.referencia }}" placeholder="Referencia de la operación" class="w-full bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-600 rounded-xl px-3 py-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
+              {% if payment_form.referencia.errors %}<span class="mt-1 block text-sm font-semibold text-red-300">{{ payment_form.referencia.errors }}</span>{% endif %}
+            </label>
+            <label class="checkout-field" style="grid-column: 1 / -1;">
+              <span>Capture de pago</span>
+              <input type="file" name="capture" accept="image/*" class="w-full bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-600 rounded-xl px-3 py-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 file:mr-4 file:rounded-lg file:border-0 file:bg-emerald-500 file:px-4 file:py-2 file:text-white">
+              {% if payment_form.capture.errors %}<span class="mt-1 block text-sm font-semibold text-red-300">{{ payment_form.capture.errors }}</span>{% endif %}
+            </label>
+          </div>
+          <p class="checkout-trust"><i class="fa-solid fa-circle-info"></i> Tu pedido quedará pendiente de confirmación hasta validar el pago.</p>
+        </div>
+
+        <div class="payment-panel" data-payment-panel="BINANCE">
+          <div class="payment-callout">
+            <div>
+              <strong>Binance Pay · Firma HMAC segura</strong>
+              <p>El backend genera una firma SHA-256 segura para cada intención de pago y la valida en el webhook. Nunca compartas tu clave API en este formulario.</p>
+            </div>
+          </div>
+          <label class="checkout-field">
+            <span>Referencia de Binance Pay</span>
+            <input name="referencia" type="text" placeholder="Opcional hasta confirmar la intención">
+          </label>
+        </div>
+
+        <div class="payment-panel" data-payment-panel="PAYPAL">
+          <div class="payment-callout">
+            <div>
+              <strong>PayPal / Tarjeta internacional</strong>
+              <p>Adjunta la referencia y el comprobante del pago. El pedido quedará pendiente de revisión administrativa.</p>
+            </div>
+          </div>
+          <label class="checkout-field">
+            <span>Referencia del pago</span>
+            <input name="referencia" type="text" placeholder="Referencia de PayPal o tarjeta" required>
+          </label>
+          <label class="checkout-field">
+            <span>Comprobante de pago</span>
+            <input name="comprobante" type="file" accept="image/*" required>
+          </label>
+        </div>
+      </section>
+
+      <div class="checkout-actions">
+        <a href="{% url 'carrito' %}" class="checkout-secondary">Volver al carrito</a>
+        <button type="submit" class="checkout-submit"><i class="fa-solid fa-lock"></i> Confirmar y procesar pedido</button>
+      </div>
+    </div>
+
+    <aside class="checkout-summary">
+      <div class="summary-top">
+        <div>
+          <h2>Resumen del pedido</h2>
+          <p>El stock se reserva en la misma transacción.</p>
+        </div>
+      </div>
+
+      <div class="checkout-items">
+        {% for item in items %}
+        <div class="checkout-item">
+          <div>
+            <strong>{{ item.producto.Descripcion }}</strong>
+            <span>{{ item.cantidad }} × $ {{ item.producto.Precio|floatformat:2 }} · IVA {{ item.iva_rate|floatformat:2 }}%</span>
+          </div>
+          <strong>$ {{ item.total_con_iva|floatformat:2 }}</strong>
+        </div>
+        {% endfor %}
+      </div>
+
+      <div class="checkout-summary-line">
+        <span>Subtotal</span>
+        <strong>$ {{ subtotal|floatformat:2 }}</strong>
+      </div>
+      <div class="checkout-summary-line">
+        <span>Impuestos</span>
+        <strong>$ {{ iva_total|floatformat:2 }}</strong>
+      </div>
+      <div class="checkout-total">
+        <span>Total estimado</span>
+        <strong>$ {{ total|floatformat:2 }}</strong>
+      </div>
+      <div class="checkout-trust">
+        <i class="fa-solid fa-shield-halved"></i>
+        <span>Transacción protegida con stock reservado en tiempo real</span>
+      </div>
+    </aside>
+  </form>
+</div>
+{% endblock %}
+
+{% block scripts %}<script src="{% static 'js/checkout.js' %}"></script>{% endblock %}

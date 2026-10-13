@@ -1,0 +1,608 @@
+{% extends 'base/pan_con_queso.html' %}
+{% load static %}
+
+{% block arroz_con_pollo %}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+
+<style>
+    .inventario-page {
+        --bg-page: radial-gradient(circle at top left, rgba(56, 189, 248, 0.16), transparent 24%),
+                    radial-gradient(circle at bottom right, rgba(14, 165, 233, 0.12), transparent 28%),
+                    linear-gradient(180deg, #060b16 0%, #090f1d 100%);
+        --surface: rgba(12, 18, 34, 0.88);
+        --surface-soft: rgba(15, 23, 42, 0.78);
+        --border: rgba(96, 165, 250, 0.22);
+        --border-strong: rgba(96, 165, 250, 0.30);
+        --text-main: #e2e8f0;
+        --text-muted: #94a3b8;
+        --text-strong: #ffffff;
+        --accent: #60a5fa;
+        --accent-light: rgba(96, 165, 250, 0.18);
+        --accent-glow: rgba(56, 189, 248, 0.16);
+        --shadow: 0 35px 90px rgba(0, 0, 0, 0.32);
+        --radius: 28px;
+    }
+
+    html[data-theme="light"] .inventario-page {
+        --bg-page: radial-gradient(circle at top left, rgba(56, 189, 248, 0.12), transparent 22%),
+                    radial-gradient(circle at bottom right, rgba(59, 130, 246, 0.10), transparent 24%),
+                    linear-gradient(180deg, #eff6ff 0%, #f8fafc 100%);
+        --surface: rgba(255, 255, 255, 0.86);
+        --surface-soft: rgba(255, 255, 255, 0.72);
+        --border: rgba(56, 189, 248, 0.18);
+        --border-strong: rgba(56, 189, 248, 0.26);
+        --text-main: #0f172a;
+        --text-muted: #475569;
+        --text-strong: #0f172a;
+        --accent: #2563eb;
+        --accent-light: rgba(59, 130, 246, 0.16);
+        --accent-glow: rgba(59, 130, 246, 0.10);
+        --shadow: 0 35px 90px rgba(15, 23, 42, 0.10);
+    }
+
+    .inventario-page {
+        width: 100%;
+        max-width: none;
+        margin: 0;
+        padding: 0;
+        color: var(--text-main);
+        font-family: 'Inter', sans-serif;
+        background: transparent;
+        animation: fadeInUp 0.7s ease both;
+    }
+
+    .inventario-hero {
+        display:flex;
+        align-items:flex-start;
+        justify-content:space-between;
+        gap:24px;
+        flex-wrap:wrap;
+        margin-bottom:24px;
+        padding-top:18px;
+        padding-right:320px;
+    }
+
+    .inventario-title {
+        display:flex;
+        align-items:center;
+        gap:16px;
+        margin:0;
+        font-size: clamp(2rem, 3.2vw, 3.2rem);
+        font-weight: 800;
+        letter-spacing: -0.04em;
+        text-transform: uppercase;
+        color: var(--text-strong);
+        text-shadow: 0 18px 40px rgba(15, 23, 42, 0.22);
+    }
+
+    .inventario-title .icon {
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+        width:56px;
+        height:56px;
+        border-radius:18px;
+        background: linear-gradient(180deg, rgba(56, 189, 248, 0.2), rgba(59, 130, 246, 0.12));
+        border: 1px solid rgba(96, 165, 250, 0.28);
+        box-shadow: 0 16px 40px rgba(59, 130, 246, 0.14);
+        font-size: 26px;
+        color: var(--accent);
+    }
+
+    .inventario-actions {
+        display:flex;
+        gap:18px;
+        flex-wrap:wrap;
+        align-items:center;
+        justify-content:center;
+        flex: 1 1 auto;
+        min-width:0;
+        margin-top:22px;
+    }
+
+    .inv-btn {
+        display:inline-flex;
+        align-items:center;
+        gap:10px;
+        min-height:54px;
+        padding: 14px 24px;
+        border-radius: 16px;
+        text-decoration:none;
+        font-weight: 700;
+        font-size: 1.04rem;
+        border: 1px solid rgba(96, 165, 250, 0.2);
+        background: rgba(15, 23, 42, 0.72);
+        color: var(--text-main);
+        transition: transform .22s ease, box-shadow .22s ease, background .22s ease, border-color .22s ease;
+        box-shadow: 0 16px 42px rgba(0, 0, 0, 0.16);
+    }
+
+    .inv-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 20px 54px rgba(0, 0, 0, 0.2);
+        background: rgba(56, 189, 248, 0.12);
+        border-color: rgba(96, 165, 250, 0.34);
+    }
+
+    .inv-btn.primary {
+        background: linear-gradient(135deg, rgba(37, 99, 235, 0.96), rgba(59, 130, 246, 0.92));
+        color: #ffffff;
+        border-color: transparent;
+        box-shadow: 0 18px 48px rgba(37, 99, 235, 0.24);
+    }
+
+    .inv-btn.primary:hover {
+        background: linear-gradient(135deg, #2563eb, #3b82f6);
+    }
+
+    .inv-btn .mat {
+        font-size: 20px;
+        color: inherit;
+    }
+
+    .inventario-stats {
+        display:grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 18px;
+        margin-bottom: 24px;
+        animation: fadeInUp 0.8s ease both;
+    }
+
+    .stat-card {
+        display:flex;
+        align-items:center;
+        gap:16px;
+        padding: 22px 24px;
+        min-height: 100px;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(96, 165, 250, 0.14);
+        border-radius: 24px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.14);
+        transition: transform 0.25s ease, border-color 0.25s ease, background 0.25s ease;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-3px);
+        border-color: rgba(96, 165, 250, 0.28);
+        background: rgba(255, 255, 255, 0.08);
+    }
+
+    .stat-card > span:first-child {
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+        width: 48px;
+        height: 48px;
+        border-radius: 16px;
+        background: rgba(56, 189, 248, 0.14);
+        border: 1px solid rgba(56, 189, 248, 0.24);
+        font-size: 22px;
+        color: var(--accent);
+    }
+
+    .stat-value {
+        display: block;
+        width: auto;
+        height: auto;
+        min-width: max-content;
+        white-space: nowrap;
+    }
+
+    .stat-card div {
+        display:flex;
+        flex-direction:column;
+        gap:4px;
+    }
+
+    .stat-value {
+        font-size: clamp(1.4rem, 2vw, 2rem);
+        font-weight: 800;
+        color: var(--text-strong);
+        letter-spacing: -0.03em;
+    }
+
+    .stat-card p {
+        margin: 0;
+        color: var(--text-muted);
+        font-size: 0.95rem;
+        font-weight: 500;
+    }
+
+    .inv-card {
+        width: 100%;
+        border-radius: 20px;
+        padding: 0;
+        border: 1px solid var(--border);
+        background: var(--surface-soft);
+        overflow:hidden;
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(16px);
+    }
+
+    .inv-subtitle {
+        margin: 0;
+        padding: 22px 24px 16px;
+        color: var(--text-strong);
+        font-weight: 800;
+        font-size: 1.05rem;
+        letter-spacing: 0;
+    }
+
+    .inv-table-wrap {
+        overflow-x:auto;
+        border-radius: 16px;
+        border: 1px solid var(--border);
+        background: transparent;
+        padding: 8px;
+    }
+
+    table.inv-table {
+        width:100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        min-width: 900px;
+    }
+
+    .inv-table th, .inv-table td {
+        padding: 16px 24px;
+        text-align:left;
+        border-bottom: 1px solid var(--border);
+        white-space: nowrap;
+    }
+
+    .inv-table thead th {
+        background: var(--accent-light);
+        color: var(--text-strong);
+        font-weight: 700;
+        border-bottom: 1px solid var(--border-strong);
+    }
+
+    .inv-table tbody tr {
+        background: transparent;
+        transition: background .25s ease, transform .2s ease;
+    }
+
+    .inv-table tbody tr:nth-child(even) {
+        background: rgba(255, 255, 255, 0.035);
+    }
+
+    .inv-table tbody tr:hover {
+        background: var(--accent-light);
+        transform: none;
+    }
+
+    .inv-table td {
+        color: var(--text-main);
+    }
+
+    .inv-table td strong,
+    .inv-table td span {
+        color: var(--text-strong);
+    }
+
+    .table-action {
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+        width:42px;
+        height:42px;
+        border-radius: 14px;
+        border: 1px solid rgba(96, 165, 250, 0.15);
+        background: var(--accent-light);
+        color: var(--text-strong);
+        transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+    }
+
+    .table-action:hover {
+        transform: translateY(-1px);
+        background: rgba(56, 189, 248, 0.16);
+        border-color: rgba(96, 165, 250, 0.28);
+    }
+
+    .inv-empty {
+        padding: 28px;
+        text-align:center;
+        color: var(--text-muted);
+        font-weight: 700;
+    }
+
+    .inv-card .inv-actions-row {
+        margin-top: 16px;
+        display:flex;
+        justify-content:flex-end;
+    }
+
+    .inv-card .inv-actions-row .inv-btn {
+        padding: 12px 18px;
+    }
+
+    .inv-pagination {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        padding: 16px 24px 20px;
+        color: var(--text-muted);
+        font-size: 0.92rem;
+    }
+
+    .inv-pagination-controls {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .inv-pagination a,
+    .inv-page-current {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 38px;
+        padding: 0 13px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        color: var(--text-main);
+        text-decoration: none;
+        font-weight: 650;
+    }
+
+    .inv-pagination a {
+        background: var(--accent-light);
+        transition: background .18s ease, border-color .18s ease;
+    }
+
+    .inv-pagination a:hover {
+        border-color: var(--border-strong);
+        background: var(--accent-glow);
+    }
+
+    .inv-page-current {
+        background: transparent;
+        color: var(--text-muted);
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @media (max-width: 960px) {
+        .inventario-hero {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .inventario-stats {
+            grid-template-columns: 1fr;
+        }
+        .inventario-actions {
+            justify-content: center;
+        }
+        .inventario-hero {
+            padding-right: 0;
+        }
+        .inv-table th, .inv-table td {
+            padding: 14px 12px;
+        }
+    }
+
+    @media (max-width: 680px) {
+        .inventario-page {
+            padding: 0;
+        }
+        .inv-pagination {
+            align-items: center;
+            padding: 14px 16px 18px;
+        }
+        .inv-pagination-controls {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+</style>
+
+<div class="inventario-page w-full px-4 sm:px-6 lg:px-8 py-8">
+    <div class="inventario-hero">
+        <div>
+            <p class="inv-eyebrow">CONTROL OPERATIVO · STOCK</p>
+            <h1 class="inventario-title">
+                <span class="icon"><span class="material-symbols-outlined">inventory_2</span></span>
+                Inventario
+            </h1>
+            <p class="inventario-description">Gestiona productos, existencias y movimientos desde un solo lugar.</p>
+        </div>
+
+        <div class="inventario-actions">
+            <a href="{% url 'listar_productos' %}" class="inv-btn primary">
+                <span class="mat material-symbols-outlined">list_alt</span>
+                Productos
+            </a>
+            <a href="{% url 'movimientos_inventario' %}" class="inv-btn">
+                <span class="mat material-symbols-outlined">compare_arrows</span>
+                Movimientos
+            </a>
+            <a href="{% url 'addProducto' %}" class="inv-btn">
+                <span class="mat material-symbols-outlined">add_box</span>
+                Agregar producto
+            </a>
+        </div>
+    </div>
+
+    <div class="inventario-stats">
+            <article class="stat-card">
+                <span class="material-symbols-outlined">inventory_2</span>
+                <div>
+                    <span class="stat-value">{{ productos.paginator.count|default:"0" }}</span>
+                    <p>Productos registrados</p>
+                </div>
+            </article>
+            <article class="stat-card">
+                <span class="material-symbols-outlined">trending_up</span>
+                <div>
+                    <span class="stat-value">{{ productos|length }}</span>
+                    <p>Productos en esta página</p>
+                </div>
+            </article>
+            <article class="stat-card">
+                <span class="material-symbols-outlined">stacks</span>
+                <div>
+                    <span class="stat-value">{{ total_unidades }}</span>
+                    <p>Unidades disponibles</p>
+                </div>
+            </article>
+    </div>
+
+    <div class="inv-card">
+        <div class="inv-subtitle">
+            <div><span class="inv-section-eyebrow">EXISTENCIAS</span><h2>Inventario de productos</h2><p>Revisa costos y cantidades actuales.</p></div>
+            <span class="inv-result-count">{{ productos.paginator.count }} referencias</span>
+        </div>
+
+        <div class="inv-table-wrap">
+            <table class="inv-table">
+                <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Descripción</th>
+                        <th>Costo</th>
+                        <th>Cantidad</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if productos %}
+                        {% for p in productos %}
+                        <tr>
+                            <td>{{ p.Codigo }}</td>
+                            <td style="max-width:360px; overflow:hidden; text-overflow:ellipsis;">
+                                {{ p.Descripcion }}
+                            </td>
+                            <td>${{ p.Costo|floatformat:2 }}</td>
+                            <td>{{ p.Cantidad }}</td>
+                            <td>
+                                <div style="display:flex; gap:10px; justify-content:center;">
+                                    {% if perms.Inventario.change_productos %}
+                                        <a class="table-action" href="{% url 'updtProducto' p.Codigo %}" title="Editar producto">
+                                            <span class="material-symbols-outlined" style="font-size:18px;">edit</span>
+                                        </a>
+                                    {% endif %}
+                                    {% if perms.Inventario.delete_productos %}
+                                        <form method="post" action="{% url 'dltProducto' p.Codigo %}" class="inventory-summary-delete" onsubmit="return confirm('¿Eliminar el producto {{ p.Codigo|escapejs }}?');">
+                                            {% csrf_token %}
+                                            <button type="submit" class="table-action" title="Eliminar producto {{ p.Codigo }}" aria-label="Eliminar producto {{ p.Codigo }}">
+                                                <span class="material-symbols-outlined" aria-hidden="true">delete</span>
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="5" class="inv-empty">No hay productos cargados.</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+
+        <nav class="inv-pagination" aria-label="Paginación de productos">
+            <span>Mostrando {{ productos.start_index }}-{{ productos.end_index }} de {{ productos.paginator.count }} productos</span>
+            <div class="inv-pagination-controls">
+                {% if productos.has_previous %}
+                    <a href="?page={{ productos.previous_page_number }}" aria-label="Página anterior">Anterior</a>
+                {% endif %}
+                <span class="inv-page-current">Página {{ productos.number }} de {{ productos.paginator.num_pages }}</span>
+                {% if productos.has_next %}
+                    <a href="?page={{ productos.next_page_number }}" aria-label="Página siguiente">Siguiente</a>
+                {% endif %}
+            </div>
+        </nav>
+
+    </div>
+</div>
+<style>
+.inventario-page {
+    --bg-page: transparent;
+    --surface: var(--admin-surface, #fff);
+    --surface-soft: var(--admin-surface-soft, #f7f9fa);
+    --border: var(--admin-line, #d8e2e9);
+    --border-strong: var(--admin-line-strong, #c7d5de);
+    --text-main: var(--admin-text, #193247);
+    --text-muted: var(--admin-muted, #657b8a);
+    --text-strong: var(--admin-text, #193247);
+    --accent: #176b78;
+    --accent-light: #eaf3f4;
+    --accent-glow: #f2f7f7;
+    --shadow: 0 12px 30px rgba(18,43,61,.06);
+    width:100%;
+    margin:0;
+    padding:0;
+    color:var(--text-main)!important;
+    font-family:'DM Sans','Segoe UI',sans-serif;
+    animation:none;
+}
+.inventario-hero { align-items:flex-end; gap:16px; margin:0 0 18px; padding:0; }
+.inventario-hero { border-bottom:1px solid var(--border); padding-bottom:16px; }
+.inv-eyebrow, .inv-section-eyebrow { margin:0 0 5px; color:#24777a; font-size:9px; font-weight:800; letter-spacing:.12em; }
+.inventario-title { gap:12px; color:var(--text-strong)!important; font:750 25px/1.2 'DM Sans','Segoe UI',sans-serif; letter-spacing:0; text-transform:none; text-shadow:none; }
+.inventario-title .icon { width:42px; height:42px; border:1px solid #c7dce0; border-radius:7px; background:#eaf3f4; box-shadow:none; color:#176b78; }
+.inventario-description { margin:5px 0 0; color:var(--text-muted)!important; font-size:12px; }
+.inventario-actions { flex:0 1 auto; justify-content:flex-end; gap:7px; margin:0; }
+.inv-btn { min-height:38px; gap:7px; border:1px solid var(--border-strong); border-radius:5px; background:var(--surface); color:var(--text-main); padding:0 11px; font-size:11px; box-shadow:none; }
+.inv-btn:hover { transform:translateY(-1px); border-color:#99b9bf; background:var(--surface-soft); box-shadow:none; }
+.inv-btn.primary { border-color:#176b78; background:#176b78; color:#fff; box-shadow:none; }
+.inv-btn.primary:hover { background:#115762; }
+.inventario-stats { grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin-bottom:14px; animation:none; }
+.stat-card { min-height:76px; gap:12px; border:1px solid var(--border); border-radius:7px; background:var(--surface); padding:14px 16px; box-shadow:none; }
+.stat-card:hover { transform:none; border-color:var(--border-strong); background:var(--surface-soft); }
+.stat-card > span:first-child { width:36px; height:36px; border:0; border-radius:6px; background:var(--accent-light); color:var(--accent); font-size:19px; }
+.stat-value { color:var(--text-strong); font:700 20px/1.2 'DM Sans','Segoe UI',sans-serif; letter-spacing:0; }
+.stat-card p { color:var(--text-muted); font-size:11px; }
+.inv-card { overflow:hidden; border:1px solid var(--border); border-radius:8px; background:var(--surface); box-shadow:var(--shadow); backdrop-filter:none; }
+.inv-subtitle { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:14px 16px; border-bottom:1px solid var(--border); color:var(--text-strong); }
+.inv-subtitle h2 { margin:0; color:var(--text-strong); font:700 13px 'DM Sans','Segoe UI',sans-serif; }
+.inv-subtitle p { margin:4px 0 0; color:var(--text-muted); font-size:10px; }
+.inv-section-eyebrow { display:block; margin-bottom:4px; }
+.inv-result-count { color:var(--text-muted); font-size:10px; font-weight:650; }
+.inv-table-wrap { border:0; border-radius:0; padding:0; }
+.inv-table th, .inv-table td { padding:11px 14px; border-color:var(--border); font-size:11px; }
+.inv-table thead th { background:var(--admin-table-head,#eaf1f5); color:var(--text-strong); border-color:var(--border-strong); font-size:9px; letter-spacing:.06em; text-transform:uppercase; }
+.inv-table tbody tr:nth-child(even) { background:var(--surface-soft); }
+.inv-table tbody tr:hover { background:var(--accent-light); }
+.table-action { width:32px; height:32px; border:1px solid var(--border); border-radius:5px; background:var(--surface); color:var(--text-main); }
+.table-action:hover { transform:none; border-color:#99b9bf; background:var(--accent-light); }
+.inventory-summary-delete { display:inline-flex; margin:0; }
+.inv-empty { padding:25px; color:var(--text-muted); font-size:12px; }
+.inv-pagination { flex-direction:row; justify-content:space-between; gap:10px; padding:12px 16px; color:var(--text-muted); font-size:10px; }
+.inv-pagination a, .inv-page-current { min-height:32px; border:1px solid var(--border-strong); border-radius:5px; background:var(--surface); color:var(--text-main); padding:0 10px; font-size:10px; }
+html[data-theme="dark"] .inventario-page { --surface:#101d2b; --surface-soft:#142435; --border:#2a3b4d; --border-strong:#3a5064; --text-main:#e8f0f6; --text-muted:#a6b7c5; --text-strong:#e8f0f6; --accent-light:#18323d; --accent-glow:#142b35; --shadow:0 12px 30px rgba(0,0,0,.16); }
+html[data-theme="dark"] .inventario-title .icon { border-color:#31505d; background:#18323d; color:#8fc7c6; }
+html[data-theme="dark"] .inv-table thead th { background:#1a3043; color:#e8f0f6; }
+@media(max-width:900px) { .inventario-hero { align-items:flex-start; } .inventario-actions { justify-content:flex-start; } }
+@media(max-width:900px) { .inventario-stats { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media(max-width:640px) { .inventario-title { font-size:22px; } .inventario-stats { grid-template-columns:1fr 1fr; gap:8px; } .stat-card:last-child { grid-column:1/-1; } .stat-card { padding:11px; } .inv-subtitle { align-items:flex-start; flex-direction:column; } .inv-pagination { align-items:flex-start; flex-direction:column; } .inv-pagination-controls { width:100%; } }
+</style>
+{% endblock %}
+
+{% block help_content %}
+<div>
+    <h4>Ayuda: Inventario</h4>
+    <p>Esta pantalla te muestra accesos rápidos y un resumen corto del inventario.</p>
+    <ul>
+        <li><strong>Productos:</strong> lista completa con acciones CRUD.</li>
+        <li><strong>Movimientos:</strong> entradas/salidas con filtro por fechas y artículo.</li>
+        <li><strong>Agregar producto:</strong> crea un nuevo artículo con imagen/costo/cantidad.</li>
+    </ul>
+</div>
+{% endblock %}

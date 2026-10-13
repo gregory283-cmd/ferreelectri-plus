@@ -1,0 +1,1057 @@
+{% extends 'base/pan_con_queso.html' %}
+{% load static %}
+{% block arroz_con_pollo %}
+{% comment %} help_content definido al final del archivo (evita que aparezca visible dentro del bloque arroz_con_pollo) {% endcomment %}
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+    html, body {
+        width: 100vw;
+        overflow-x: hidden;
+        margin: 0;
+        padding: 0;
+    }
+    body {
+        background: #f9fbfd;
+    }
+    .ventas-main {
+        margin-top: 120px;
+        width: 100%;
+        max-width: none;
+        box-sizing: border-box;
+        padding: 0 32px;
+    }
+    @media (max-width: 1200px) {
+        .ventas-main {
+            margin-top: 100px;
+            width: 100%;
+            max-width: none;
+            padding: 0 18px;
+        }
+    }
+    @media (max-width: 900px) {
+        .ventas-main {
+            margin-top: 80px;
+            margin-left: 0;
+            width: 100%;
+            max-width: 100vw;
+            padding: 12px 2vw;
+        }
+    }
+    @media (max-width: 600px) {
+        .ventas-main {
+            padding: 2vw 0.5vw;
+        }
+    }
+    .top-bar-ventas {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        margin-bottom: 18px;
+    }
+    .form-cerrar-sesion {
+        position: absolute;
+        top: 32px;
+        right: 38px;
+        z-index: 100;
+        margin: 0;
+    }
+    .salir {
+        background: #fff;
+        color: #00b2ff;
+        border: 2px solid #00b2ff;
+        border-radius: 12px;
+        padding: 10px 28px;
+        font-weight: 700;
+        font-size: 1.1rem;
+        box-shadow: 0 2px 8px 0 rgba(0,178,255,0.08);
+        cursor: pointer;
+        transition: background 0.2s, color 0.2s;
+        outline: none;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .salir .material-symbols-outlined {
+        font-size: 2rem;
+    }
+    .salir-text {
+        display: inline;
+    }
+    .salir:hover {
+        background: #00b2ff;
+        color: #fff;
+    }
+    .ventas-title {
+        color: #00b2ff;
+        text-align: center;
+        font-size: 2.3rem;
+        font-weight: 800;
+        margin-bottom: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+    }
+    .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 600, 'GRAD' 0, 'opsz' 24;
+        font-size: 2rem;
+        vertical-align: middle;
+        color: #00b2ff;
+    }
+    .ventas-summary-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 30px;
+        margin-bottom: 35px;
+        width: 100%;
+        justify-content: space-between;
+    }
+    .ventas-summary-card {
+        background: #fff;
+        border-radius: 18px;
+        box-shadow: 0 4px 24px 0 rgba(0,0,0,0.07);
+        padding: 32px 28px;
+        min-width: 220px;
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        border-left: 6px solid #00b2ff;
+        flex: 1 1 0;
+        max-width: 100%;
+    }
+    .ventas-summary-card .icon {
+        font-size: 2.8rem;
+        color: #00b2ff;
+        background: rgba(0,178,255,0.12);
+        border-radius: 50%;
+        padding: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    html[data-theme="dark"] .ventas-summary-card .icon {
+        background: rgba(0,178,255,0.18) !important;
+        color: #00b2ff !important;
+    }
+    .ventas-summary-card .info h5 {
+        margin: 0;
+        font-size: 2.1rem;
+        font-weight: 700;
+        color: #222;
+    }
+    .ventas-summary-card .info small {
+        color: #00b2ff;
+        font-size: 1.1rem;
+        font-weight: 600;
+        letter-spacing: 1px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .ventas-actions-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+        flex-wrap: wrap;
+        gap: 18px;
+    }
+    .report-buttons {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+    .report-buttons a {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        background: #00b2ff;
+        color: #fff;
+        border-radius: 12px;
+        padding: 10px 18px;
+        font-weight: 700;
+        text-decoration: none;
+        transition: background 0.2s, transform 0.2s;
+    }
+    .report-buttons a:hover {
+        background: #1976d2;
+        transform: translateY(-1px);
+    }
+    .ventas-form-search {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex: 1 1 350px;
+        max-width: 400px;
+    }
+    .ventas-form-search input[type="text"] {
+        height: 38px;
+        padding: 8px 14px;
+        width: 100%;
+        border: 1.5px solid #00b2ff;
+        border-radius: 8px;
+        font-size: 1rem;
+        outline: none;
+        transition: border 0.2s;
+        background: #f9fbfd;
+    }
+    .ventas-form-search input[type="text"]:focus {
+        border: 2px solid #0090cc;
+    }
+    .ventas-form-search button {
+        height: 38px;
+        padding: 0 18px;
+        background-color: #00b2ff;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 1.05rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        transition: background 0.2s;
+        box-shadow: 0 2px 8px 0 rgba(0,178,255,0.08);
+    }
+    .ventas-form-search button:hover {
+        background: #0090cc;
+    }
+    .ventas-btn-nuevo {
+        background: #fff;
+        color: #00b2ff;
+        border: 2px solid #00b2ff;
+        border-radius: 12px;
+        padding: 10px 24px;
+        font-weight: 700;
+        font-size: 1.1rem;
+        box-shadow: 0 2px 8px 0 rgba(0,178,255,0.08);
+        cursor: pointer;
+        transition: background 0.2s, color 0.2s;
+        outline: none;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none;
+    }
+    .ventas-btn-nuevo:hover {
+        background: #00b2ff;
+        color: #fff;
+    }
+    .ventas-table-container {
+        background: #fff;
+        border-radius: 18px;
+        box-shadow: 0 4px 24px 0 rgba(0,0,0,0.07);
+        padding: 32px 28px;
+        margin-bottom: 40px;
+        margin-top: 0;
+        width: 100%;
+        max-width: 100%;
+        overflow-x: auto;
+    }
+    .tabla-facturas {
+        width: 100%;
+        margin: 30px auto;
+        border-collapse: collapse;
+        box-shadow: 0 4px 16px rgba(2,117,129,0.10);
+        background: #fff;
+        font-size: 1.08em;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    .tabla-facturas th, .tabla-facturas td {
+        padding: 16px 12px;
+        text-align: center;
+        border-bottom: 1px solid #e0e0e0;
+    }
+    .tabla-facturas th {
+        background: #00b2ff;
+        color: #fff;
+        font-size: 1.1em;
+        letter-spacing: 1px;
+    }
+    .tabla-facturas tr:nth-child(even) {
+        background: #f7fafc;
+    }
+    .tabla-facturas tr:hover {
+        background: #e6f7fa;
+    }
+    @media (max-width: 900px) {
+        .ventas-main {
+            margin-top: 80px;
+            margin-left: 0;
+            width: 100%;
+            max-width: 100vw;
+            padding: 12px 2vw;
+        }
+        .tabla-facturas th, .tabla-facturas td {
+            padding: 8px 4px;
+            font-size: 0.95em;
+        }
+    }
+    @media (max-width: 700px) {
+        .tabla-facturas, .tabla-facturas thead, .tabla-facturas tbody, .tabla-facturas tr, .tabla-facturas th, .tabla-facturas td {
+            display: block;
+            width: 100%;
+        }
+        .tabla-facturas thead {
+            display: none;
+        }
+        .tabla-facturas tr {
+            margin-bottom: 18px;
+            box-shadow: 0 2px 8px rgba(2,117,129,0.07);
+            border-radius: 10px;
+            background: #fff;
+            border: 1px solid #e0e0e0;
+        }
+        .tabla-facturas td {
+            text-align: left;
+            padding: 12px 10px;
+            position: relative;
+        }
+        .tabla-facturas td:before {
+            content: attr(data-label);
+            font-weight: bold;
+            color: #00b2ff;
+            display: block;
+            margin-bottom: 4px;
+        }
+    }
+    .pagination {
+        margin: 40px 0;
+        text-align: center;
+    }
+    .pagination .step-links a {
+        margin: 0 5px;
+        padding: 5px 10px;
+        background-color: #00b2ff;
+        color: white;
+        text-decoration: none;
+        border-radius: 5px;
+    }
+    .pagination .step-links a:hover {
+        background-color: #0090cc;
+    }
+    .pagination .step-links span {
+        margin: 0 5px;
+        padding: 5px 10px;
+        color: #333;
+    }
+
+    @media (max-width: 900px) {
+        .form-cerrar-sesion {
+            position: fixed !important;
+            top: 0 !important;
+            right: 0 !important;
+            z-index: 1100 !important;
+            margin: 0 !important;
+            padding: 0.5em 0.7em 0 0 !important;
+        }
+        .salir {
+            padding: 0 !important;
+            width: 48px !important;
+            height: 48px !important;
+            min-width: 48px !important;
+            min-height: 48px !important;
+            border-radius: 50% !important;
+            background: #fff !important;
+            color: #00b2ff !important;
+            box-shadow: 0 2px 8px 0 rgba(0,178,255,0.08);
+            font-size: 1.8rem !important;
+            justify-content: center;
+            align-items: center;
+            gap: 0 !important;
+            display: flex !important;
+        }
+        .salir:hover {
+            background: #00b2ff !important;
+            color: #fff !important;
+        }
+        .salir-text {
+            display: none !important;
+        }
+        .salir .material-symbols-outlined {
+            font-size: 2rem !important;
+            margin: 0 !important;
+        }
+    }
+
+    /* Animación para el título */
+.ventas-title {
+    opacity: 0;
+    transform: translateY(-40px) scale(0.96) skewX(-8deg);
+    animation: ventasTituloIn 0.2s cubic-bezier(.68,-0.55,.27,1.55) forwards;
+    animation-delay: 0.05s;
+    will-change: opacity, transform;
+}
+@keyframes ventasTituloIn {
+    0% { opacity: 0; transform: translateY(-40px) scale(0.96) skewX(-8deg);}
+    60% { opacity: 1; transform: translateY(8px) scale(1.04) skewX(2deg);}
+    100% { opacity: 1; transform: none;}
+}
+/* Animación para tarjetas resumen */
+.ventas-summary-card {
+    opacity: 0;
+    transform: translateY(40px) scale(0.97) rotate(-4deg);
+    animation: ventasCardIn 0.2s cubic-bezier(.68,-0.55,.27,1.55) forwards;
+    will-change: opacity, transform;
+}
+.ventas-summary-card:nth-child(1) { animation-delay: 0.18s; }
+.ventas-summary-card:nth-child(2) { animation-delay: 0.32s; }
+.ventas-summary-card:nth-child(3) { animation-delay: 0.46s; }
+@keyframes ventasCardIn {
+    0% { opacity: 0; transform: translateY(40px) scale(0.97) rotate(-4deg);}
+    60% { opacity: 1; transform: translateY(-8px) scale(1.04) rotate(2deg);}
+    80% { transform: translateY(2px) scale(0.98) rotate(-1deg);}
+    100% { opacity: 1; transform: none;}
+}
+/* Animación para barra de acciones */
+.ventas-actions-bar {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.98);
+    animation: ventasAccionesIn 0.15s cubic-bezier(.68,-0.55,.27,1.55) forwards;
+    animation-delay: 0.65s;
+    will-change: opacity, transform;
+}
+@keyframes ventasAccionesIn {
+    0% { opacity: 0; transform: translateY(-20px) scale(0.98);}
+    60% { opacity: 1; transform: translateY(4px) scale(1.02);}
+    100% { opacity: 1; transform: none;}
+}
+/* Animación para el botón "Nueva Factura" */
+.ventas-btn-nuevo {
+    opacity: 0;
+    transform: scale(0.92) rotate(-8deg);
+    animation: ventasBtnNuevoIn 0.1s cubic-bezier(.68,-0.55,.27,1.55) forwards;
+    animation-delay: 0.8s;
+    will-change: opacity, transform;
+}
+@keyframes ventasBtnNuevoIn {
+    0% { opacity: 0; transform: scale(0.92) rotate(-8deg);}
+    60% { opacity: 1; transform: scale(1.06) rotate(2deg);}
+    100% { opacity: 1; transform: none;}
+}
+/* Animación para la tabla de facturas */
+.ventas-table-container {
+    opacity: 0;
+    transform: translateY(60px) scale(0.97);
+    animation: ventasTablaIn 0.3s cubic-bezier(.68,-0.55,.27,1.55) forwards;
+    animation-delay: 1.0s;
+    will-change: opacity, transform;
+}
+@keyframes ventasTablaIn {
+    0% { opacity: 0; transform: translateY(60px) scale(0.97);}
+    60% { opacity: 1; transform: translateY(-8px) scale(1.03);}
+    80% { transform: translateY(2px) scale(0.99);}
+    100% { opacity: 1; transform: none;}
+}
+/* Animación para filas de la tabla */
+.tabla-facturas tbody tr {
+    opacity: 0;
+    transform: translateX(-40px) scale(0.97);
+    animation: ventasFilaIn 0.15s cubic-bezier(.68,-0.55,.27,1.55) forwards;
+}
+.tabla-facturas tbody tr:nth-child(1) { animation-delay: 1.15s; }
+.tabla-facturas tbody tr:nth-child(2) { animation-delay: 1.22s; }
+.tabla-facturas tbody tr:nth-child(3) { animation-delay: 1.29s; }
+.tabla-facturas tbody tr:nth-child(4) { animation-delay: 1.36s; }
+.tabla-facturas tbody tr:nth-child(5) { animation-delay: 1.43s; }
+@keyframes ventasFilaIn {
+    0% { opacity: 0; transform: translateX(-40px) scale(0.97);}
+    70% { opacity: 1; transform: translateX(8px) scale(1.03);}
+    100% { opacity: 1; transform: none;}
+}
+/* Animación para la paginación */
+.pagination {
+    opacity: 0;
+    transform: translateY(30px) scale(0.97);
+    animation: ventasPaginacionIn 0.15s cubic-bezier(.68,-0.55,.27,1.55) forwards;
+    animation-delay: 1.7s;
+    will-change: opacity, transform;
+}
+@keyframes ventasPaginacionIn {
+    0% { opacity: 0; transform: translateY(30px) scale(0.97);}
+    60% { opacity: 1; transform: translateY(-6px) scale(1.03);}
+    100% { opacity: 1; transform: none;}
+}
+.btn-precios {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(90deg, #1976d2 0%, #43e97b 100%);
+    color: #fff;
+    padding: 12px 28px;
+    border-radius: 8px;
+    font-size: 1.1em;
+    font-weight: bold;
+    text-decoration: none;
+    box-shadow: 0 2px 8px #1976d233;
+    transition: background 0.2s, color 0.2s, transform 0.2s;
+    margin-bottom: 24px;
+    margin-right: 18px;
+}
+.btn-precios:hover {
+    background: linear-gradient(90deg, #43e97b 0%, #1976d2 100%);
+    color: #fffbe7;
+    transform: scale(1.05);
+}
+html[data-theme="dark"] .tabla-facturas {
+    background: rgba(255,255,255,0.04);
+}
+html[data-theme="dark"] .tabla-facturas th {
+    background: rgba(2,117,179,0.95);
+    color: #fff;
+}
+html[data-theme="dark"] .tabla-facturas td {
+    color: #eaf4ff;
+    border-color: rgba(255,255,255,0.12);
+}
+html[data-theme="dark"] .tabla-facturas tr:nth-child(even) {
+    background: rgba(255,255,255,0.03);
+}
+html[data-theme="dark"] .tabla-facturas tr:hover {
+    background: rgba(255,255,255,0.08);
+}
+html[data-theme="dark"] .btn-precios {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.28);
+}
+.top-bar-precios {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    margin-bottom: -150px;
+    margin-left: 0;
+    margin-top: 30px;
+}
+@media (max-width: 900px) {
+    .top-bar-precios {
+        justify-content: center;
+        margin-left: 0;
+    }
+    .btn-precios {
+        width: 100%;
+        justify-content: center;
+        margin-right: 0;
+    }
+}
+
+    /* (Lista de precios movida a plantilla separada `lista_precios.html`) */
+
+    /* =========================
+       PREMIUM: overrides modo oscuro (ventas)
+       ========================= */
+    html[data-theme="dark"] body{
+        background: rgba(10,18,34,0.95) !important;
+    }
+    html[data-theme="dark"] .ventas-main{
+        background: transparent !important;
+        color: rgba(255,255,255,0.94) !important;
+    }
+    html[data-theme="dark"] .ventas-summary-card{
+        background: rgba(10,18,34,0.75) !important;
+        border-color: rgba(255,255,255,0.12) !important;
+        box-shadow: 0 24px 70px rgba(0,0,0,0.28) !important;
+    }
+    html[data-theme="dark"] .ventas-summary-card .info h5{
+        color: rgba(255,255,255,0.96) !important;
+    }
+    html[data-theme="dark"] .ventas-summary-card .info small{
+        color: rgba(0,178,255,0.95) !important;
+    }
+    html[data-theme="dark"] .ventas-summary-card .icon {
+        background: rgba(0,178,255,0.22) !important;
+        color: #00b2ff !important;
+    }
+    html[data-theme="dark"] .ventas-actions-bar{
+        color: rgba(255,255,255,0.94) !important;
+    }
+    html[data-theme="dark"] .ventas-form-search input[type="text"]{
+        background: rgba(255,255,255,0.05) !important;
+        color: rgba(255,255,255,0.96) !important;
+        border-color: rgba(0,178,255,0.35) !important;
+    }
+    html[data-theme="dark"] .ventas-form-search input[type="text"]::placeholder{
+        color: rgba(149,181,216,0.75) !important;
+    }
+    html[data-theme="dark"] .ventas-form-search button{
+        background: rgba(0,178,255,0.20) !important;
+        color: rgba(255,255,255,0.96) !important;
+        border: 1px solid rgba(0,178,255,0.35) !important;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.22) !important;
+    }
+    html[data-theme="dark"] .ventas-form-search button:hover{
+        background: rgba(0,178,255,0.28) !important;
+    }
+    html[data-theme="dark"] .ventas-btn-nuevo{
+        background: rgba(255,255,255,0.08) !important;
+        color: rgba(233,247,255,0.96) !important;
+        border-color: rgba(0,178,255,0.45) !important;
+    }
+    html[data-theme="dark"] .ventas-table-container{
+        background: rgba(11,18,32,0.96) !important;
+        border: 1px solid rgba(255,255,255,0.12) !important;
+        box-shadow: 0 24px 70px rgba(0,0,0,0.28) !important;
+    }
+    html[data-theme="dark"] .tabla-facturas{
+        background: rgba(11,18,32,0.96) !important;
+        border: 1px solid rgba(255,255,255,0.10) !important;
+    }
+    html[data-theme="dark"] .tabla-facturas th{
+        background: rgba(2,117,179,0.95) !important;
+        color: #ffffff !important;
+    }
+    html[data-theme="dark"] .tabla-facturas td{
+        background: transparent !important;
+        color: rgba(234,244,255,0.95) !important;
+        border-bottom-color: rgba(255,255,255,0.10) !important;
+    }
+    html[data-theme="dark"] .tabla-facturas tr:nth-child(even){
+        background: rgba(255,255,255,0.03) !important;
+    }
+    html[data-theme="dark"] .ventas-main .pagination{
+        color: rgba(255,255,255,0.78) !important;
+    }
+    html[data-theme="dark"] .pagination .step-links a{
+        background-color: rgba(0,178,255,0.20) !important;
+        color: rgba(255,255,255,0.96) !important;
+    }
+    html[data-theme="dark"] .pagination .step-links a:hover{
+        background-color: rgba(0,178,255,0.28) !important;
+    }
+
+    /* Botones inline (ver/imprimir/editar/anular/activar/eliminar) */
+    html[data-theme="dark"] .ventas-main a[style*="background:#00b2ff"]{
+        background: rgba(0,178,255,0.95) !important;
+        color: #ffffff !important;
+    }
+    html[data-theme="dark"] .ventas-main a[style*="background:#1976d2"]{
+        background: rgba(25,118,210,0.95) !important;
+        color: #ffffff !important;
+    }
+    html[data-theme="dark"] .ventas-main a[style*="background:#e74c3c"]{
+        background: rgba(231,76,60,0.95) !important;
+        color: #ffffff !important;
+    }
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Título
+    const titulo = document.querySelector('.ventas-title');
+    if(titulo) {
+        titulo.style.opacity = 0;
+        titulo.style.transform = 'translateY(-40px) scale(0.96) skewX(-8deg)';
+        setTimeout(() => {
+            titulo.style.animationPlayState = 'running';
+        }, 50);
+    }
+    // Tarjetas resumen
+    document.querySelectorAll('.ventas-summary-card').forEach((card, i) => {
+        card.style.animationDelay = (0.18 + i * 0.14) + 's';
+    });
+    // Barra de acciones
+    const acciones = document.querySelector('.ventas-actions-bar');
+    if(acciones) {
+        acciones.style.opacity = 0;
+        acciones.style.transform = 'translateY(-20px) scale(0.98)';
+        setTimeout(() => {
+            acciones.style.animationPlayState = 'running';
+        }, 650);
+    }
+    // Botón nueva factura
+    const btnNuevo = document.querySelector('.ventas-btn-nuevo');
+    if(btnNuevo) {
+        btnNuevo.style.opacity = 0;
+        btnNuevo.style.transform = 'scale(0.92) rotate(-8deg)';
+        setTimeout(() => {
+            btnNuevo.style.animationPlayState = 'running';
+        }, 800);
+    }
+    // Tabla
+    const tabla = document.querySelector('.ventas-table-container');
+    if(tabla) {
+        tabla.style.opacity = 0;
+        tabla.style.transform = 'translateY(60px) scale(0.97)';
+        setTimeout(() => {
+            tabla.style.animationPlayState = 'running';
+        }, 1000);
+    }
+    // Filas de la tabla
+    document.querySelectorAll('.tabla-facturas tbody tr').forEach((tr, i) => {
+        tr.style.animationDelay = (1.15 + i * 0.07) + 's';
+    });
+    // Paginación
+    const paginacion = document.querySelector('.pagination');
+    if(paginacion) {
+        paginacion.style.opacity = 0;
+        paginacion.style.transform = 'translateY(30px) scale(0.97)';
+        setTimeout(() => {
+            paginacion.style.animationPlayState = 'running';
+        }, 1700);
+    }
+});
+</script>
+
+<div class="top-bar-precios">
+    <a href="{% url 'gestionar_precios' %}" class="btn-precios">
+        <span class="material-symbols-outlined" style="vertical-align:middle;">price_change</span>
+        Gestionar Precios
+    </a>
+</div>
+
+<div class="ventas-main">
+    <h2 class="ventas-title">
+        <span class="material-symbols-outlined">receipt_long</span> Facturación y Ventas
+    </h2>
+
+    <!-- Resumen de ventas -->
+    <div class="ventas-summary-row">
+        <div class="ventas-summary-card">
+            <span class="icon material-symbols-outlined">check_circle</span>
+            <div class="info">
+                <h5>{{ total_facturadas }}</h5>
+                <small><span class="material-symbols-outlined" style="font-size:1.1em;">check_circle</span> Facturadas</small>
+            </div>
+        </div>
+        <div class="ventas-summary-card">
+            <span class="icon material-symbols-outlined">cancel</span>
+            <div class="info">
+                <h5>{{ total_anuladas }}</h5>
+                <small><span class="material-symbols-outlined" style="font-size:1.1em;">cancel</span> Anuladas</small>
+            </div>
+        </div>
+        <div class="ventas-summary-card">
+            <span class="icon material-symbols-outlined">list_alt</span>
+            <div class="info">
+                <h5>{{ facturas|length }}</h5>
+                <small><span class="material-symbols-outlined" style="font-size:1.1em;">list_alt</span> Total</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Barra de acciones -->
+    <div class="ventas-actions-bar">
+        <div class="ventas-form-search">
+            <input type="text" placeholder="Buscar por cliente, número, fecha..." id="buscador-facturas">
+            <button type="button" tabindex="-1">
+                <span class="material-symbols-outlined">search</span> Buscar
+            </button>
+        </div>
+        <div class="report-buttons">
+            <a href="{% url 'reporte_facturas_pdf' %}" target="_blank">
+                <span class="material-symbols-outlined">picture_as_pdf</span> PDF ventas
+            </a>
+            <a href="{% url 'reporte_facturas_excel' %}">
+                <span class="material-symbols-outlined">grid_on</span> Excel ventas
+            </a>
+        </div>
+        <a href="{% url 'formato_facturacion' %}" class="ventas-btn-nuevo">
+            <span class="material-symbols-outlined">add</span> Nueva Factura
+        </a>
+    </div>
+
+    <div class="ventas-table-container">
+        <h3 style="color:#00b2ff; font-weight:700; margin-bottom:18px; display:flex;align-items:center;gap:8px;">
+            <span class="material-symbols-outlined">list_alt</span> Últimas Facturas
+        </h3>
+        <table class="tabla-facturas">
+            <thead>
+                <tr>
+                    <th><span class="material-symbols-outlined">barcode</span> Número</th>
+                    <th><span class="material-symbols-outlined">badge</span> Cédula</th>
+                    <th><span class="material-symbols-outlined">person</span> Nombre</th>
+                    <th><span class="material-symbols-outlined">calendar_month</span> Fecha</th>
+                    <th><span class="material-symbols-outlined">attach_money</span> Monto Total</th>
+                    <th><span class="material-symbols-outlined">label</span> Estado</th>
+                    <th><span class="material-symbols-outlined">settings</span> Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for f in facturas %}
+                <tr>
+                    <td data-label="N°">{{ f.numero }}</td>
+                    <td data-label="Cédula">{{ f.cliente.cedula }}</td>
+                    <td data-label="Nombre">{{ f.cliente.nombre }} {{ f.cliente.apellido }}</td>
+                    <td data-label="Fecha">{{ f.fecha|date:"d/m/Y H:i" }}</td>
+                    <td data-label="Monto Total">${{ f.total|floatformat:2 }}</td>
+                    <td data-label="Estado">
+                        {% if f.estado == 'anulada' %}
+                            <span style="display:inline-flex; align-items:center; gap:8px; padding:8px 14px; border-radius:999px; background:rgba(231,76,60,0.12); color:#c0392b; border:1px solid rgba(231,76,60,0.26); font-weight:900;">
+                                <span class="material-symbols-outlined" style="font-size:18px;">cancel</span>
+                                Anulada
+                            </span>
+                        {% else %}
+                            <span style="display:inline-flex; align-items:center; gap:8px; padding:8px 14px; border-radius:999px; background:rgba(39,174,96,0.12); color:#1e8449; border:1px solid rgba(39,174,96,0.26); font-weight:900;">
+                                <span class="material-symbols-outlined" style="font-size:18px;">check_circle</span>
+                                Facturada/Activa
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td data-label="Acciones" style="display:flex; gap:8px; justify-content:center; align-items:center;">
+                        <!-- Ver factura -->
+                        <a href="{% url 'ver_factura' f.numero %}" title="Ver" style="background:#00b2ff; color:white; padding:8px 12px; border-radius:8px; text-decoration:none; display:inline-flex; align-items:center;">
+                            <span class="material-symbols-outlined" style="font-size:24px; color:white;">visibility</span>
+                        </a>
+                        <!-- Imprimir -->
+                        <a href="{% url 'reporte_factura_pdf' f.numero %}" target="_blank" title="Imprimir" style="background:#00b2ff; color:white; padding:8px 12px; border-radius:8px; text-decoration:none; display:inline-flex; align-items:center;">
+                            <span class="material-symbols-outlined" style="font-size:24px; color:white;">print</span>
+                        </a>
+                        <!-- Editar -->
+                        <a href="{% url 'editar_factura' f.numero %}" title="Editar"
+                        class="editar-factura"
+                        style="background:#1976d2; color:white; padding:8px 12px; border-radius:8px; text-decoration:none; display:inline-flex; align-items:center;">
+                            <span class="material-symbols-outlined" style="font-size:24px; color:white;">edit</span>
+                        </a>
+                        {% if f.estado == 'facturada' %}
+                            <!-- Anular -->
+                            <form action="{% url 'anular_factura' f.numero %}" method="post" class="anular-form" style="display:inline-flex;">
+                                {% csrf_token %}
+                                <button type="submit" title="Anular" class="anular-factura" style="background:#e74c3c; color:white; padding:8px 12px; border:0; border-radius:8px; display:inline-flex; align-items:center; cursor:pointer;">
+                                    <span class="material-symbols-outlined" style="font-size:24px; color:white;">cancel</span>
+                                </button>
+                            </form>
+                        {% else %}
+                            <!-- Activar -->
+                            <form action="{% url 'activar_factura' f.numero %}" method="post" class="activar-form" style="display:inline-flex;">
+                                {% csrf_token %}
+                                <button type="submit" title="Activar" class="activar-factura" style="background:#27ae60; color:white; padding:8px 12px; border:0; border-radius:8px; display:inline-flex; align-items:center; cursor:pointer;">
+                                    <span class="material-symbols-outlined" style="font-size:24px; color:white;">restart_alt</span>
+                                </button>
+                            </form>
+                            <!-- Eliminar -->
+                            <a href="{% url 'eliminar_factura' f.numero %}" title="Eliminar"
+                            class="eliminar-factura"
+                            style="background:#b71c1c; color:white; padding:8px 12px; border-radius:8px; text-decoration:none; display:inline-flex; align-items:center;">
+                                <span class="material-symbols-outlined" style="font-size:24px; color:white;">delete</span>
+                            </a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" style="text-align:center; color:#888; padding:20px;">No hay facturas registradas.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div style="text-align: right; color:#888; font-size:1.5em; margin-right: 20px;">Total de facturas: {{ facturas|length }}</div>
+    <div class="pagination">
+        <span class="step-links">
+            {% if facturas.has_previous %}
+                <a href="?page=1">&laquo; Primera</a>
+                <a href="?page={{ facturas.previous_page_number }}">Anterior</a>
+            {% endif %}
+
+            <span>Página {{ facturas.number }} de {{ facturas.paginator.num_pages }}</span>
+
+            {% if facturas.has_next %}
+                <a href="?page={{ facturas.next_page_number }}">Siguiente</a>
+                <a href="?page={{ facturas.paginator.num_pages }}">Última &raquo;</a>
+            {% endif %}
+        </span>
+    </div>
+</div>
+
+<!-- SweetAlert2 para mostrar mensajes Django -->
+{% if messages %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        {% for message in messages %}
+            Swal.fire({
+                icon: "{% if message.tags == 'success' %}success{% elif message.tags == 'error' or message.tags == 'danger' %}error{% elif message.tags == 'warning' %}warning{% else %}info{% endif %}",
+                title: "{% if message.tags == 'success' %}¡Éxito!{% elif message.tags == 'error' or message.tags == 'danger' %}Error{% elif message.tags == 'warning' %}Advertencia{% else %}Aviso{% endif %}",
+                text: "{{ message|escapejs }}",
+                confirmButtonColor: '#1976d2',
+                timer: 3000,
+                timerProgressBar: true
+            });
+        {% endfor %}
+    });
+</script>
+{% endif %}
+
+<!-- SweetAlert2 para mostrar confirmaciones bonitas -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Anular factura
+    document.querySelectorAll('.anular-factura').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            Swal.fire({
+                title: '¿Seguro que deseas anular esta factura?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#e74c3c',
+                cancelButtonColor: '#1976d2',
+                confirmButtonText: 'Sí, anular',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    btn.closest('form').submit();
+                }
+            });
+        });
+    });
+    // Activar factura
+    document.querySelectorAll('.activar-factura').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            Swal.fire({
+                title: '¿Seguro que deseas activar esta factura?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#27ae60',
+                cancelButtonColor: '#1976d2',
+                confirmButtonText: 'Sí, activar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    btn.closest('form').submit();
+                }
+            });
+        });
+    });
+    // Eliminar factura
+    document.querySelectorAll('.eliminar-factura').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            Swal.fire({
+                title: '¿Seguro que deseas eliminar esta factura? Esta acción es irreversible.',
+                icon: 'error',
+                showCancelButton: true,
+                confirmButtonColor: '#b71c1c',
+                cancelButtonColor: '#1976d2',
+                confirmButtonText: 'Sí, eliminar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = btn.getAttribute('href');
+                }
+            });
+        });
+    });
+});
+</script>
+
+<script>
+    // Intersection Observer para ocultar el menú al hacer scroll
+    document.addEventListener('DOMContentLoaded', function() {
+        const menu = document.getElementById('menu-principal');
+        const tabla = document.querySelector('.tabla-facturas');
+        if (!menu || !tabla) return;
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            menu.style.display = '';
+                        } else {
+                            menu.style.display = 'none';
+                        }
+                    });
+                },
+            { threshold: 0.1 }
+        );
+        observer.observe(tabla);
+    });
+
+    // Funciones para mostrar alertas con SweetAlert2
+    function mostrarAdvertencia(mensaje) {
+        Swal.fire({
+            icon: 'warning',
+            title: '¡Atención!',
+            text: mensaje,
+            confirmButtonColor: '#1976d2'
+        });
+    }
+
+    function mostrarError(mensaje) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: mensaje,
+            confirmButtonColor: '#1976d2'
+        });
+    }
+
+    function mostrarConfirmacion(mensaje) {
+        Swal.fire({
+            icon: 'success',
+            title: '¡Guardado!',
+            text: mensaje,
+            showConfirmButton: false,
+            timer: 2000
+        });
+    }
+
+    function quitarArticulo(btn) {
+        Swal.fire({
+            title: '¿Estás seguro que quieres eliminar?',
+            text: "Este artículo será eliminado de la compra.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#1976d2',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                btn.closest('tr').remove();
+                recalcularTotales();
+            }
+        });
+    }
+
+    // Buscador de facturas en la tabla (filtrado en el frontend)
+    document.addEventListener('DOMContentLoaded', function() {
+        const input = document.getElementById('buscador-facturas');
+        const table = document.querySelector('.tabla-facturas tbody');
+        if (input && table) {
+            input.addEventListener('input', function() {
+                const filtro = input.value.toLowerCase();
+                const filas = table.querySelectorAll('tr');
+                let visibles = 0;
+                filas.forEach(fila => {
+                    if (fila.querySelector('td[colspan]')) {
+                        fila.style.display = 'none';
+                        return;
+                    }
+                    const textoFila = fila.innerText.toLowerCase();
+                    if (textoFila.includes(filtro)) {
+                        fila.style.display = '';
+                        visibles++;
+                    } else {
+                        fila.style.display = 'none';
+                    }
+                });
+                const filaVacia = table.querySelector('tr td[colspan]');
+                if (filaVacia) {
+                    filaVacia.parentElement.style.display = visibles === 0 ? '' : 'none';
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}
+
+{% block help_content %}
+<div>
+    <h4>Ayuda: Facturación (rápido)</h4>
+    <p>En este módulo creas y gestionas facturas. A continuación indicaciones útiles:</p>
+    <ul>
+        <li><strong>Autocompletar por código:</strong> Escribe el código del producto en el campo correspondiente; el sistema intentará completar descripción, precio y stock automáticamente. Si el artículo no se reconoce, usa F2 para buscar.</li>
+        <li><strong>Botón "Agregar":</strong> Está bloqueado hasta que la fila tenga un producto válido; si lo pulsas verás una explicación del motivo.</li>
+        <li><strong>Guardar borrador:</strong> Las facturas se guardan automáticamente en un borrador local al gestionar precios; puedes continuar más tarde.</li>
+        <li><strong>Gestionar precios:</strong> Si necesitas ajustar precios usa el botón de "Gestionar precios" y luego vuelve —la factura en curso se puede restaurar.</li>
+    </ul>
+    <p>Consejos rápidos:</p>
+    <ol>
+        <li>Usa Enter/Tab para confirmar la autocompletación del producto al escribir el código.</li>
+        <li>Verifica que el stock sea suficiente antes de completar la factura.</li>
+    </ol>
+</div>
+{% endblock %}

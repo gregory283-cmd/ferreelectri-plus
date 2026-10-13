@@ -1,0 +1,798 @@
+{% extends "base/pan_con_queso.html" %}
+{% block arroz_con_pollo %}
+{% load static %}
+
+{% comment %} help_content definido al final del archivo (evita que aparezca visible dentro del bloque arroz_con_pollo) {% endcomment %}
+
+<!-- Animación de entrada global para el dashboard -->
+<style>
+    @keyframes dashboardEntrance {
+        0% {
+            opacity: 0;
+            filter: blur(12px);
+            transform: scale(0.96) translateY(60px) rotateX(18deg);
+        }
+        60% {
+            opacity: 1;
+            filter: blur(0px);
+            transform: scale(1.04) translateY(-8px) rotateX(-2deg);
+        }
+        100% {
+            opacity: 1;
+            filter: blur(0px);
+            transform: scale(1) translateY(0) rotateX(0);
+        }
+    }
+    .dashboard-entrance-ani {
+        animation: dashboardEntrance 1.3s cubic-bezier(.7,.04,.33,.97) both;
+        will-change: opacity, transform, filter;
+    }
+
+    /* Animación de aparición para cada cuadro del resumen */
+    @keyframes resumenCardIn {
+        0% {
+            opacity: 0;
+            transform: scale(0.85) translateY(40px) rotateZ(-8deg);
+            filter: blur(8px);
+        }
+        60% {
+            opacity: 1;
+            transform: scale(1.04) translateY(-8px) rotateZ(2deg);
+            filter: blur(0px);
+        }
+        100% {
+            opacity: 1;
+            transform: scale(1) translateY(0) rotateZ(0);
+            filter: blur(0px);
+        }
+    }
+    .resumen-animado {
+        opacity: 0;
+        filter: blur(8px);
+        transform: scale(0.85) translateY(40px) rotateZ(-8deg);
+        animation: resumenCardIn 0.8s cubic-bezier(.7,.04,.33,.97) forwards;
+    }
+    .rest-content-ani {
+        opacity: 0;
+        transform: translateY(40px);
+        filter: blur(8px);
+        transition: opacity 0.7s cubic-bezier(.7,.04,.33,.97), transform 0.7s cubic-bezier(.7,.04,.33,.97), filter 0.7s cubic-bezier(.7,.04,.33,.97);
+    }
+    .rest-content-ani.visible {
+        opacity: 1;
+        transform: translateY(0);
+        filter: blur(0);
+    }
+
+    /* --- ESTILO DEL CUADRO AZUL DE ACCESO RÁPIDO --- */
+    .dashboard-actions {
+        background: linear-gradient(90deg, #00b2ff 60%, #1976d2 100%) !important;
+        color: #fff !important;
+        border-radius: 18px;
+        box-shadow: 0 4px 24px 0 rgba(0,178,255,0.13);
+        padding: 32px 28px;
+        min-width: 220px;
+        max-width: 320px;
+        flex: 1 1 220px;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 18px;
+        border-left: 6px solid #fff;
+        position: relative;
+        overflow: hidden;
+    }
+    .chart-panel {
+        background: var(--surface);
+        border-radius: 24px;
+        box-shadow: var(--panel-shadow);
+        padding: 24px;
+        margin-bottom: 32px;
+        overflow: hidden;
+    }
+    .chart-header {
+        display: flex;
+        align-items: center;
+        gap: 32px;
+        padding: 0 24px;
+        flex-wrap: wrap;
+    }
+    .chart-header-title {
+        color: var(--azul-principal);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 0;
+        font-size: 1.35rem;
+    }
+    .chart-select {
+        margin-left: auto;
+        font-size: 1.08rem;
+        border-radius: 8px;
+        padding: 6px 18px;
+        border: 1px solid rgba(255,255,255,0.14);
+        background: var(--surface-soft);
+        color: var(--text-primary);
+        min-width: 150px;
+    }
+    .chart-canvas-wrapper {
+        width: 100%;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: stretch;
+        justify-content: flex-start;
+        gap: 24px;
+        margin: 0 0 18px 0;
+        background: var(--surface);
+        border-radius: 22px;
+        box-shadow: var(--panel-shadow);
+        padding: 32px 24px 24px 24px;
+        min-width: 0;
+    }
+    .chart-block {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255,255,255,0.05);
+        border-radius: 18px;
+        box-shadow: 0 2px 16px 0 rgba(0,0,0,0.08);
+        padding: 18px 12px;
+        position: relative;
+        min-height: 356px;
+        width: 100%;
+        box-sizing: border-box;
+        min-width: 0;
+    }
+    .chart-block-wide {
+        flex: 2 1 420px;
+        min-width: 340px;
+        max-width: 100%;
+    }
+    .chart-block-narrow {
+        flex: 1 1 260px;
+        min-width: 260px;
+        max-width: 360px;
+    }
+    .chart-block canvas {
+        width: 100% !important;
+        height: auto !important;
+        max-height: 356px;
+    }
+    .chart-panel {
+        background: var(--surface);
+        border-radius: 24px;
+        box-shadow: var(--panel-shadow);
+        padding: 24px;
+        margin-bottom: 32px;
+    }
+    .chart-header {
+        display: flex;
+        align-items: center;
+        gap: 32px;
+        padding: 0 24px;
+        flex-wrap: wrap;
+    }
+    .chart-header-title {
+        color: var(--azul-principal);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 0;
+        font-size: 1.35rem;
+    }
+    .chart-select {
+        margin-left: auto;
+        font-size: 1.08rem;
+        border-radius: 8px;
+        padding: 6px 18px;
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        background: var(--surface-soft);
+        color: var(--text-primary);
+    }
+    .chart-canvas-wrapper {
+        width: 100%;
+        max-width: 100%;
+        min-height: 420px;
+        height: 420px;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: stretch;
+        justify-content: flex-start;
+        gap: 24px;
+        margin: 0 0 18px 0;
+        background: var(--surface);
+        border-radius: 22px;
+        box-shadow: var(--panel-shadow);
+        padding: 32px 24px 24px 24px;
+    }
+    .dashboard-actions .actions-title,
+    .dashboard-actions .actions-desc,
+    .dashboard-actions .actions-icon {
+        color: #0f172a !important;
+    }
+    html[data-theme="dark"] .dashboard-actions .actions-title,
+    html[data-theme="dark"] .dashboard-actions .actions-desc,
+    html[data-theme="dark"] .dashboard-actions .actions-icon {
+        color: #ffffff !important;
+    }
+    .dashboard-actions .actions-title {
+        font-size: 1.13rem;
+        font-weight: 700;
+        margin-bottom: 4px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .dashboard-actions .actions-desc {
+        font-size: 0.98rem;
+        opacity: 0.92;
+        margin-bottom: 8px;
+    }
+    .dashboard-actions .actions-icon {
+        font-size: 2.2rem;
+        margin-bottom: 8px;
+        filter: drop-shadow(0 2px 8px #00b2ff44);
+        animation: iconPop 1.2s;
+    }
+    .summary-card-modern .icon {
+        color: #1976d2;
+        min-width: 44px;
+        min-height: 44px;
+        display: grid;
+        place-items: center;
+        background: rgba(0,178,255,0.12);
+        border-radius: 14px;
+        box-shadow: 0 12px 30px rgba(0,178,255,0.06);
+    }
+    html[data-theme="dark"] .summary-card-modern .icon {
+        color: #cff3ff;
+        background: rgba(255,255,255,0.08);
+        box-shadow: 0 12px 30px rgba(0,0,0,0.28);
+    }
+    @keyframes iconPop {
+        0% { transform: scale(0.7) rotate(-20deg);}
+        70% { transform: scale(1.18) rotate(10deg);}
+        100% { transform: scale(1) rotate(0);}
+    }
+
+    /* --- BOTÓN DE ACCESO RÁPIDO AL INICIO --- */
+    .dashboard-actions .go-index-btn-2 {
+        margin-top: 10px;
+        background: linear-gradient(90deg, #fff 60%, #e6f7ff 100%);
+        color: #1976d2 !important;
+        border-radius: 10px;
+        padding: 10px 24px;
+        font-weight: 700;
+        font-size: 1.08rem;
+        box-shadow: 0 2px 12px 0 rgba(0,178,255,0.13);
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        text-decoration: none !important;
+        border: none;
+        outline: none;
+        transition: 
+            background 0.22s cubic-bezier(.7,.04,.33,.97),
+            color 0.22s cubic-bezier(.7,.04,.33,.97),
+            box-shadow 0.22s cubic-bezier(.7,.04,.33,.97),
+            transform 0.18s cubic-bezier(.7,.04,.33,.97);
+        position: relative;
+        overflow: hidden;
+    }
+    .dashboard-actions .go-index-btn-2 .material-symbols-outlined {
+        font-size: 1.5em;
+        margin-right: 4px;
+        color: #00b2ff;
+        transition: color 0.2s;
+    }
+    .dashboard-actions .go-index-btn-2:hover, 
+    .dashboard-actions .go-index-btn-2:focus {
+        background: linear-gradient(90deg, #00b2ff 60%, #1976d2 100%);
+        color: #fff !important;
+        box-shadow: 0 8px 32px 0 rgba(0,178,255,0.22), 0 1.5px 8px 0 rgba(0,178,255,0.10);
+        transform: translateY(-2px) scale(1.04);
+    }
+    .dashboard-actions .go-index-btn-2:hover .material-symbols-outlined,
+    .dashboard-actions .go-index-btn-2:focus .material-symbols-outlined {
+        color: #fff;
+    }
+
+    /* Quitar subrayado de los enlaces en las tarjetas de resumen */
+    .summary-modern-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 24px;
+        justify-content: flex-start;
+        align-items: stretch;
+    }
+    .summary-modern-row a,
+    .summary-modern-row a:visited,
+    .summary-modern-row a:active {
+        text-decoration: none !important;
+    }
+
+    /* Quitar efecto borroso en hover de las tarjetas de resumen */
+    .summary-modern-row .summary-card-modern:hover,
+    .summary-modern-row .summary-card-modern:focus {
+        filter: none !important;
+        /* Mantén el resto de tus efectos de hover si los tienes */
+    }
+
+    .summary-card-modern,
+    .dashboard-actions {
+        min-height: 110px !important;
+        padding-top: 18px !important;
+        padding-bottom: 18px !important;
+    }
+
+    /* Truncado responsivo para columna Detalles en Actividad reciente */
+    table td.td-details { max-width: 48ch; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    table td.td-useragent { max-width: 36ch; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    @media (max-width: 900px) {
+        table td.td-details, table td.td-useragent { white-space: normal; }
+    }
+
+    .summary-modern-row .summary-card-modern {
+        filter: none !important;
+        /* Si tienes otros efectos visuales, mantenlos aquí */
+    }
+</style>
+
+<div>
+    <div class="top-bar rest-content-ani">
+    </div>
+    
+    <h2 class="dash-title section-animate ani-fade-in-left rest-content-ani">
+        <span class="material-symbols-outlined ani-scale-in ani-hover-pop">bar_chart</span>
+        Supervisión
+    </h2>
+    <div class="summary-modern-row section-animate" id="dashboard-cards-row">
+        <a href="{% url 'clientes' %}" class="summary-card-modern dashboard-btn ani-fade-in-left ani-hover-pop resumen-animado">
+            <span class="icon material-symbols-outlined ani-scale-in ani-hover-pop">badge</span>
+            <div class="info">
+                <h5 class="ani-fade-in-right">{{ total_clientes }}</h5>
+                <small class="ani-fade-in-left"><span class="material-symbols-outlined ani-rotate-in">group</span> Clientes</small>
+            </div>
+        </a>
+        <a href="{% url 'proveedores' %}" class="summary-card-modern dashboard-btn ani-fade-in-left ani-hover-pop resumen-animado">
+            <span class="icon material-symbols-outlined ani-scale-in ani-hover-pop">local_shipping</span>
+            <div class="info">
+                <h5 class="ani-fade-in-right">{{ total_proveedores }}</h5>
+                <small class="ani-fade-in-left"><span class="material-symbols-outlined ani-rotate-in">business_center</span> Proveedores</small>
+            </div>
+        </a>
+        <a href="{% url 'inventario' %}" class="summary-card-modern dashboard-btn ani-fade-in-right ani-hover-pop resumen-animado">
+            <span class="icon material-symbols-outlined ani-scale-in ani-hover-pop">inventory_2</span>
+            <div class="info">
+                <h5 class="ani-fade-in-right">{{ total_productos }}</h5>
+                <small class="ani-fade-in-left"><span class="material-symbols-outlined ani-rotate-in">category</span> Inventario</small>
+            </div>
+        </a>
+        <div class="dashboard-actions ani-fade-in-right resumen-animado">
+            <div class="actions-content" style="display: flex; align-items: center; gap: 18px;">
+                <!-- Círculo blanco con icono -->
+                <span style="display: flex; align-items: center; justify-content: center; width: 54px; height: 54px; border-radius: 50%; background: #fff; box-shadow: 0 2px 8px #00b2ff22; font-size: 2.2rem;">
+                    <span class="material-symbols-outlined" style="color: #00b2ff; font-size: 2.2rem;">grid_view</span>
+                </span>
+                <div>
+                    <div class="actions-title">
+                        Acceso rápido al <b>Inicio</b>
+                    </div>
+                    <div class="actions-desc">
+                        Consulta el resumen general, navega entre módulos y gestiona tu sistema con un solo clic.
+                    </div>
+                </div>
+            </div>
+            <a href="{% url 'index' %}" class="go-index-btn-2 dashboard-btn ani-fade-in ani-hover-pop">
+                <span class="material-symbols-outlined">arrow_forward</span>
+                Ir al Inicio
+            </a>
+        </div>
+    </div>
+
+    <!-- El resto del contenido aparece después del resumen -->
+    <div class="rest-content-ani" style="display: flex; justify-content: flex-start; gap: 12px; margin-bottom: 18px;">
+        {% if request.user.is_authenticated and request.user.is_staff %}
+        <a href="{% url 'admin_historial_pedidos' %}" class="dashboard-btn ani-fade-in ani-hover-pop" style="
+        {% else %}
+        <a href="{% url 'historial_pedidos_global' %}" class="dashboard-btn ani-fade-in ani-hover-pop" style="
+        {% endif %}
+            background: linear-gradient(90deg, #ff80ab 60%, #ffb300 100%);
+            color: #fff;
+            border-radius: 10px;
+            padding: 10px 24px;
+            font-weight: 700;
+            font-size: 1.08rem;
+            box-shadow: 0 2px 12px 0 rgba(255,128,171,0.13);
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none !important;
+            border: none;
+            outline: none;
+            transition: background 0.22s, color 0.22s, box-shadow 0.22s, transform 0.18s;
+            ">
+            <span class="material-symbols-outlined" style="font-size:1.5em; margin-right:4px; color:#fff;">history</span>
+            Historial de Pedidos
+        </a>
+        <a href="{% url 'cierre_caja' %}" class="dashboard-btn ani-fade-in ani-hover-pop" style="
+            background: linear-gradient(90deg, #00b2ff 60%, #1976d2 100%);
+            color: #fff;
+            border-radius: 10px;
+            padding: 10px 24px;
+            font-weight: 700;
+            font-size: 1.08rem;
+            box-shadow: 0 2px 12px 0 rgba(0,178,255,0.13);
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none !important;
+            border: none;
+            outline: none;
+            transition: background 0.22s, color 0.22s, box-shadow 0.22s, transform 0.18s;
+            ">
+            <span class="material-symbols-outlined" style="font-size:1.5em; margin-right:4px; color:#fff;">point_of_sale</span>
+            Cierre de Caja
+        </a>
+    </div>
+
+    <!-- 'Actividad reciente' movido abajo para aparecer después del panel de gráficos -->
+
+    <div class="chart-panel section-animate ani-fade-in rest-content-ani">
+        <div class="chart-header">
+            <h4 class="chart-header-title">
+                <span class="ti-stats-up"></span> Ventas
+            </h4>
+            <h4 class="chart-header-title">
+                <span class="ti-pie-chart"></span> Distribución
+            </h4>
+            <select id="periodoVentas" class="chart-select dashboard-btn ani-fade-in ani-hover-pop">
+                <option value="dia">Por Día</option>
+                <option value="semana">Por Semana</option>
+                <option value="mes">Por Mes</option>
+                <option value="anio">Por Año</option>
+            </select>
+        </div>
+        <div class="chart-canvas-wrapper">
+            <!-- Gráfica de líneas (ventas) más ancha y pegada a la de torta -->
+            <div class="chart-block chart-block-wide">
+                <canvas id="ventasLineChart"></canvas>
+            </div>
+            <!-- Gráfica de torta (distribución) con tamaño original y fondo -->
+            <div class="chart-block chart-block-narrow" style="background: rgba(25,118,210,0.04); box-shadow: 0 2px 16px 0 rgba(25,118,210,0.07);">
+                <canvas id="ventasPieChart"></canvas>
+                <div id="ventasPorcentaje" style="margin-top:18px;font-size:1.15rem;font-weight:600;color:#1976d2;text-align:center;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Botón de respaldo manual -->
+    <div class="rest-content-ani" style="display: flex; justify-content: flex-start; gap: 12px; margin-bottom: 18px;">
+        <a href="{% url 'manual_backup' %}" class="dashboard-btn ani-fade-in ani-hover-pop" style="
+            background: linear-gradient(90deg, #43a047 60%, #2e7d32 100%);
+            color: #fff;
+            border-radius: 10px;
+            padding: 10px 24px;
+            font-weight: 700;
+            font-size: 1.08rem;
+            box-shadow: 0 2px 12px 0 rgba(67,160,71,0.13);
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none !important;
+            border: none;
+            outline: none;
+            transition: background 0.22s, color 0.22s, box-shadow 0.22s, transform 0.18s;
+            "
+            onclick="return confirm('¿Generar respaldo de la base de datos ahora?')">
+            <span class="material-symbols-outlined" style="font-size:1.5em; margin-right:4px; color:#fff;">backup</span>
+            Generar Respaldo BD
+        </a>
+        <span style="
+            background: rgba(67,160,71,0.08);
+            color: #2e7d32;
+            border-radius: 10px;
+            padding: 10px 20px;
+            font-size: 0.95rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid rgba(67,160,71,0.2);
+            ">
+            <span class="material-symbols-outlined" style="font-size:1.3em;">schedule</span>
+            Backup automático: cada 7 días
+        </span>
+    </div>
+
+    <!-- Inserto aquí la sección 'Actividad reciente' para mostrarla debajo de los gráficos -->
+    <section class="recent section-animate ani-fade-in rest-content-ani">
+        <div class="activity-grid">
+            <div class="activity-card">
+                <div class="activity-header">
+                    <h3><span class="ti-time"></span> Actividad reciente</h3>
+                    <div class="activity-actions">
+                        <a href="{% url 'descargar_auditoria_csv' %}" style="text-decoration: none;" class="action-btn dashboard-btn ani-fade-in ani-hover-pop" title="Descargar CSV">
+                            <span class="ti-download"></span> Descargar CSV
+                        </a>
+                        <a href="{% url 'auditoria_completa' %}" style="text-decoration: none;" class="action-btn secondary dashboard-btn ani-fade-in ani-hover-pop" title="Ver auditoría completa">
+                            <span class="ti-eye"></span> Ver auditoría completa
+                        </a>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th><span class="material-symbols-outlined">person</span> Usuario</th>
+                                <th><span class="material-symbols-outlined">edit</span> Acción</th>
+                                <th><span class="material-symbols-outlined">layers</span> Modelo</th>
+                                <th><span class="material-symbols-outlined">info</span> Detalles</th>
+                                <th><span class="material-symbols-outlined">calendar_month</span> Fecha</th>
+                                {% if include_ip_recent %}<th>IP</th>{% endif %}
+                                {% if include_user_agent_recent %}<th>User Agent</th>{% endif %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for log in audit_logs %}
+                            <tr>
+                                <td><span class="ti-user"></span> {{ log.username }}</td>
+                                <td><span class="ti-pencil-alt"></span> {{ log.action }}</td>
+                                <td><span class="ti-layers"></span> {{ log.model_name }}</td>
+                                <td class="td-details"><span class="ti-info-alt"></span> <span title="{{ log.raw_details|default:'' }}">{{ log.details }}</span></td>
+                                <td><span class="ti-calendar"></span> {{ log.timestamp|date:"d/m/Y H:i" }}</td>
+                                {% if include_ip_recent %}<td>{{ log.ip_address }}</td>{% endif %}
+                                {% if include_user_agent_recent %}<td class="td-useragent" title="{{ log.user_agent|default:'' }}">{{ log.user_agent }}</td>{% endif %}
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="{{ recent_colspan }}">No hay registros de auditoría disponibles.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="espacio-separador section-animate rest-content-ani"></div>
+    <p class="derechos section-animate rest-content-ani"><span class="ti-copyright"></span> Todos los derechos reservados © - FERREELECTRI PLUS</p>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const ventasData = {
+    dia: {{ ventas_dia|safe }},
+    semana: {{ ventas_semana|safe }},
+    mes: {{ ventas_mes|safe }},
+    anio: {{ ventas_anio|safe }}
+};
+
+const pastelColors = [
+    "#00b2ff", "#1976d2", "#00e1d2", "#ffb300", "#ff7043", "#ab47bc", "#43a047", "#e53935", "#3949ab", "#00897b"
+];
+
+function getChartData(periodo) {
+    const datos = ventasData[periodo];
+    let total = datos.reduce((acc, v) => acc + v.total, 0);
+    let labels = datos.map(v => v.label);
+    let data = datos.map(v => v.total);
+    let porcentajes = data.map(v => total ? ((v / total) * 100).toFixed(1) : 0);
+    return { labels, data, porcentajes, total };
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Animación escalonada para los cuadros del resumen
+    const cards = document.querySelectorAll('#dashboard-cards-row .resumen-animado');
+    cards.forEach((card, i) => {
+        card.style.animationDelay = (0.5 + i * 0.18) + 's';
+    });
+
+    // Cuando termine la animación del último cuadro, mostrar el resto del contenido
+    if (cards.length) {
+        const lastCard = cards[cards.length - 1];
+        lastCard.addEventListener('animationend', function handler() {
+            document.querySelectorAll('.rest-content-ani').forEach(el => {
+                el.classList.add('visible');
+            });
+            lastCard.removeEventListener('animationend', handler);
+        });
+    } else {
+        document.querySelectorAll('.rest-content-ani').forEach(el => {
+            el.classList.add('visible');
+        });
+    }
+
+    // --- GRAFICO DE LÍNEAS ---
+    const lineCanvas = document.getElementById('ventasLineChart');
+    let lineChart;
+    function renderLine(periodo) {
+        let { labels, data } = getChartData(periodo);
+
+        // Ajustes dinámicos según número de puntos
+        const count = labels.length || 0;
+        const dynamicPointRadius = count > 20 ? 3 : (count > 8 ? 5 : 7);
+        const dynamicTickFontSize = count > 20 ? 11 : (count > 10 ? 13 : 15);
+
+        if (lineChart) lineChart.destroy();
+        // Asegurar que el canvas ocupe todo el alto del contenedor
+        lineCanvas.style.width = '100%';
+        lineCanvas.style.height = '100%';
+
+        lineChart = new Chart(lineCanvas.getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Ventas',
+                    data: data,
+                    borderColor: '#00b2ff',
+                    backgroundColor: 'rgba(0,178,255,0.13)',
+                    tension: 0.35,
+                    pointRadius: dynamicPointRadius,
+                    pointHoverRadius: Math.min(dynamicPointRadius * 2, 12),
+                    pointBackgroundColor: '#1976d2',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    fill: true,
+                    borderWidth: 3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#fff',
+                        titleColor: '#1976d2',
+                        bodyColor: '#1976d2',
+                        borderColor: '#00b2ff',
+                        borderWidth: 1,
+                        padding: 12,
+                        callbacks: {
+                            label: function(context) {
+                                return ` ${context.label}: ${context.parsed.y?.toLocaleString('es-ES', {minimumFractionDigits:2, maximumFractionDigits:2}) || ''}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#1976d2', font: { weight: 'bold', size: dynamicTickFontSize } },
+                        offset: false,
+                        ticks: { autoSkip: true, maxRotation: 0, minRotation: 0 }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: '#e6f7ff' },
+                        ticks: { color: '#1976d2', font: { weight: 'bold', size: 13 } }
+                    }
+                },
+                layout: { padding: { left: 8, right: 8, top: 6, bottom: 6 } }
+            }
+        });
+
+        // Forzar redimensionado por si el contenedor cambió
+        setTimeout(() => { try { lineChart.resize(); } catch(e) {} }, 80);
+    }
+
+    // --- GRAFICO DE TORTA ---
+    const pieCanvas = document.getElementById('ventasPieChart');
+    const porcentajeDiv = document.getElementById('ventasPorcentaje');
+    let pieChart;
+    function renderPie(periodo) {
+        const { labels, data, porcentajes, total } = getChartData(periodo);
+
+        // Generar colores dinámicos
+        let bgColors = [];
+        for (let i = 0; i < data.length; i++) {
+            bgColors.push(pastelColors[i % pastelColors.length]);
+        }
+
+        if (pieChart) pieChart.destroy();
+        pieCanvas.style.width = '100%';
+        pieCanvas.style.height = '100%';
+        pieChart = new Chart(pieCanvas.getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: data,
+                    backgroundColor: bgColors,
+                    borderColor: "#fff",
+                    borderWidth: 2,
+                    hoverOffset: 18
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '64%',
+                animation: {
+                    animateRotate: true,
+                    animateScale: true,
+                    duration: 1000,
+                    easing: 'easeOutCubic'
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'bottom',
+                        labels: {
+                            color: "#1976d2",
+                            font: { size: 13, weight: '700' },
+                            padding: 12,
+                            boxWidth: 18
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: '#fff',
+                        titleColor: '#1976d2',
+                        bodyColor: '#1976d2',
+                        borderColor: '#00b2ff',
+                        borderWidth: 1,
+                        padding: 10,
+                        callbacks: {
+                            label: function(context) {
+                                let idx = context.dataIndex;
+                                let label = context.label || '';
+                                let value = context.parsed || 0;
+                                let pct = porcentajes[idx];
+                                return ` ${label}: ${value.toLocaleString('es-ES', {minimumFractionDigits:2, maximumFractionDigits:2})} (${pct}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Mostrar el total y el porcentaje mayor
+        if (data.length > 0) {
+            let maxIdx = data.indexOf(Math.max(...data));
+            porcentajeDiv.innerHTML = `
+                <span style="color:#00b2ff;font-size:2.1rem;">${porcentajes[maxIdx]}%</span>
+                <span style="font-size:1.1rem;">${labels[maxIdx]}</span>
+                <span style="display:block;font-size:0.98rem;color:#1976d2;opacity:0.7;">Total: ${total.toLocaleString('es-ES', {minimumFractionDigits:2, maximumFractionDigits:2})}</span>
+            `;
+        } else {
+            porcentajeDiv.innerHTML = `<span style="color:#e53935;">Sin datos para este periodo</span>`;
+        }
+
+        setTimeout(() => { try { pieChart.resize(); } catch(e) {} }, 80);
+    }
+
+    // Inicializar ambos gráficos
+    renderLine('dia');
+    renderPie('dia');
+    document.getElementById('periodoVentas').addEventListener('change', function() {
+        renderLine(this.value);
+        renderPie(this.value);
+    });
+    // Redibujar al cambiar tamaño de ventana para mantener proporciones
+    window.addEventListener('resize', function() {
+        if (lineChart) try { lineChart.resize(); } catch(e) {}
+        if (pieChart) try { pieChart.resize(); } catch(e) {}
+    });
+});
+</script>
+{% endblock %}
+
+{% block help_content %}
+<div>
+    <h4>Ayuda: Panel Principal (Dashboard)</h4>
+    <p>Resumen y accesos rápidos a las áreas principales.</p>
+    <ul>
+        <li><strong>Accesos rápidos:</strong> Haz clic en los cuadros para ir a Clientes, Proveedores, Inventario, Ventas y Reportes.</li>
+        <li><strong>Reportes:</strong> Usa el panel de reportes para obtener ventas por fecha, productos más vendidos y movimientos de inventario.</li>
+        <li><strong>Cierre de caja:</strong> Encuentra el control de cierre e informes en la esquina superior para finalizar el día.</li>
+    </ul>
+    <p>Atajos y recomendaciones:</p>
+    <ol>
+        <li>Revisa los widgets de resumen (ventas del día, margen, stock crítico) y haz clic para ir al detalle.</li>
+        <li>Personaliza el periodo de los reportes antes de exportar (diario, semanal, mensual).</li>
+    </ol>
+</div>
+{% endblock %}

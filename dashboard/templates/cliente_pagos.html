@@ -1,0 +1,97 @@
+{% extends "dashboard_base.html" %}
+{% load static %}
+
+{% block title %}Mis pagos | FerreElectri PLUS{% endblock %}
+{% block page_title %}Pagos{% endblock %}
+
+{% block content %}
+<section class="client-page" aria-labelledby="client-payments-title">
+  <header class="client-page-heading">
+    <div>
+      <p class="client-eyebrow">Seguimiento financiero</p>
+      <h2 id="client-payments-title">Mis pagos</h2>
+      <p>Consulta el método, la referencia y el estado de cada operación asociada a tus pedidos.</p>
+    </div>
+    <a class="client-action" href="{% url 'panel_cliente' %}"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Volver al resumen</a>
+  </header>
+
+  <div class="client-finance-metrics">
+    <article class="client-metric" data-tone="blue"><span class="client-metric-top"><span class="client-metric-label">Operaciones registradas</span><span class="client-metric-icon"><i class="fa-solid fa-credit-card" aria-hidden="true"></i></span></span><strong class="client-metric-value">{{ total_pagos }}</strong><span class="client-metric-note">Todos tus métodos de pago</span></article>
+    <article class="client-metric" data-tone="amber"><span class="client-metric-top"><span class="client-metric-label">Pendientes de revisión</span><span class="client-metric-icon"><i class="fa-regular fa-clock" aria-hidden="true"></i></span></span><strong class="client-metric-value">{{ pagos_pendientes }}</strong><span class="client-metric-note">Comprobantes por confirmar</span></article>
+    <article class="client-metric" data-tone="green"><span class="client-metric-top"><span class="client-metric-label">Importe confirmado</span><span class="client-metric-icon"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i></span></span><strong class="client-metric-value">$ {{ importe_confirmado|floatformat:2 }}</strong><span class="client-metric-note">Pagos verificados</span></article>
+  </div>
+
+  <div class="client-finance-chart-grid">
+    <section class="client-module" aria-labelledby="payment-status-chart-title">
+      <div class="client-module-heading"><div><h3 id="payment-status-chart-title">Estado de operaciones</h3><p>Pagos pendientes, confirmados y rechazados.</p></div><i class="fa-solid fa-chart-pie" aria-hidden="true"></i></div>
+      {% if total_pagos %}
+      <div class="client-chart-frame client-status-chart-frame" data-chart-frame>
+        <ul class="client-chart-legend client-chart-fallback">{% for item in payment_status_chart %}<li><span><i data-tone="{{ forloop.counter }}"></i>{{ item.label }}</span><strong>{{ item.value }}</strong></li>{% endfor %}</ul>
+        <div class="client-chart-canvas"><canvas data-client-chart data-chart-type="doughnut" data-source="client-payment-status-series" role="img" aria-label="Pagos por estado"></canvas></div>
+      </div>
+      {% else %}<div class="client-empty-state"><i class="fa-regular fa-credit-card" aria-hidden="true"></i><strong>Sin operaciones todavía</strong><p>El gráfico se actualizará cuando registres un pago.</p></div>{% endif %}
+    </section>
+
+    <section class="client-module" aria-labelledby="payment-method-chart-title">
+      <div class="client-module-heading"><div><h3 id="payment-method-chart-title">Métodos utilizados</h3><p>Operaciones agrupadas por método de pago.</p></div><i class="fa-solid fa-chart-bar" aria-hidden="true"></i></div>
+      {% if payment_method_chart %}
+      <div class="client-chart-frame" data-chart-frame>
+        <div class="client-mini-bars client-chart-fallback" role="img" aria-label="Pagos agrupados por método">
+          {% for item in payment_method_chart %}<div class="client-mini-bar-row"><span>{{ item.label }}</span><span class="client-mini-bar-track"><i style="width: {{ item.percentage }}%"></i></span><strong>{{ item.value }}</strong></div>{% endfor %}
+        </div>
+        <div class="client-chart-canvas"><canvas data-client-chart data-chart-type="bar" data-axis="y" data-source="client-payment-method-series" data-label="Operaciones" role="img" aria-label="Cantidad de operaciones por método de pago"></canvas></div>
+      </div>
+      {% else %}<div class="client-empty-state"><i class="fa-solid fa-chart-bar" aria-hidden="true"></i><strong>Sin métodos registrados</strong><p>Los métodos aparecerán aquí después de tu primer pago.</p></div>{% endif %}
+    </section>
+  </div>
+
+  <form class="client-filter-bar" method="get" role="search" aria-label="Buscar pagos">
+    <label class="client-filter-search"><span class="sr-only">Buscar por referencia o pedido</span><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i><input type="search" name="q" value="{{ query }}" placeholder="Referencia o número de pedido"></label>
+    <label class="client-filter-select"><span class="sr-only">Método de pago</span><select name="metodo"><option value="">Todos los métodos</option>{% for code, label in metodos_pago %}<option value="{{ code }}" {% if metodo == code %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+    <label class="client-filter-select"><span class="sr-only">Estado del pago</span><select name="estado"><option value="">Todos los estados</option>{% for value, label in estados_pago %}<option value="{{ value }}" {% if estado == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+    <button class="client-action primary" type="submit"><i class="fa-solid fa-filter" aria-hidden="true"></i> Aplicar</button>
+    {% if query or estado or metodo %}<a class="client-action" href="{% url 'cliente_pagos' %}">Limpiar</a>{% endif %}
+  </form>
+
+  <section class="client-table-shell" aria-label="Historial de pagos">
+    <div class="client-table-heading"><div><h3>Historial de operaciones</h3><p>Los estados reflejan la revisión registrada para cada pago.</p></div></div>
+    {% if pagos %}
+    <div class="client-table-scroll">
+      <table class="client-data-table">
+        <thead><tr><th>Pago</th><th>Pedido</th><th>Fecha</th><th>Referencia</th><th>Comprobante</th><th>Estado</th><th class="is-numeric">Importe</th><th class="is-actions">Detalle</th></tr></thead>
+        <tbody>
+          {% for pago in pagos %}
+          <tr>
+            <td><strong>{{ pago.get_metodo_display }}</strong></td>
+            <td><a href="{% url 'detalle_pedido_cliente' pago.pedido_id %}">#{{ pago.pedido_id }}</a></td>
+            <td>{{ pago.creado|date:"d/m/Y" }}</td>
+            <td><span class="client-table-reference">{{ pago.referencia|default:"Sin referencia"|truncatechars:24 }}</span></td>
+            <td>{% if pago.comprobante %}<span class="client-proof is-attached"><i class="fa-solid fa-paperclip" aria-hidden="true"></i> Adjunto</span>{% else %}<span class="client-proof">No adjunto</span>{% endif %}</td>
+            <td><span class="client-state" data-state="{{ pago.estado }}">{{ pago.get_estado_display }}</span></td>
+            <td class="is-numeric">$ {{ pago.monto|floatformat:2 }}</td>
+            <td class="is-actions"><a class="client-icon-link" href="{% url 'detalle_pedido_cliente' pago.pedido_id %}" title="Ver pedido" aria-label="Ver pedido #{{ pago.pedido_id }}"><i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i></a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="client-page-empty"><i class="fa-regular fa-credit-card" aria-hidden="true"></i><h3>No hay pagos para mostrar</h3><p>{% if query or estado or metodo %}No encontramos operaciones con esos filtros.{% else %}Al enviar un pedido, aquí aparecerán sus pagos y comprobantes.{% endif %}</p>{% if query or estado or metodo %}<a class="client-action" href="{% url 'cliente_pagos' %}">Limpiar filtros</a>{% endif %}</div>
+    {% endif %}
+  </section>
+
+  {% if pagos.has_other_pages %}
+  <nav class="client-pagination" aria-label="Paginación de pagos">
+    <span>Página {{ pagos.number }} de {{ pagos.paginator.num_pages }}</span>
+    <div>{% if pagos.has_previous %}<a class="client-action" href="?page={{ pagos.previous_page_number }}&amp;q={{ query|urlencode }}&amp;estado={{ estado|urlencode }}&amp;metodo={{ metodo|urlencode }}"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Anterior</a>{% endif %}{% if pagos.has_next %}<a class="client-action" href="?page={{ pagos.next_page_number }}&amp;q={{ query|urlencode }}&amp;estado={{ estado|urlencode }}&amp;metodo={{ metodo|urlencode }}">Siguiente <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>{% endif %}</div>
+  </nav>
+  {% endif %}
+</section>
+{% endblock %}
+
+{% block page_scripts %}
+{{ payment_status_chart|json_script:"client-payment-status-series" }}
+{{ payment_method_chart|json_script:"client-payment-method-series" }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{% static 'js/client-charts.js' %}?v=20261008-charts-v1"></script>
+{% endblock %}

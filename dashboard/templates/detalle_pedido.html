@@ -1,0 +1,61 @@
+{% extends 'dashboard_base.html' %}
+
+{% block title %}Detalle del pedido #{{ pedido.id }} | FerreElectri PLUS{% endblock %}
+{% block page_title %}Detalle del pedido #{{ pedido.id }}{% endblock %}
+
+{% block content %}
+<div class="w-full px-4 py-6 sm:px-6 lg:px-8">
+  <div class="mx-auto w-full max-w-screen-2xl">
+    <header class="mb-8 flex flex-col gap-5 border-b border-slate-200 pb-7 lg:flex-row lg:items-end lg:justify-between">
+      <div>
+        <a href="{% url 'mis_pedidos_cliente' %}" class="inline-flex items-center gap-2 rounded-lg px-2 py-2 text-sm font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-emerald-600">
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"/></svg>
+          Volver a mis pedidos
+        </a>
+        <div class="mt-5 flex flex-wrap items-center gap-4">
+          <h1 class="text-3xl font-extrabold tracking-tight text-slate-900 md:text-4xl">Pedido #{{ pedido.id }}</h1>
+          <span class="inline-flex rounded-full px-3 py-1 text-sm font-medium {% if pedido.estado == 'pendiente' %}bg-yellow-100 text-yellow-800{% elif pedido.estado == 'pagado' %}bg-emerald-100 text-emerald-800{% elif pedido.estado == 'enviado' %}bg-sky-100 text-sky-800{% elif pedido.estado == 'cancelado' %}bg-red-100 text-red-800{% else %}bg-slate-100 text-slate-700{% endif %}">{{ pedido.estado|capfirst }}</span>
+        </div>
+        <p class="mt-2 text-sm text-slate-500">Consulta los productos, el pago y la información asociada a esta orden.</p>
+      </div>
+      <div class="rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-left lg:text-right">
+        <p class="text-xs font-bold uppercase tracking-[0.16em] text-emerald-700">Total del pedido</p>
+        <p class="mt-1 text-2xl font-black text-slate-900">${{ pedido.total|floatformat:2 }}</p>
+      </div>
+    </header>
+
+    <section class="mb-8 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+      <article class="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
+        <div class="flex items-start gap-4"><span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600"><svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 2v4m8-4v4M4 9h16M5.5 5h13A1.5 1.5 0 0120 6.5v12A1.5 1.5 0 0118.5 20h-13A1.5 1.5 0 014 18.5v-12A1.5 1.5 0 015.5 5Z"/></svg></span><div><p class="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">Fecha de la orden</p><p class="mt-2 text-base font-bold text-slate-900">{{ pedido.fecha_creacion|date:'d/m/Y' }}</p><p class="mt-1 text-sm text-slate-500">{{ pedido.fecha_creacion|date:'H:i' }} horas</p></div></div>
+      </article>
+      <article class="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
+        <div class="flex items-start gap-4"><span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-sky-600"><svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 12a4 4 0 100-8 4 4 0 000 8Zm-7 8a7 7 0 0114 0M19 8v6m-3-3h6"/></svg></span><div class="min-w-0"><p class="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">Cliente y entrega</p><p class="mt-2 truncate text-base font-bold text-slate-900">{{ pedido.cliente.get_full_name|default:pedido.cliente.username }}</p><p class="mt-1 truncate text-sm text-slate-500">{{ pedido.cliente.email }}</p><p class="mt-1 text-sm text-slate-500">{{ pedido.cliente.perfil_cliente.direccion|default:'Dirección no registrada' }}</p></div></div>
+      </article>
+      <article class="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
+        <div class="flex items-start gap-4"><span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-violet-100 text-violet-600"><svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 6.5A2.5 2.5 0 015.5 4h13A2.5 2.5 0 0121 6.5v11a2.5 2.5 0 01-2.5 2.5h-13A2.5 2.5 0 013 17.5v-11ZM3 9h18M7 15h3"/></svg></span><div><p class="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">Método de pago</p>{% with pago=pedido.pagos.first %}<p class="mt-2 text-base font-bold text-slate-900">{% if pago %}{{ pago.get_metodo_display }}{% else %}Pendiente de registro{% endif %}</p><p class="mt-1 text-sm text-slate-500">{% if pago and pago.verificado %}Pago verificado{% elif pago %}En revisión{% else %}Aún no hay pago asociado{% endif %}</p>{% endwith %}</div></div>
+      </article>
+    </section>
+
+    <section class="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
+      <div class="flex flex-col gap-2 border-b border-slate-100 bg-slate-50 px-6 py-5 sm:flex-row sm:items-center sm:justify-between"><div><p class="text-xs font-bold uppercase tracking-[0.16em] text-emerald-600">Resumen de compra</p><h2 class="mt-1 text-xl font-extrabold text-slate-900">Productos de la orden</h2></div><p class="text-sm text-slate-500">{{ pedido.items.count }} artículo{{ pedido.items.count|pluralize }}</p></div>
+      <div class="overflow-x-auto"><table class="w-full min-w-[680px] text-left"><thead class="bg-gray-50 text-xs uppercase tracking-wider text-gray-500"><tr><th class="px-6 py-4 font-semibold">Producto</th><th class="px-6 py-4 text-center font-semibold">Cantidad</th><th class="px-6 py-4 text-right font-semibold">Precio unitario</th><th class="px-6 py-4 text-right font-semibold">Subtotal</th></tr></thead><tbody class="divide-y divide-slate-100">{% for item in pedido.items.all %}<tr class="transition hover:bg-gray-50"><td class="px-6 py-5"><div class="flex items-center gap-3"><span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500"><svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 7.5 12 3l8 4.5v9L12 21l-8-4.5v-9ZM4 7.5l8 4.5 8-4.5M12 12v9"/></svg></span><span class="font-medium text-gray-900">{% if item.producto %}{{ item.producto.Descripcion }}{% else %}Producto eliminado{% endif %}</span></div></td><td class="px-6 py-5 text-center font-semibold text-slate-700">{{ item.cantidad }}</td><td class="px-6 py-5 text-right text-slate-600">${{ item.precio|floatformat:2 }}</td><td class="px-6 py-5 text-right font-bold text-slate-900">${{ item.subtotal|floatformat:2 }}</td></tr>{% empty %}<tr><td colspan="4" class="px-6 py-12 text-center text-sm text-slate-500">No hay productos asociados a este pedido.</td></tr>{% endfor %}</tbody></table></div>
+    </section>
+
+    <section class="mt-8 overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
+      <div class="border-b border-slate-100 bg-slate-50 px-6 py-5"><p class="text-xs font-bold uppercase tracking-[0.16em] text-emerald-600">Verificación manual</p><h2 class="mt-1 text-xl font-extrabold text-slate-900">Pagos y comprobantes</h2></div>
+      <div class="divide-y divide-slate-100">
+        {% for pago in pedido.pagos.all %}
+        <article class="grid gap-4 px-6 py-5 md:grid-cols-2">
+          <div><p class="font-bold text-slate-900">{{ pago.get_metodo_display }} · ${{ pago.monto|floatformat:2 }}</p><p class="mt-1 text-sm text-slate-600">Estado: {{ pago.get_estado_display }}{% if pago.verificado %} · verificado{% endif %}</p><p class="mt-2 text-sm text-slate-600">Banco de origen: {{ pago.banco_origen|default:'No indicado' }}</p><p class="text-sm text-slate-600">Cédula del pagador: {{ pago.cedula_pagador|default:'No indicada' }}</p><p class="text-sm text-slate-600">Referencia: {{ pago.numero_referencia|default:pago.referencia|default:'No indicada' }}</p></div>
+          <div class="flex flex-wrap items-start gap-3">
+            {% if pago.comprobante and perms.dashboard.view_payment_evidence %}<a href="{% url 'admin_comprobante_pago' pago.id %}" class="inline-flex min-h-10 items-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-bold text-white hover:bg-slate-700">Descargar comprobante</a>{% elif pago.comprobante %}<span class="text-sm text-slate-600">Comprobante recibido y pendiente de revisión.</span>{% else %}<span class="text-sm text-amber-700">Sin comprobante adjunto.</span>{% endif %}
+            {% if perms.dashboard.verify_order_payments and pedido.estado == 'pendiente' %}<form method="post" action="{% url 'confirmar_pago_admin' pago.id %}">{% csrf_token %}<button type="submit" class="inline-flex min-h-10 items-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-500">Aprobar pago y facturar</button></form>{% endif %}
+          </div>
+        </article>
+        {% empty %}<p class="px-6 py-8 text-sm text-slate-500">Todavía no se ha registrado un pago para este pedido.</p>{% endfor %}
+      </div>
+    </section>
+
+  </div>
+</div>
+{% endblock %}

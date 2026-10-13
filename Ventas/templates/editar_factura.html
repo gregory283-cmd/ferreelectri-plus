@@ -1,0 +1,935 @@
+{% extends 'base/pan_con_queso.html' %}
+{% block arroz_con_pollo %}
+{% load static %}
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+<style>
+    body {
+        background: #f9fbfd;
+    }
+    .facturacion-main {
+        margin-left: 270px;
+        padding: 40px 30px 30px 30px;
+        background: #f9fbfd;
+        min-height: 100vh;
+        width: calc(100vw - 270px);
+        box-sizing: border-box;
+    }
+    .facturacion-title {
+        color: #00b2ff;
+        text-align: center;
+        font-size: 2.3rem;
+        font-weight: 800;
+        margin-bottom: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        letter-spacing: 1px;
+    }
+    .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 600, 'GRAD' 0, 'opsz' 24;
+        font-size: 2.2rem;
+        vertical-align: middle;
+        color: #00b2ff;
+    }
+    .facturacion-container {
+        background: #fff;
+        border-radius: 18px;
+        box-shadow: 0 4px 24px 0 rgba(0,0,0,0.07);
+        padding: 32px 28px;
+        margin-bottom: 40px;
+        margin-top: 0;
+        width: 100%;
+        max-width: 100%;
+        overflow-x: auto;
+    }
+    .facturacion-flex {
+        display: flex;
+        gap: 30px;
+        align-items: flex-end;
+        flex-wrap: wrap;
+        margin-bottom: 10px;
+    }
+    .facturacion-flex > div {
+        min-width: 120px;
+        flex: 1 1 120px;
+    }
+    label {
+        font-weight: 600;
+        color: #00b2ff;
+        margin-bottom: 4px;
+        display: block;
+        font-size: 1.05em;
+    }
+    input[type="text"], input[type="number"] {
+        height: 38px;
+        padding: 8px 14px;
+        width: 100%;
+        border: 1.5px solid #00b2ff;
+        border-radius: 8px;
+        font-size: 1rem;
+        outline: none;
+        transition: border 0.2s;
+        background: #f9fbfd;
+        margin-bottom: 8px;
+    }
+    input[type="text"]:focus, input[type="number"]:focus {
+        border: 2px solid #0090cc;
+    }
+    .btn-agregar, .btn-guardar {
+        position: relative;
+        overflow: hidden;
+        background: #00b2ff;
+        color: white;
+        border: none;
+        padding: 10px 22px;
+        border-radius: 7px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: background 0.2s;
+        font-size: 1em;
+        margin-top: 8px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding-left: 38px !important;
+    }
+    .btn-agregar:hover, .btn-guardar:hover {
+        background: #0090cc;
+    }
+    .btn-agregar .icon-default,
+    .btn-agregar .icon-hover,
+    .btn-guardar .icon-default,
+    .btn-guardar .icon-hover {
+        font-size: 20px;
+        position: absolute;
+        left: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        transition: opacity 0.25s, color 0.25s;
+        pointer-events: none;
+    }
+    .btn-agregar .icon-hover,
+    .btn-guardar .icon-hover {
+        opacity: 0;
+        color: #ffd600;
+    }
+    .btn-agregar:hover .icon-default,
+    .btn-guardar:hover .icon-default {
+        opacity: 0;
+    }
+    .btn-agregar:hover .icon-hover,
+    .btn-guardar:hover .icon-hover {
+        opacity: 1;
+    }
+    .btn-eliminar {
+        background: #e74c3c;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 38px;
+        height: 38px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background 0.2s;
+        font-size: 1.2em;
+        margin-right: 6px;
+        box-shadow: 0 2px 6px 0 rgba(0,0,0,0.07);
+        position: relative;
+    }
+    .btn-eliminar:hover {
+        background: #c0392b;
+    }
+    .btn-editar {
+        background: #ffd600;
+        color: #444;
+        border: none;
+        border-radius: 50%;
+        width: 38px;
+        height: 38px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background 0.2s;
+        font-size: 1.2em;
+        margin-right: 6px;
+        box-shadow: 0 2px 6px 0 rgba(0,0,0,0.07);
+        position: relative;
+    }
+    .btn-editar:hover {
+        background: #ffe066;
+    }
+    .acciones-articulo {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+    }
+    #tabla-productos {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+        margin-bottom: 10px;
+        background: #fff;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px 0 rgba(0,178,255,0.08);
+    }
+    #tabla-productos th, #tabla-productos td {
+        padding: 14px 10px;
+        text-align: center;
+        border-bottom: 1px solid #e6f7ff;
+        font-size: 1.08em;
+    }
+    #tabla-productos th {
+        background: #00b2ff;
+        color: #fff;
+        font-size: 1.1em;
+        letter-spacing: 1px;
+    }
+    #tabla-productos tr:nth-child(even) {
+        background: #f7fafc;
+    }
+    #tabla-productos tr:hover {
+        background: #e6f7ff;
+    }
+    #tabla-productos td[contenteditable="true"], #tabla-productos td.editando-td {
+        outline: none;
+        background: #fffbe6;
+        border-radius: 8px;
+        box-shadow: 0 0 0 2px #ffd600 inset, 0 2px 8px 0 rgba(255,214,0,0.10);
+        transition: box-shadow 0.25s, background 0.25s;
+    }
+    .totales-box {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        margin-top: 10px;
+        gap: 2px;
+    }
+    .totales-box strong {
+        font-size: 1.1em;
+        color: #00b2ff;
+    }
+    .totales-box .gran-total {
+        font-size: 1.3em;
+        color: #222;
+        font-weight: bold;
+        margin-top: 2px;
+    }
+    @media (max-width: 1200px) {
+        .facturacion-main {
+            margin-left: 0;
+            padding: 10px 0;
+            width: 100vw;
+        }
+        .facturacion-container {
+            padding: 12px 2vw;
+            max-width: 100vw;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px 0 rgba(0,178,255,0.10);
+        }
+        .facturacion-title {
+            font-size: 1.4em !important;
+            padding: 0 2vw;
+            word-break: break-word;
+            margin-bottom: 18px;
+        }
+        .facturacion-flex {
+            flex-direction: column;
+            gap: 0;
+            margin-bottom: 0;
+        }
+        .facturacion-flex > div {
+            width: 100%;
+            min-width: unset;
+            margin-bottom: 14px;
+        }
+        label {
+            font-size: 1em;
+            font-weight: 700;
+            color: #0090cc;
+            margin-bottom: 4px;
+            margin-left: 2px;
+        }
+        input[type="text"], input[type="number"] {
+            width: 100%;
+            font-size: 1.05em;
+            padding: 12px 14px;
+            border-radius: 8px;
+            border: 1.5px solid #00b2ff;
+            background: #fafdff;
+            margin-bottom: 0;
+            box-sizing: border-box;
+            transition: border 0.2s, box-shadow 0.2s;
+            box-shadow: 0 1px 6px 0 rgba(0,178,255,0.04);
+        }
+        input[type="text"]:focus, input[type="number"]:focus {
+            border: 2px solid #0090cc;
+            background: #fff;
+            box-shadow: 0 2px 8px 0 rgba(0,178,255,0.10);
+        }
+        .btn-agregar, .btn-guardar {
+            width: 100%;
+            justify-content: center;
+            font-size: 1.1em;
+            margin-top: 10px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px 0 rgba(0,178,255,0.08);
+        }
+    }
+    @media (max-width: 600px) {
+        .facturacion-container {
+            padding: 5px 1vw;
+            border-radius: 8px;
+        }
+        .facturacion-title {
+            font-size: 1.1em !important;
+        }
+        #tabla-productos th, #tabla-productos td {
+            font-size: 0.95em;
+            padding: 8px 4px;
+        }
+    }
+
+    /* Animación de entrada desde la derecha para el main */
+.facturacion-main {
+    opacity: 0;
+    transform: translateX(80px) scale(0.98);
+    animation: facturacionMainIn 0.2s cubic-bezier(.68,-0.55,.27,1.55) forwards;
+    animation-delay: 0.08s;
+    will-change: opacity, transform;
+}
+@keyframes facturacionMainIn {
+    0% { opacity: 0; transform: translateX(80px) scale(0.98);}
+    60% { opacity: 1; transform: translateX(-6px) scale(1.01);}
+    100% { opacity: 1; transform: none;}
+}
+</style>
+
+<div class="facturacion-main">
+    <h2 class="facturacion-title">
+        <span class="material-symbols-outlined">edit_document</span> Editar Factura N° {{ factura.numero }}
+    </h2>
+    <div class="facturacion-container">
+        <!-- Datos del cliente -->
+        <div class="facturacion-flex">
+            <div>
+                <label><span class="material-symbols-outlined" style="font-size:1.1em;">badge</span> Cédula cliente:</label>
+                <input type="text" id="cedula_cliente" value="{{ factura.cliente.cedula }}" list="lista-clientes" autocomplete="off">
+                <datalist id="lista-clientes"></datalist>
+            </div>
+            <div>
+                <label><span class="material-symbols-outlined" style="font-size:1.1em;">person</span> Nombre:</label>
+                <input type="text" id="nombre_cliente" value="{{ factura.cliente.nombre }}" readonly>
+            </div>
+            <div>
+                <label><span class="material-symbols-outlined" style="font-size:1.1em;">person</span> Apellido:</label>
+                <input type="text" id="apellido_cliente" value="{{ factura.cliente.apellido }}" readonly>
+            </div>
+            <div>
+                <label><span class="material-symbols-outlined" style="font-size:1.1em;">mail</span> Email:</label>
+                <input type="text" id="email_cliente" value="{{ factura.cliente.email }}" readonly>
+            </div>
+            <div>
+                <label><span class="material-symbols-outlined" style="font-size:1.1em;">call</span> Teléfono:</label>
+                <input type="text" id="telefono_cliente" value="{{ factura.cliente.telefono }}" readonly>
+            </div>
+        </div>
+        <!-- Agregar producto -->
+        <div class="facturacion-flex">
+            <div>
+                <label><span class="material-symbols-outlined" style="font-size:1.1em;">barcode</span> Código:</label>
+                <input type="text" id="codigo" list="lista-codigos" autocomplete="off">
+                <datalist id="lista-codigos"></datalist>
+            </div>
+            <div>
+                <label><span class="material-symbols-outlined" style="font-size:1.1em;">label</span> Nombre:</label>
+                <input type="text" id="nombre" readonly>
+            </div>
+            <div>
+                <label><span class="material-symbols-outlined" style="font-size:1.1em;">attach_money</span> Precio:</label>
+                <input type="number" id="precio" readonly>
+            </div>
+            <div>
+                <label><span class="material-symbols-outlined" style="font-size:1.1em;">inventory_2</span> Cantidad:</label>
+                <input type="number" id="cantidad" min="1" value="1">
+            </div>
+            <div>
+                <label><span class="material-symbols-outlined" style="font-size:1.1em;">percent</span> IVA (%):</label>
+                <input type="number" id="iva" min="0" max="100" value="0" readonly>
+            </div>
+            <div>
+                <label><span class="material-symbols-outlined" style="font-size:1.1em;">percent</span> Descuento (%):</label>
+                <input type="number" id="descuento" min="0" max="100" value="0">
+            </div>
+            <div style="display:flex;align-items:end;">
+                <button type="button" onclick="agregarProducto()" class="btn-agregar">
+                    <span class="material-symbols-outlined icon-default">add</span>
+                    <span class="material-symbols-outlined icon-hover">done</span>
+                    Agregar
+                </button>
+            </div>
+        </div>
+        <hr style="margin: 20px 0;">
+        <!-- Tabla de productos -->
+        <div style="overflow-x:auto;">
+            <table id="tabla-productos">
+                <thead>
+                    <tr>
+                        <th><span class="material-symbols-outlined">barcode</span> Código</th>
+                        <th><span class="material-symbols-outlined">label</span> Nombre</th>
+                        <th><span class="material-symbols-outlined">attach_money</span> Precio</th>
+                        <th><span class="material-symbols-outlined">inventory_2</span> Cantidad</th>
+                        <th><span class="material-symbols-outlined">percent</span> IVA</th>
+                        <th><span class="material-symbols-outlined">percent</span> Descuento</th>
+                        <th><span class="material-symbols-outlined">receipt_long</span> Subtotal</th>
+                        <th><span class="material-symbols-outlined">edit</span> Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+        <!-- Totales -->
+        <div class="totales-box">
+            <strong>IVA Total: $<span id="iva_total">0.00</span></strong>
+            <strong>Descuento Total: $<span id="descuento_total">0.00</span></strong>
+            <span class="gran-total">Total: $<span id="total">0.00</span></span>
+        </div>
+        <!-- Botones -->
+        <div style="text-align:right; margin-top:18px;">
+            <button type="button" onclick="guardarFacturaEditada()" class="btn-guardar">
+                <span class="material-symbols-outlined icon-default">save</span>
+                <span class="material-symbols-outlined icon-hover">check_circle</span>
+                Guardar Cambios
+            </button>
+            <a href="{% url 'listar_facturas' %}" class="btn-volver">
+                <span class="material-symbols-outlined icon-default">arrow_back</span>
+                Volver
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+.btn-volver {
+    background: #f5f7fa;
+    color: #00b2ff;
+    border: 1.5px solid #00b2ff;
+    padding: 8px 22px;
+    border-radius: 7px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 1em;
+    margin-left: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    text-decoration: none;
+    transition: background 0.18s, color 0.18s, border 0.18s;
+    box-shadow: 0 2px 8px 0 rgba(0,178,255,0.04);
+}
+.btn-volver:hover {
+    background: #e6f7ff;
+    color: #0090cc;
+    border-color: #0090cc;
+    text-decoration: none;
+}
+.btn-volver .material-symbols-outlined {
+    font-size: 20px;
+    color: #00b2ff;
+}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+let clientesData = [];
+let productosData = [];
+
+// Cargar clientes y productos
+fetch("{% url 'api_clientes' %}")
+    .then(r => r.json())
+    .then(data => { clientesData = data; });
+fetch("{% url 'api_productos' %}")
+    .then(r => r.json())
+    .then(data => { productosData = data; });
+
+// Cargar productos de la factura guardada
+const productosFactura = {{ detalles_json|safe }};
+window.addEventListener('DOMContentLoaded', function() {
+    const tbody = document.querySelector('#tabla-productos tbody');
+    productosFactura.forEach(function(prod) {
+        const fila = document.createElement('tr');
+        fila.innerHTML = `
+            <td>${prod.codigo}</td>
+            <td>${prod.nombre}</td>
+            <td>${parseFloat(prod.precio).toFixed(2)}</td>
+            <td>${prod.cantidad}</td>
+            <td>${prod.iva}%</td>
+            <td>${prod.descuento}%</td>
+            <td>${parseFloat(prod.subtotal).toFixed(2)}</td>
+            <td>
+                <div class="acciones-articulo">
+                    <button type="button" class="btn-editar" title="Editar artículo" onclick="editarFila(this)">
+                        <span class="material-symbols-outlined">edit</span>
+                    </button>
+                    <button type="button" class="btn-eliminar" title="Eliminar artículo" onclick="this.closest('tr').remove(); actualizarTotales();">
+                        <span class="material-symbols-outlined">delete</span>
+                    </button>
+                </div>
+            </td>
+        `;
+        tbody.appendChild(fila);
+    });
+    actualizarTotales();
+});
+
+// Modal de búsqueda reutilizable
+function mostrarBusquedaModal(titulo, lista, callback, mostrarTexto) {
+    let modal = document.getElementById('busqueda-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'busqueda-modal';
+        modal.className = 'busqueda-modal';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <div class="modal-title" id="busqueda-modal-title"></div>
+                <input type="text" id="busqueda-modal-input" placeholder="Buscar..." style="width:100%;margin-bottom:10px;padding:6px 10px;border-radius:5px;border:1px solid #00b2ff;">
+                <ul id="busqueda-modal-list"></ul>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+    const title = modal.querySelector('#busqueda-modal-title');
+    const input = modal.querySelector('#busqueda-modal-input');
+    const ul = modal.querySelector('#busqueda-modal-list');
+    let seleccion = 0;
+    let filtrados = lista.slice();
+    let lastActive = document.activeElement;
+
+    title.textContent = titulo;
+    input.value = '';
+    ul.innerHTML = '';
+    modal.style.display = 'flex';
+
+    function render() {
+        ul.innerHTML = '';
+        filtrados.forEach((item, idx) => {
+            const li = document.createElement('li');
+            li.textContent = mostrarTexto(item);
+            if (idx === seleccion) li.classList.add('selected');
+            li.onclick = () => { cerrar(item); };
+            ul.appendChild(li);
+        });
+    }
+
+    function cerrar(item) {
+        modal.style.display = 'none';
+        document.removeEventListener('keydown', keydownHandler, true);
+        callback(item);
+        if (lastActive && typeof lastActive.focus === 'function') {
+            setTimeout(() => lastActive.focus(), 100);
+        }
+    }
+
+    function keydownHandler(e) {
+        if (modal.style.display !== 'flex') return;
+        if (e.key === 'ArrowDown') {
+            seleccion = (seleccion + 1) % filtrados.length;
+            render();
+            e.preventDefault();
+        } else if (e.key === 'ArrowUp') {
+            seleccion = (seleccion - 1 + filtrados.length) % filtrados.length;
+            render();
+            e.preventDefault();
+        } else if (e.key === 'Enter') {
+            if (filtrados[seleccion]) cerrar(filtrados[seleccion]);
+            e.preventDefault();
+        } else if (e.key === 'Escape') {
+            modal.style.display = 'none';
+            document.removeEventListener('keydown', keydownHandler, true);
+            if (lastActive && typeof lastActive.focus === 'function') {
+                setTimeout(() => lastActive.focus(), 100);
+            }
+        }
+    }
+
+    input.oninput = function() {
+        const val = input.value.toLowerCase();
+        filtrados = lista.filter(item => mostrarTexto(item).toLowerCase().includes(val));
+        seleccion = 0;
+        render();
+    };
+
+    render();
+    input.focus();
+    document.addEventListener('keydown', keydownHandler, true);
+}
+
+// F2 en cliente
+document.getElementById('cedula_cliente').addEventListener('keydown', function(e) {
+    if (e.key === 'F2') {
+        e.preventDefault();
+        mostrarBusquedaModal(
+            'Buscar cliente',
+            clientesData,
+            function(cliente) {
+                if (cliente) {
+                    document.getElementById('cedula_cliente').value = cliente.cedula;
+                    document.getElementById('nombre_cliente').value = cliente.nombre;
+                    document.getElementById('apellido_cliente').value = cliente.apellido;
+                    document.getElementById('email_cliente').value = cliente.email;
+                    document.getElementById('telefono_cliente').value = cliente.telefono;
+                }
+            },
+            c => `${c.cedula} - ${c.nombre} ${c.apellido}`
+        );
+    }
+});
+
+// F2 en agregar producto
+document.getElementById('codigo').addEventListener('keydown', function(e) {
+    if (e.key === 'F2') {
+        e.preventDefault();
+        mostrarBusquedaModal(
+            'Buscar producto',
+            productosData,
+            function(producto) {
+                if (producto) {
+                    document.getElementById('codigo').value = producto.Codigo;
+                    document.getElementById('nombre').value = producto.Descripcion;
+                    document.getElementById('precio').value = producto.precio;
+                    setTimeout(() => document.getElementById('cantidad').focus(), 100);
+                }
+            },
+            p => `${p.Codigo} - ${p.Descripcion}`
+        );
+    }
+});
+
+// F2 en edición de código en la tabla
+function editarFila(btn) {
+    const tr = btn.closest('tr');
+    const tds = tr.querySelectorAll('td');
+    const [codigoTd, nombreTd, precioTd, cantidadTd, ivaTd, descuentoTd] = tds;
+
+    if (btn.classList.contains('editando')) {
+        // Guardar cambios
+        tds.forEach((td, idx) => {
+            if (idx < 6) td.contentEditable = "false";
+            td.classList.remove('editando-td');
+        });
+        btn.classList.remove('editando');
+        btn.title = "Editar artículo";
+        btn.querySelector('span').textContent = "edit";
+
+        // Validar y actualizar valores
+        let codigo = codigoTd.textContent.trim();
+        let nombre = nombreTd.textContent.trim();
+        let precio = parseFloat(precioTd.textContent) || 0;
+        let cantidad = parseInt(cantidadTd.textContent) || 1;
+        let iva = parseFloat(ivaTd.textContent) || 0;
+        let descuento = parseFloat(descuentoTd.textContent) || 0;
+
+        // Limitar valores
+        if (precio < 0) precio = 0;
+        if (cantidad < 1) cantidad = 1;
+        if (iva < 0) iva = 0; if (iva > 100) iva = 100;
+        if (descuento < 0) descuento = 0; if (descuento > 100) descuento = 100;
+
+        precioTd.textContent = precio.toFixed(2);
+        cantidadTd.textContent = cantidad;
+        ivaTd.textContent = iva + "%";
+        descuentoTd.textContent = descuento + "%";
+
+        // Recalcular subtotal
+        const subtotalSinDescuento = precio * cantidad;
+        const montoDescuento = subtotalSinDescuento * (descuento / 100);
+        const subtotalConDescuento = subtotalSinDescuento - montoDescuento;
+        const montoIVA = subtotalConDescuento * (iva / 100);
+        const subtotalFinal = subtotalConDescuento + montoIVA;
+        tr.children[6].textContent = subtotalFinal.toFixed(2);
+
+        actualizarTotales();
+
+        // Quitar eventos F2
+        codigoTd.onkeydown = null;
+        nombreTd.oninput = null;
+    } else {
+        // Activar modo edición en todos los campos
+        tds.forEach((td, idx) => {
+            if (idx < 6) {
+                td.contentEditable = "true";
+                td.classList.add('editando-td');
+            }
+        });
+        btn.classList.add('editando');
+        btn.title = "Guardar cambios";
+        btn.querySelector('span').textContent = "save";
+        codigoTd.focus();
+
+        // F2 para buscar producto en edición de código
+        codigoTd.onkeydown = function(e) {
+            if (e.key === 'F2') {
+                e.preventDefault();
+                mostrarBusquedaModal(
+                    'Buscar producto',
+                    productosData,
+                    function(producto) {
+                        if (producto) {
+                            codigoTd.textContent = producto.Codigo;
+                            nombreTd.textContent = producto.Descripcion;
+                            precioTd.textContent = producto.precio;
+                            ivaTd.textContent = producto.iva || 0;
+                            descuentoTd.textContent = producto.descuento || 0;
+                        }
+                    },
+                    p => `${p.Codigo} - ${p.Descripcion}`
+                );
+            }
+        };
+        // Autocompletado para código y nombre
+        codigoTd.oninput = function() {
+            const val = codigoTd.textContent.trim().toLowerCase();
+            const prod = productosData.find(p => p.Codigo.toLowerCase() === val);
+            if (prod) {
+                nombreTd.textContent = prod.Descripcion;
+                precioTd.textContent = prod.precio;
+                ivaTd.textContent = prod.iva || 0;
+                descuentoTd.textContent = prod.descuento || 0;
+            }
+        };
+        nombreTd.oninput = function() {
+            const val = nombreTd.textContent.trim().toLowerCase();
+            const prod = productosData.find(p => p.Descripcion.toLowerCase() === val);
+            if (prod) {
+                codigoTd.textContent = prod.Codigo;
+                precioTd.textContent = prod.precio;
+                ivaTd.textContent = prod.iva || 0;
+                descuentoTd.textContent = prod.descuento || 0;
+            }
+        };
+    }
+}
+
+// Agregar producto
+function agregarProducto() {
+    const codigo = document.getElementById('codigo').value.trim();
+    const nombre = document.getElementById('nombre').value.trim();
+    const precio = parseFloat(document.getElementById('precio').value) || 0;
+    const cantidad = parseInt(document.getElementById('cantidad').value) || 1;
+    const iva = parseFloat(document.getElementById('iva').value) || 0;
+    const descuento = parseFloat(document.getElementById('descuento').value) || 0;
+
+    if (!codigo || !nombre || precio <= 0 || cantidad <= 0) {
+        alert("Debes seleccionar un producto válido y cantidad mayor a 0.");
+        return;
+    }
+
+    // Calcular subtotal
+    const subtotalSinDescuento = precio * cantidad;
+    const montoDescuento = subtotalSinDescuento * (descuento / 100);
+    const subtotalConDescuento = subtotalSinDescuento - montoDescuento;
+    const montoIVA = subtotalConDescuento * (iva / 100);
+    const subtotalFinal = subtotalConDescuento + montoIVA;
+
+    // Crear fila
+    const tbody = document.querySelector('#tabla-productos tbody');
+    const fila = document.createElement('tr');
+    fila.innerHTML = `
+        <td>${codigo}</td>
+        <td>${nombre}</td>
+        <td>${precio.toFixed(2)}</td>
+        <td>${cantidad}</td>
+        <td>${iva}%</td>
+        <td>${descuento}%</td>
+        <td>${subtotalFinal.toFixed(2)}</td>
+        <td>
+            <div class="acciones-articulo">
+                <button type="button" class="btn-editar" title="Editar artículo" onclick="editarFila(this)">
+                    <span class="material-symbols-outlined">edit</span>
+                </button>
+                <button type="button" class="btn-eliminar" title="Eliminar artículo" onclick="this.closest('tr').remove(); actualizarTotales();">
+                    <span class="material-symbols-outlined">delete</span>
+                </button>
+            </div>
+        </td>
+    `;
+    tbody.appendChild(fila);
+
+    // Limpiar campos para siguiente producto
+    document.getElementById('codigo').value = '';
+    document.getElementById('nombre').value = '';
+    document.getElementById('precio').value = '';
+    document.getElementById('cantidad').value = 1;
+    document.getElementById('iva').value = 0;
+    document.getElementById('descuento').value = 0;
+
+    actualizarTotales();
+}
+
+// Actualizar totales
+function actualizarTotales() {
+    let total = 0, totalIVA = 0, totalDescuento = 0;
+    document.querySelectorAll('#tabla-productos tbody tr').forEach(tr => {
+        const precio = parseFloat(tr.children[2].textContent) || 0;
+        const cantidad = parseInt(tr.children[3].textContent) || 0;
+        const iva = parseFloat(tr.children[4].textContent) || 0;
+        const descuento = parseFloat(tr.children[5].textContent) || 0;
+
+        const subtotalSinDescuento = precio * cantidad;
+        const montoDescuento = subtotalSinDescuento * (descuento / 100);
+        const subtotalConDescuento = subtotalSinDescuento - montoDescuento;
+        const montoIVA = subtotalConDescuento * (iva / 100);
+        const subtotalFinal = subtotalConDescuento + montoIVA;
+
+        total += subtotalFinal;
+        totalIVA += montoIVA;
+        totalDescuento += montoDescuento;
+    });
+    document.getElementById('total').textContent = total.toFixed(2);
+    document.getElementById('iva_total').textContent = totalIVA.toFixed(2);
+    document.getElementById('descuento_total').textContent = totalDescuento.toFixed(2);
+}
+
+// Llama a actualizarTotales cada vez que se edite o elimine un producto
+document.addEventListener('input', function(e) {
+    if (e.target.closest('#tabla-productos')) {
+        actualizarTotales();
+    }
+});
+
+function guardarFacturaEditada() {
+    // Recolectar datos del cliente
+    const cliente = {
+        cedula: document.getElementById('cedula_cliente').value,
+        nombre: document.getElementById('nombre_cliente').value,
+        apellido: document.getElementById('apellido_cliente').value,
+        email: document.getElementById('email_cliente').value,
+        telefono: document.getElementById('telefono_cliente').value
+    };
+
+    // Recolectar productos de la tabla
+    const productos = [];
+    document.querySelectorAll('#tabla-productos tbody tr').forEach(tr => {
+        productos.push({
+            codigo: tr.children[0].textContent.trim(),
+            nombre: tr.children[1].textContent.trim(),
+            precio: parseFloat(tr.children[2].textContent) || 0,
+            cantidad: parseInt(tr.children[3].textContent) || 0,
+            iva: parseFloat(tr.children[4].textContent) || 0,
+            descuento: parseFloat(tr.children[5].textContent) || 0,
+            subtotal: parseFloat(tr.children[6].textContent) || 0
+        });
+    });
+
+    // Enviar por AJAX
+    fetch(window.location.pathname, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            cliente: cliente,
+            productos: productos
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: '¡Factura modificada!',
+                text: 'La factura fue actualizada correctamente.',
+                timer: 1800,
+                showConfirmButton: false
+            }).then(() => {
+                window.location.href = "{% url 'listar_facturas' %}";
+            });
+            // Por si el usuario no espera el timer:
+            setTimeout(function() {
+                window.location.href = "{% url 'listar_facturas' %}";
+            }, 2000);
+        } else {
+            Swal.fire('Error', data.error || 'No se pudo guardar', 'error');
+        }
+    });
+}
+
+// Función para obtener el CSRF token
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+<style>
+.busqueda-modal {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    left: 0; top: 0; width: 100vw; height: 100vh;
+    background: rgba(0,0,0,0.25);
+    align-items: center; justify-content: center;
+}
+.busqueda-modal .modal-content {
+    background: #fff;
+    border-radius: 10px;
+    padding: 20px 25px;
+    min-width: 320px;
+    max-width: 90vw;
+    max-height: 70vh;
+    overflow-y: auto;
+    box-shadow: 0 8px 32px 0 rgba(0,178,255,0.15);
+}
+.busqueda-modal ul {
+    list-style: none;
+    padding: 0; margin: 0;
+    max-height: 50vh;
+    overflow-y: auto;
+}
+.busqueda-modal li {
+    padding: 8px 10px;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: background 0.15s;
+}
+.busqueda-modal li:hover, .busqueda-modal li.selected {
+    background: #e6f7ff;
+}
+.busqueda-modal .modal-title {
+    font-weight: bold;
+    color: #00b2ff;
+    margin-bottom: 10px;
+    font-size: 1.1em;
+}
+</style>
+{% endblock %}
+
+{% block help_content %}
+<div>
+    <h4>Ayuda: Editar Factura</h4>
+    <p>En esta pantalla puedes modificar una factura existente.</p>
+    <ul>
+        <li><strong>Editar líneas:</strong> Usa el botón de editar en cada fila para cambiar cantidad, precio o descuentos.</li>
+        <li><strong>F2:</strong> Presiona F2 en el campo de código para buscar productos sin perder el foco.</li>
+        <li><strong>Guardar:</strong> Guarda los cambios con el botón <em>Guardar Cambios</em>. El sistema validará duplicados y totales.</li>
+    </ul>
+</div>
+{% endblock %}
+

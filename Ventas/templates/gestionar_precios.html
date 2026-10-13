@@ -1,0 +1,838 @@
+{% load static l10n %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Precios de Venta</title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root { color-scheme: light; --ink: #152336; --muted: #657486; --line: #e2e7eb; --paper: #f4f6f7; --white: #fff; --navy: #142d42; --orange: #e66b2e; --green: #287b62; }
+        * { box-sizing: border-box; }
+        body { margin: 0; background: var(--paper); color: var(--ink); font-family: 'DM Sans', sans-serif; -webkit-font-smoothing: antialiased; }
+        button, input, select { font: inherit; }
+        .page { max-width: 1500px; margin: 0 auto; padding: 38px clamp(18px, 4vw, 58px) 64px; }
+        .topline { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; margin-bottom: 28px; }
+        .eyebrow, .field-label { color: var(--muted); font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+        h1, h2, h3, p { margin-top: 0; }
+        h1 { margin-bottom: 8px; font: 800 clamp(27px, 3vw, 36px)/1.15 'Manrope', sans-serif; letter-spacing: 0; }
+        .subtitle { margin: 0; color: var(--muted); font-size: 14px; }
+        .back-link, .download-link { display: inline-flex; min-height: 42px; align-items: center; justify-content: center; gap: 9px; border: 1px solid var(--line); border-radius: 7px; background: var(--white); color: var(--ink); padding: 0 15px; font-size: 13px; font-weight: 700; text-decoration: none; transition: border-color .18s, transform .18s, background .18s; }
+        .back-link:hover, .download-link:hover { transform: translateY(-1px); border-color: #bdc9d1; background: #fbfcfc; }
+        .summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 22px; }
+        .summary-item { display: flex; align-items: center; gap: 14px; min-height: 82px; padding: 16px 18px; border: 1px solid var(--line); border-radius: 8px; background: var(--white); }
+        .summary-mark { display: grid; width: 38px; height: 38px; flex: 0 0 38px; place-items: center; border-radius: 7px; background: #edf2f4; color: var(--navy); font: 800 12px 'Manrope', sans-serif; }
+        .summary-item:nth-child(2) .summary-mark { background: #fff2e9; color: var(--orange); }
+        .summary-item:nth-child(3) .summary-mark { background: #eaf5f0; color: var(--green); }
+        .summary-value { display: block; font: 800 20px 'Manrope', sans-serif; }
+        .summary-label { display: block; margin-top: 2px; color: var(--muted); font-size: 12px; }
+        .toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+        .toolbar-actions, .filters { display: flex; flex-wrap: wrap; gap: 9px; }
+        .download-link.primary { border-color: var(--navy); background: var(--navy); color: white; }
+        .download-link.primary:hover { background: #203d55; }
+        .control { min-height: 40px; border: 1px solid var(--line); border-radius: 6px; background: var(--white); color: var(--ink); padding: 0 12px; font-size: 13px; outline: none; }
+        .control:focus, .field:focus { border-color: #43657f; box-shadow: 0 0 0 3px #dce8ef; }
+        .search { width: min(300px, 70vw); }
+        .catalog-layout { display: grid; grid-template-columns: minmax(0, 1fr) 255px; align-items: start; gap: 14px; }
+        .catalog { overflow: hidden; border: 1px solid var(--line); border-radius: 8px; background: var(--white); }
+        .insights { border: 1px solid var(--line); border-radius: 8px; background: var(--white); }
+        .insights-head { padding: 17px 16px 13px; border-bottom: 1px solid var(--line); }
+        .insights-head h2 { margin: 0; font: 700 14px 'Manrope', sans-serif; }
+        .insights-head p { margin: 5px 0 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
+        .insight-list { display: grid; gap: 0; padding: 3px 16px; }
+        .insight-row { display: flex; justify-content: space-between; gap: 8px; padding: 11px 0; border-bottom: 1px solid #edf0f2; color: var(--muted); font-size: 11px; }
+        .insight-row:last-child { border-bottom: 0; }
+        .insight-row strong { color: var(--ink); font-size: 12px; }
+        .insight-row strong.alert { color: #b4473b; }
+        .insight-actions { display: grid; gap: 8px; padding: 0 14px 15px; }
+        .tool-launch { min-height: 39px; border: 1px solid var(--line); border-radius: 6px; background: #fff; color: var(--ink); padding: 0 12px; font-size: 12px; font-weight: 700; text-align: left; cursor: pointer; }
+        .tool-launch:hover { border-color: #b9c8d0; background: #f7f9fa; }
+        .tool-launch.primary { border-color: var(--navy); background: var(--navy); color: white; }
+        .catalog-heading { display: flex; justify-content: space-between; align-items: center; gap: 18px; padding: 18px 20px; border-bottom: 1px solid var(--line); }
+        .catalog-heading h2 { margin: 0; font: 700 16px 'Manrope', sans-serif; }
+        .catalog-heading p { margin: 4px 0 0; color: var(--muted); font-size: 12px; }
+        .result-count { white-space: nowrap; color: var(--muted); font-size: 12px; }
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; min-width: 900px; border-collapse: collapse; }
+        th { background: #f7f9fa; color: #657486; font-size: 10px; font-weight: 800; letter-spacing: .07em; text-align: left; text-transform: uppercase; }
+        th, td { padding: 13px 16px; border-bottom: 1px solid #edf0f2; }
+        tbody tr:last-child td { border-bottom: 0; }
+        tbody tr { transition: background .15s; }
+        tbody tr:hover { background: #fafcfc; }
+        .product-cell { display: flex; min-width: 220px; align-items: center; gap: 12px; }
+        .product-image { width: 42px; height: 42px; flex: 0 0 42px; border: 1px solid var(--line); border-radius: 6px; object-fit: cover; background: #f6f8f8; }
+        .product-name { display: block; max-width: 280px; overflow: hidden; color: var(--ink); font-size: 13px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+        .product-sub { display: block; margin-top: 3px; color: var(--muted); font-size: 11px; }
+        .code { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+        .money { color: var(--ink); font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+        .money-muted { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+        .stock { display: inline-flex; align-items: center; gap: 7px; color: var(--ink); font-size: 12px; white-space: nowrap; }
+        .stock::before { width: 7px; height: 7px; border-radius: 50%; background: #58a989; content: ''; }
+        .stock.out { color: #b4473b; }
+        .stock.out::before { background: #d66a5c; }
+        .badge { display: inline-flex; border-radius: 4px; padding: 5px 8px; background: #edf5f1; color: #287b62; font-size: 11px; font-weight: 700; white-space: nowrap; }
+        .badge.off { background: #f0f2f4; color: #74808b; }
+        .edit-button { display: grid; width: 36px; height: 36px; place-items: center; border: 1px solid transparent; border-radius: 6px; background: transparent; color: var(--orange); cursor: pointer; }
+        .edit-button:hover { border-color: #f4d3c1; background: #fff6f0; }
+        .edit-button svg { width: 17px; height: 17px; }
+        .empty-row { padding: 44px 20px; color: var(--muted); text-align: center; font-size: 13px; }
+        .draft-link { margin: 18px 0 0; color: var(--muted); font-size: 13px; }
+        .draft-link a { color: var(--navy); font-weight: 700; }
+        .modal { position: fixed; z-index: 50; inset: 0; display: grid; place-items: center; overflow-y: auto; padding: 22px; background: rgb(15 29 42 / 65%); opacity: 0; pointer-events: none; transition: opacity .2s ease; backdrop-filter: blur(5px); }
+        .modal.open { opacity: 1; pointer-events: auto; }
+        .modal-card { width: min(760px, 100%); max-height: min(90vh, 880px); overflow-y: auto; transform: translateY(12px) scale(.99); border: 1px solid #dce2e6; border-top: 4px solid var(--orange); border-radius: 9px; background: var(--white); box-shadow: 0 24px 70px rgb(12 27 39 / 28%); transition: transform .2s ease; }
+        .modal.open .modal-card { transform: translateY(0) scale(1); }
+        .modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; padding: 22px 26px 18px; border-bottom: 1px solid var(--line); }
+        .modal-head h2 { margin: 4px 0 0; font: 800 21px 'Manrope', sans-serif; }
+        .close-button { display: grid; width: 34px; height: 34px; flex: 0 0 34px; place-items: center; border: 1px solid var(--line); border-radius: 6px; background: white; color: var(--muted); font-size: 21px; cursor: pointer; }
+        .modal-body { padding: 22px 26px; }
+        .product-overview { display: flex; align-items: center; gap: 15px; padding: 14px; border: 1px solid var(--line); border-radius: 7px; background: #f8fafb; }
+        .product-overview img { width: 66px; height: 66px; flex: 0 0 66px; border: 1px solid var(--line); border-radius: 6px; object-fit: cover; background: white; }
+        .overview-name { margin: 0 0 5px; font: 700 16px 'Manrope', sans-serif; }
+        .overview-meta { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
+        .facts { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 9px; margin: 14px 0 22px; }
+        .fact { min-width: 0; padding: 12px; border: 1px solid var(--line); border-radius: 6px; }
+        .fact span { display: block; color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+        .fact strong { display: block; overflow: hidden; margin-top: 6px; color: var(--ink); font: 700 14px 'Manrope', sans-serif; text-overflow: ellipsis; white-space: nowrap; }
+        .section-label { margin: 0 0 12px; font: 700 13px 'Manrope', sans-serif; }
+        .pricing-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+        .field-wrap label { display: block; margin-bottom: 6px; color: #455464; font-size: 12px; font-weight: 700; }
+        .field { width: 100%; min-height: 43px; border: 1px solid #d8e0e5; border-radius: 6px; background: white; color: var(--ink); padding: 0 12px; outline: none; font-size: 14px; }
+        .field[readonly] { background: #f4f6f7; color: #526171; }
+        .price-result { border-color: #d9e8e1; background: #f2f8f5; color: #205d49; font-weight: 800; }
+        .promo-box { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-top: 17px; padding: 13px 14px; border: 1px solid var(--line); border-radius: 6px; }
+        .promo-box strong { display: block; font-size: 13px; }
+        .promo-box small { display: block; margin-top: 3px; color: var(--muted); font-size: 11px; }
+        .switch { position: relative; width: 42px; height: 24px; flex: 0 0 42px; }
+        .switch input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+        .switch span { position: absolute; inset: 0; border-radius: 20px; background: #cbd3d9; cursor: pointer; transition: background .15s; }
+        .switch span::after { position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: white; box-shadow: 0 1px 3px #0002; content: ''; transition: transform .15s; }
+        .switch input:checked + span { background: var(--green); }
+        .switch input:checked + span::after { transform: translateX(18px); }
+        .modal-foot { display: flex; justify-content: flex-end; gap: 9px; padding: 15px 26px 20px; border-top: 1px solid var(--line); }
+        .button { min-height: 42px; border: 1px solid var(--line); border-radius: 6px; background: white; color: var(--ink); padding: 0 17px; font-size: 13px; font-weight: 700; cursor: pointer; }
+        .button.save { border-color: var(--orange); background: var(--orange); color: white; }
+        .button.save:hover { background: #cf5c24; }
+        .tool-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+        .tool-card { min-height: 150px; border: 1px solid var(--line); border-radius: 7px; background: #fbfcfc; padding: 18px; color: var(--ink); text-align: left; cursor: pointer; }
+        .tool-card:hover { border-color: #b5c5cd; background: #f4f8f9; }
+        .tool-icon { display: grid; width: 36px; height: 36px; margin-bottom: 18px; place-items: center; border-radius: 6px; background: #eaf0f3; color: var(--navy); font: 800 15px 'Manrope', sans-serif; }
+        .tool-card strong { display: block; font: 700 14px 'Manrope', sans-serif; }
+        .tool-card small { display: block; margin-top: 6px; color: var(--muted); font-size: 11px; line-height: 1.5; }
+        .modal-card.cost-modal { display: flex; width: min(98vw, 1720px); height: min(96vh, 1240px); max-height: 96vh; flex-direction: column; }
+        .cost-tabs { display: flex; gap: 4px; overflow-x: auto; padding: 0 24px; border-bottom: 1px solid var(--line); }
+        .cost-tab { min-height: 44px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--muted); padding: 0 13px; font-size: 12px; font-weight: 700; white-space: nowrap; cursor: pointer; }
+        .cost-tab[aria-selected="true"] { border-bottom-color: var(--orange); color: var(--ink); }
+        .cost-tab span { margin-left: 5px; color: inherit; font-variant-numeric: tabular-nums; }
+        .cost-content { min-height: 0; flex: 1; overflow-y: auto; padding: 20px 24px; }
+        .cost-split-grid { display: grid; height: 100%; grid-template-columns: minmax(300px, .72fr) minmax(0, 1.65fr); align-items: start; gap: 18px; transition: grid-template-columns .28s cubic-bezier(.2,.8,.2,1), gap .28s ease; }
+        .cost-entry-panel { position: sticky; top: 0; min-width: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 7px; background: #fbfcfc; padding: 18px; transition: opacity .2s ease, transform .28s cubic-bezier(.2,.8,.2,1), padding .25s ease, border-width .25s ease; }
+        .cost-history-panel { min-width: 0; max-height: 100%; overflow-y: auto; }
+        .cost-review-toolbar { display: flex; justify-content: flex-end; margin-bottom: 13px; }
+        .cost-review-mode .cost-split-grid { grid-template-columns: minmax(0, 0fr) minmax(0, 1fr); gap: 0; }
+        .cost-review-mode .cost-entry-panel { height: 0; min-height: 0; transform: translateX(-22px); border-width: 0; padding-block: 0; opacity: 0; }
+        .cost-review-mode .cost-history-panel .cost-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        .cost-history-panel .cost-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .cost-toolbar { display: grid; gap: 11px; margin-bottom: 14px; }
+        .cost-toolbar p { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
+        .cost-day { margin: 0 0 20px; }
+        .cost-day-title { margin: 0 0 9px; color: #566777; font: 700 12px 'Manrope', sans-serif; text-transform: capitalize; }
+        .cost-cards { display: grid; gap: 9px; }
+        .cost-card { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 15px; border: 1px solid var(--line); border-left: 3px solid #d9a14e; border-radius: 7px; background: white; padding: 14px; }
+        .cost-card.approved { border-left-color: var(--green); }
+        .cost-card.rejected { border-left-color: #aeb7be; }
+        .cost-card-title { margin: 0; font: 700 13px 'Manrope', sans-serif; }
+        .cost-card-meta { margin: 4px 0 11px; color: var(--muted); font-size: 11px; }
+        .cost-card-values { display: flex; flex-wrap: wrap; gap: 8px 18px; }
+        .cost-value span { display: block; color: var(--muted); font-size: 10px; }
+        .cost-value strong { display: block; margin-top: 2px; color: var(--ink); font-size: 12px; font-variant-numeric: tabular-nums; }
+        .cost-card-actions { display: flex; flex-wrap: wrap; align-content: center; justify-content: flex-end; gap: 6px; }
+        .cost-action { min-height: 32px; border: 1px solid var(--line); border-radius: 5px; background: white; color: var(--ink); padding: 0 9px; font-size: 11px; font-weight: 700; cursor: pointer; }
+        .cost-action.approve { border-color: #c9e1d5; background: #edf7f1; color: #22684e; }
+        .cost-action.reject, .cost-action.delete { color: #a5483f; }
+        .cost-status { display: inline-flex; margin-left: 7px; border-radius: 4px; background: #edf7f1; color: #22684e; padding: 4px 7px; font-size: 10px; font-weight: 700; }
+        .cost-status.waiting { background: #fff4e8; color: #9a5a17; }
+        .cost-status.ready { background: #e9f1f7; color: #315c78; }
+        .cost-status.reverted { background: #f0f2f4; color: #657486; }
+        .cost-form { display: grid; grid-template-columns: 1fr; gap: 11px; margin: 0; border: 0; border-radius: 0; background: transparent; padding: 0; }
+        .cost-form[hidden], .cost-pane[hidden] { display: none; }
+        .cost-form .field-wrap:last-of-type { grid-column: auto; }
+        .cost-form-note { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
+        .cost-form-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+        .cost-empty { padding: 28px 15px; border: 1px dashed #d6dfe4; border-radius: 6px; color: var(--muted); text-align: center; font-size: 12px; }
+        .order-list { display: grid; gap: 7px; max-height: 55vh; overflow: auto; padding: 0; list-style: none; }
+        .order-item { display: flex; align-items: center; gap: 10px; border: 1px solid var(--line); border-radius: 6px; background: white; padding: 9px; cursor: grab; }
+        .order-item.dragging { opacity: .45; }
+        .drag-grip { color: #8a98a3; font-size: 18px; }
+        .order-product { min-width: 0; flex: 1; }
+        .order-product strong, .order-product small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .order-product strong { font-size: 12px; }
+        .order-product small { margin-top: 3px; color: var(--muted); font-size: 10px; }
+        .order-move { display: flex; gap: 3px; }
+        .order-move button { width: 28px; height: 28px; border: 1px solid var(--line); border-radius: 4px; background: white; color: var(--ink); cursor: pointer; }
+        .compare-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+        .compare-panel { border: 1px solid var(--line); border-radius: 7px; padding: 14px; }
+        .compare-panel h3 { margin: 0 0 10px; color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+        .compare-select { width: 100%; min-height: 42px; margin-bottom: 12px; }
+        .compare-facts { display: grid; gap: 8px; }
+        .compare-fact { display: flex; justify-content: space-between; gap: 10px; color: var(--muted); font-size: 11px; }
+        .compare-fact strong { color: var(--ink); font-variant-numeric: tabular-nums; }
+        .compare-result { margin-top: 12px; border-radius: 6px; background: #f1f6f4; padding: 14px; color: var(--ink); font-size: 12px; line-height: 1.6; }
+        .compare-result strong { color: var(--green); }
+        .modal-back { margin-right: auto; }
+        .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+        body.modal-open { overflow: hidden; }
+        @media (max-width: 900px) { .catalog-layout { grid-template-columns: 1fr; } .insights { display: grid; grid-template-columns: 1fr auto; } .insights-head { grid-column: 1 / -1; } .insight-list { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; } .insight-row { align-items: flex-start; flex-direction: column; } .insight-actions { align-content: center; min-width: 175px; } }
+        @media (max-width: 1050px) { .cost-review-mode .cost-history-panel .cost-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        @media (max-width: 780px) { .modal-card.cost-modal { width: 98vw; height: 96vh; } .cost-split-grid, .cost-review-mode .cost-split-grid { height: auto; grid-template-columns: 1fr; } .cost-entry-panel { position: static; } .cost-history-panel .cost-cards, .cost-review-mode .cost-history-panel .cost-cards { grid-template-columns: 1fr; } }
+        @media (max-width: 680px) { .page { padding-top: 24px; } .topline { flex-direction: column; } .summary { grid-template-columns: 1fr; gap: 8px; } .summary-item { min-height: 68px; } .toolbar { align-items: stretch; } .toolbar-actions, .filters { width: 100%; } .download-link, .control { flex: 1; } .search { width: 100%; } .catalog-heading { align-items: flex-start; flex-direction: column; gap: 6px; } .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); } .modal { padding: 10px; } .modal-card { max-height: 94vh; } .modal-head, .modal-body { padding-right: 17px; padding-left: 17px; } .modal-foot { padding-right: 17px; padding-left: 17px; } .pricing-grid, .tool-grid, .compare-grid { grid-template-columns: 1fr; } .insights { display: block; } .insight-list { grid-template-columns: 1fr; } .insight-row { align-items: center; flex-direction: row; } .cost-tabs { padding: 0 12px; } .cost-content { padding: 15px 12px; } .cost-card { grid-template-columns: 1fr; } .cost-card-actions { justify-content: flex-start; } }
+        @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; } }
+    </style>
+</head>
+<body>
+<main class="page">
+    <header class="topline">
+        <div><p class="eyebrow">Administración · Comercial</p><h1>Gestión de precios</h1><p class="subtitle">Controla costos, márgenes y disponibilidad de tu catálogo.</p></div>
+        <a href="{% url 'listar_facturas' %}" class="back-link">← Volver a facturación</a>
+    </header>
+    <section class="summary" aria-label="Resumen del catálogo">
+        <div class="summary-item"><span class="summary-mark">CAT</span><div><strong class="summary-value" id="metric-total">0</strong><span class="summary-label">Productos en catálogo</span></div></div>
+        <div class="summary-item"><span class="summary-mark">%</span><div><strong class="summary-value" id="metric-promo">0</strong><span class="summary-label">Con promoción activa</span></div></div>
+        <div class="summary-item"><span class="summary-mark">ST</span><div><strong class="summary-value" id="metric-out">0</strong><span class="summary-label">Agotados</span></div></div>
+    </section>
+    <div class="toolbar">
+        <div class="toolbar-actions"><a href="{% url 'lista_precios_pdf' %}" target="_blank" class="download-link primary">↓ Lista de precios</a><a href="{% url 'catalogo_4x_pdf' %}" target="_blank" class="download-link">▤ Catálogo PDF</a></div>
+        <div class="filters"><input id="product-search" class="control search" type="search" placeholder="Buscar por producto o código" aria-label="Buscar por producto o código"><select id="status-filter" class="control" aria-label="Filtrar productos"><option value="all">Todos los productos</option><option value="promo">En promoción</option><option value="available">Con existencia</option><option value="out">Agotados</option></select></div>
+    </div>
+    <div id="volver-factura-container" class="draft-link" hidden><a href="{% url 'formato_facturacion' %}">Continuar con la factura en curso →</a></div>
+    <div class="catalog-layout"><section class="catalog">
+        <div class="catalog-heading"><div><h2>Catálogo de productos</h2><p>Consulta el precio y abre una ficha para actualizar su margen.</p></div><span id="visible-count" class="result-count"></span></div>
+        <div class="table-wrap"><table>
+            <thead><tr><th scope="col">Producto</th><th scope="col">Código</th><th scope="col">Costo</th><th scope="col">Precio de venta</th><th scope="col">Existencia</th><th scope="col">Promoción</th><th scope="col"><span class="sr-only">Acciones</span></th></tr></thead>
+            <tbody id="product-rows">
+                {% for producto in productos %}
+                <tr class="product-row" data-name="{{ producto.descripcion|lower }}" data-code="{{ producto.id|lower }}" data-stock="{{ producto.cantidad }}" data-promo="{{ producto.promocion|yesno:'1,0' }}" data-costo="{{ producto.costo|unlocalize }}" data-precio="{{ producto.precio_venta|unlocalize }}">
+                    <td><div class="product-cell">{% if producto.imagen_url %}<img src="{{ producto.imagen_url }}" alt="" class="product-image">{% else %}<img src="{% static 'img/default-product.png' %}" alt="" class="product-image">{% endif %}<div><span class="product-name">{{ producto.descripcion }}</span><span class="product-sub">{{ producto.categoria|default:'Sin categoría' }} · IVA {{ producto.iva|floatformat:0 }}%</span></div></div></td>
+                    <td class="code">{{ producto.id }}</td><td class="money-muted">${{ producto.costo|floatformat:2 }}</td><td class="money">${{ producto.precio_venta|floatformat:2 }}</td>
+                    <td><span class="stock{% if producto.cantidad == 0 %} out{% endif %}">{% if producto.cantidad == 0 %}Agotado{% else %}{{ producto.cantidad }} uds.{% endif %}</span></td>
+                    <td>{% if producto.promocion %}<span class="badge">Activa</span>{% else %}<span class="badge off">No activa</span>{% endif %}</td>
+                    <td><button type="button" class="edit-button btn-editar" data-id="{{ producto.id }}" data-costo="{{ producto.costo|default_if_none:0|unlocalize }}" data-margen="{{ producto.margen|default_if_none:0|unlocalize }}" data-nombre="{{ producto.descripcion }}" data-precio="{{ producto.precio_venta|default_if_none:0|unlocalize }}" data-promocion="{{ producto.promocion|yesno:'1,0' }}" data-stock="{{ producto.cantidad }}" data-iva="{{ producto.iva|unlocalize }}" data-categoria="{{ producto.categoria|default:'Sin categoría' }}" data-imagen="{{ producto.imagen_url|default:'' }}" title="Editar precio" aria-label="Editar precio de {{ producto.descripcion }}"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a2.25 2.25 0 1 1 3.182 3.182L7.5 20.212 3 21l.788-4.5L16.862 4.487Z"/></svg></button></td>
+                </tr>
+                {% empty %}<tr><td colspan="7" class="empty-row">No hay productos registrados.</td></tr>{% endfor %}
+                <tr id="no-results" hidden><td colspan="7" class="empty-row">No hay productos que coincidan con la búsqueda.</td></tr>
+            </tbody>
+        </table></div>
+    </section><aside class="insights" aria-label="Herramientas del catálogo"><div class="insights-head"><h2>Panel de control</h2><p>Señales rápidas sobre la salud de tus precios.</p></div><div class="insight-list"><div class="insight-row"><span>Precio sin definir</span><strong id="metric-no-price">0</strong></div><div class="insight-row"><span>Costo sin definir</span><strong id="metric-no-cost">0</strong></div><div class="insight-row"><span>Margen negativo</span><strong id="metric-loss">0</strong></div></div><div class="insight-actions"><button type="button" class="tool-launch primary" id="abrir-herramientas">Abrir herramientas</button><button type="button" class="tool-launch" id="atajo-comparar">Comparar productos</button><button type="button" class="tool-launch" id="atajo-ordenar">Ordenar catálogo</button></div></aside></div>
+</main>
+<div id="pricingModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-titulo" aria-hidden="true">
+    <div class="modal-card"><div class="modal-head"><div><p class="eyebrow">Ficha de producto · Actualización</p><h2 id="modal-titulo">Precio y rentabilidad</h2></div><button type="button" id="cerrar-modal-precio" class="close-button" title="Cerrar" aria-label="Cerrar modal">×</button></div>
+        <form id="form-precio" autocomplete="off"><input type="hidden" id="modal-id"><div class="modal-body">
+            <div class="product-overview"><img id="modal-imagen" src="{% static 'img/default-product.png' %}" alt=""><div><h3 id="modal-nombre" class="overview-name"></h3><p id="modal-meta" class="overview-meta"></p></div></div>
+            <div class="facts"><div class="fact"><span>Precio actual</span><strong id="fact-precio">$0.00</strong></div><div class="fact"><span>Existencia</span><strong id="fact-stock">0</strong></div><div class="fact"><span>Margen bruto estimado</span><strong id="fact-margen">0%</strong></div><div class="fact"><span>Impuesto IVA</span><strong id="fact-iva">0%</strong></div><div class="fact"><span>Promoción</span><strong id="fact-promo">No activa</strong></div></div>
+            <h3 class="section-label">Cálculo del nuevo precio</h3><div class="pricing-grid">
+                <div class="field-wrap"><label for="costo_compra">Costo unitario / nuevo costo propuesto ($)</label><input type="number" id="costo_compra" min="0" step="0.01" required class="field"></div>
+                <div class="field-wrap"><label for="margen_ganancia">Recargo sobre costo (%)</label><input type="number" id="margen_ganancia" min="0" step="0.01" placeholder="Ej. 30" required class="field"></div>
+                <div class="field-wrap"><label for="precio_final">Nuevo precio de venta ($)</label><input type="number" id="precio_final" min="0" step="0.01" readonly required class="field price-result"></div>
+                <div class="field-wrap"><label>Precio promocional</label><input type="text" value="No configurado" readonly class="field"></div>
+            </div>
+            <div class="promo-box"><div><strong>Promoción activa</strong><small>El sistema registra el estado; no hay un precio de descuento configurado.</small></div><label class="switch" aria-label="Activar promoción"><input type="checkbox" id="modal-promocion"><span></span></label></div>
+        </div><div class="modal-foot"><button type="button" id="cancelar-modal-precio" class="button">Cancelar</button><button type="submit" class="button save">Guardar precio</button></div></form>
+    </div>
+</div>
+<div id="toolsModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="tools-title" aria-hidden="true">
+    <div class="modal-card"><div class="modal-head"><div><p class="eyebrow">Utilidades comerciales</p><h2 id="tools-title">Herramientas del catálogo</h2></div><button type="button" class="close-button close-tools" aria-label="Cerrar herramientas">×</button></div><div class="modal-body"><div class="tool-grid"><button type="button" class="tool-card" data-tool="order"><span class="tool-icon">↕</span><strong>Ordenar productos</strong><small>Arrastra cada producto a la posición que quieres en la tabla y en los PDF.</small></button><button type="button" class="tool-card" data-tool="compare"><span class="tool-icon">⇄</span><strong>Comparar precios</strong><small>Contrasta precio, costo, margen bruto y utilidad por unidad.</small></button><button type="button" class="tool-card" data-tool="costs"><span class="tool-icon">$</span><strong>Costos por actualizar <span class="cost-status" id="tools-cost-count">{{ conteo_pendientes }}</span></strong><small>Propón un costo de compra y apruébalo antes de afectar el costo actual.</small></button></div></div><div class="modal-foot"><button type="button" class="button close-tools">Cerrar</button></div></div>
+</div>
+<div id="orderModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="order-title" aria-hidden="true">
+    <div class="modal-card"><div class="modal-head"><div><p class="eyebrow">Orden de publicación</p><h2 id="order-title">Posición de los productos</h2></div><button type="button" class="close-button close-order" aria-label="Cerrar orden">×</button></div><div class="modal-body"><p class="subtitle">Arrastra los productos o usa las flechas. El orden también se aplicará a los catálogos PDF.</p><ol class="order-list" id="sortable-products"></ol></div><div class="modal-foot"><button type="button" class="button modal-back" data-back-tools>Volver a herramientas</button><button type="button" class="button save" id="guardar-orden">Guardar orden</button></div></div>
+</div>
+<div id="compareModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="compare-title" aria-hidden="true">
+    <div class="modal-card"><div class="modal-head"><div><p class="eyebrow">Análisis lado a lado</p><h2 id="compare-title">Comparar productos</h2></div><button type="button" class="close-button close-compare" aria-label="Cerrar comparación">×</button></div><div class="modal-body"><div class="compare-grid"><section class="compare-panel"><h3>Producto A</h3><select class="field compare-select" id="compare-a" aria-label="Seleccionar producto A"><option value="">Selecciona un producto</option>{% for producto in productos %}<option value="{{ producto.id }}" data-name="{{ producto.descripcion }}" data-cost="{{ producto.costo|unlocalize }}" data-price="{{ producto.precio_venta|unlocalize }}">{{ producto.id }} · {{ producto.descripcion }}</option>{% endfor %}</select><div class="compare-facts" id="compare-facts-a"><div class="compare-fact"><span>Precio de venta</span><strong>—</strong></div><div class="compare-fact"><span>Costo</span><strong>—</strong></div><div class="compare-fact"><span>Margen bruto</span><strong>—</strong></div><div class="compare-fact"><span>Utilidad por unidad</span><strong>—</strong></div></div></section><section class="compare-panel"><h3>Producto B</h3><select class="field compare-select" id="compare-b" aria-label="Seleccionar producto B"><option value="">Selecciona un producto</option>{% for producto in productos %}<option value="{{ producto.id }}" data-name="{{ producto.descripcion }}" data-cost="{{ producto.costo|unlocalize }}" data-price="{{ producto.precio_venta|unlocalize }}">{{ producto.id }} · {{ producto.descripcion }}</option>{% endfor %}</select><div class="compare-facts" id="compare-facts-b"><div class="compare-fact"><span>Precio de venta</span><strong>—</strong></div><div class="compare-fact"><span>Costo</span><strong>—</strong></div><div class="compare-fact"><span>Margen bruto</span><strong>—</strong></div><div class="compare-fact"><span>Utilidad por unidad</span><strong>—</strong></div></div></section></div><div class="compare-result" id="compare-result" aria-live="polite">Selecciona dos productos para ver la diferencia de precio y rentabilidad.</div></div><div class="modal-foot"><button type="button" class="button close-compare">Cerrar</button></div></div>
+</div>
+<div id="costModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="cost-title" aria-hidden="true">
+    <div class="modal-card cost-modal"><div class="modal-head"><div><p class="eyebrow">Control de compras · Historial auditable</p><h2 id="cost-title">Costos por actualizar</h2></div><button type="button" class="close-button close-cost" aria-label="Cerrar costos por actualizar">×</button></div>
+        <div class="cost-tabs" role="tablist" aria-label="Estado de propuestas"><button type="button" class="cost-tab" role="tab" id="cost-tab-pending" aria-selected="true" data-cost-tab="pending">Pendientes <span id="cost-count-pending">{{ conteo_pendientes }}</span><small id="cost-count-wait">{% if conteo_espera_stock %} · {{ conteo_espera_stock }} en espera{% endif %}</small></button><button type="button" class="cost-tab" role="tab" id="cost-tab-approved" aria-selected="false" data-cost-tab="approved">Aprobados</button><button type="button" class="cost-tab" role="tab" id="cost-tab-rejected" aria-selected="false" data-cost-tab="rejected">Denegados</button></div>
+        <div class="cost-content" id="cost-content">
+            <section class="cost-pane" role="tabpanel" aria-labelledby="cost-tab-pending" id="cost-pane-pending"><div class="cost-split-grid"><section class="cost-entry-panel"><div class="cost-toolbar"><p>Las propuestas de Compras esperan a que se agote el lote más caro. El costo y precio actuales no cambian hasta aprobar.</p><button type="button" class="button" id="ocultar-formulario-costos">Ocultar formulario</button></div>
+                <form class="cost-form" id="form-costo-pendiente"><input type="hidden" id="costo-propuesta-id"><div class="field-wrap"><label for="costo-producto">Producto</label><select class="field" id="costo-producto" required><option value="">Selecciona un producto</option>{% for producto in productos %}<option value="{{ producto.id }}">{{ producto.id }} · {{ producto.descripcion }}</option>{% endfor %}</select></div><div class="field-wrap" id="cost-quantity-wrap"><label for="costo-cantidad">Cantidad comprada</label><input class="field" type="number" id="costo-cantidad" min="1" step="1" required></div><div class="field-wrap" id="cost-unit-wrap"><label for="costo-unidad">Unidad</label><select class="field" id="costo-unidad" required><option value="unidades">Unidades</option><option value="cajas">Cajas</option><option value="paquetes">Paquetes</option><option value="lotes">Lotes</option><option value="rollos">Rollos</option><option value="kits">Kits</option></select></div><div class="field-wrap"><label for="costo-propuesto">Costo unitario propuesto ($)</label><input class="field" type="number" id="costo-propuesto" min="0" step="0.01" required></div><div class="field-wrap"><label for="costo-motivo">Referencia / nota</label><input class="field" type="text" id="costo-motivo" maxlength="255" placeholder="Compra, proveedor o referencia"></div><p class="cost-form-note">La propuesta manual no modifica existencias. Registra las entradas físicas desde Compras.</p><div class="cost-form-actions"><button type="button" class="button" id="cancelar-costo">Limpiar</button><button type="submit" class="button save" id="guardar-costo">Guardar propuesta</button></div></form></section>
+                <section class="cost-history-panel"><div class="cost-review-toolbar"><button type="button" class="button" id="mostrar-formulario-costos" hidden>Mostrar formulario</button></div><div id="cost-history-groups">{% for grupo in propuestas_pendientes %}<section class="cost-day" data-day-key="{{ grupo.fecha_key }}"><h3 class="cost-day-title">{{ grupo.fecha }}</h3><div class="cost-cards">{% for costo in grupo.items %}<article class="cost-card{% if costo.estado == 'espera_stock' %} waiting{% endif %}" data-cost-id="{{ costo.pk }}" data-product="{{ costo.producto_id }}" data-manual="{% if costo.cantidad_compra %}0{% else %}1{% endif %}" data-quantity="{{ costo.cantidad_compra|default:'' }}" data-unit="{{ costo.unidad_compra }}" data-cost="{{ costo.costo_propuesto|unlocalize }}" data-reason="{{ costo.motivo }}"><div><h3 class="cost-card-title">{{ costo.producto.Codigo }} · {{ costo.producto.Descripcion }}{% if costo.estado == 'espera_stock' %}<span class="cost-status waiting">Esperando agotar lote caro</span>{% else %}<span class="cost-status ready">Lista para aprobar</span>{% endif %}</h3><p class="cost-card-meta">{{ costo.fecha_local|time:'H:i' }} · Propuesto por {{ costo.creado_por|default:'Usuario eliminado' }}</p><div class="cost-card-values"><div class="cost-value"><span>Costo vigente</span><strong>${{ costo.producto.Costo|floatformat:2 }}</strong></div><div class="cost-value"><span>Nuevo costo unitario</span><strong>${{ costo.costo_propuesto|floatformat:2 }}</strong></div>{% if costo.cantidad_compra %}<div class="cost-value"><span>Compra</span><strong>{{ costo.cantidad_compra }} {{ costo.get_unidad_compra_display|default:costo.unidad_compra }}</strong></div>{% else %}<div class="cost-value"><span>Origen</span><strong>Propuesta manual</strong></div>{% endif %}{% if costo.estado == 'espera_stock' %}<div class="cost-value"><span>Stock caro restante</span><strong>{{ costo.stock_caro_restante }}</strong></div>{% endif %}</div>{% if costo.motivo %}<p class="cost-card-meta">{{ costo.motivo }}</p>{% endif %}</div><div class="cost-card-actions">{% if costo.estado == 'pendiente' %}<button type="button" class="cost-action approve" data-cost-action="aprobar">Aprobar</button>{% endif %}<button type="button" class="cost-action reject" data-cost-action="denegar">Denegar</button><button type="button" class="cost-action" data-cost-action="editar">Editar</button><button type="button" class="cost-action delete" data-cost-action="eliminar">Eliminar</button></div></article>{% empty %}<div class="cost-empty">No hay costos pendientes de revisión.</div>{% endfor %}</div></section>{% empty %}<div class="cost-empty">No hay propuestas de costo.</div>{% endfor %}</div></section></div>
+            <section class="cost-pane" role="tabpanel" aria-labelledby="cost-tab-approved" id="cost-pane-approved" hidden>{% for grupo in propuestas_aprobadas %}<section class="cost-day"><h3 class="cost-day-title">{{ grupo.fecha }}</h3><div class="cost-cards">{% for costo in grupo.items %}<article class="cost-card approved"><div><h3 class="cost-card-title">{{ costo.producto.Codigo }} · {{ costo.producto.Descripcion }}{% if costo.revertido_en %}<span class="cost-status reverted">Revertido</span>{% else %}<span class="cost-status">Aprobado</span>{% endif %}</h3><p class="cost-card-meta">Propuesto {{ costo.creado_en|date:'d/m/Y H:i' }} · Aprobado {{ costo.revisado_en|date:'d/m/Y H:i' }} por {{ costo.revisado_por|default:'Usuario eliminado' }}</p><div class="cost-card-values"><div class="cost-value"><span>Costo anterior</span><strong>${{ costo.costo_anterior|floatformat:2 }}</strong></div><div class="cost-value"><span>Costo aprobado</span><strong>${{ costo.costo_propuesto|floatformat:2 }}</strong></div><div class="cost-value"><span>Precio anterior</span><strong>${{ costo.precio_anterior|floatformat:2 }}</strong></div><div class="cost-value"><span>Precio aprobado</span><strong>${{ costo.precio_aprobado|floatformat:2 }}</strong></div><div class="cost-value"><span>Compra recibida</span><strong>{{ costo.cantidad_compra }} {{ costo.get_unidad_compra_display|default:costo.unidad_compra }}</strong></div></div>{% if costo.motivo %}<p class="cost-card-meta">{{ costo.motivo }}</p>{% endif %}</div><div class="cost-card-actions">{% if not costo.revertido_en %}<button type="button" class="cost-action reject" data-cost-id="{{ costo.pk }}" data-cost-action="revertir">Revertir</button>{% endif %}</div></article>{% endfor %}</div></section>{% empty %}<div class="cost-empty">Todavía no hay costos aprobados.</div>{% endfor %}</section>
+            <section class="cost-pane" role="tabpanel" aria-labelledby="cost-tab-rejected" id="cost-pane-rejected" hidden>{% for grupo in propuestas_denegadas %}<section class="cost-day"><h3 class="cost-day-title">{{ grupo.fecha }}</h3><div class="cost-cards">{% for costo in grupo.items %}<article class="cost-card rejected"><div><h3 class="cost-card-title">{{ costo.producto.Codigo }} · {{ costo.producto.Descripcion }}<span class="cost-status reverted">Denegado</span></h3><p class="cost-card-meta">{{ costo.fecha_local|time:'H:i' }} · Revisado {{ costo.revisado_en|date:'d/m/Y H:i' }} por {{ costo.revisado_por|default:'Usuario eliminado' }}</p><div class="cost-card-values"><div class="cost-value"><span>Costo propuesto</span><strong>${{ costo.costo_propuesto|floatformat:2 }}</strong></div><div class="cost-value"><span>Compra recibida</span><strong>{{ costo.cantidad_compra }} unidades</strong></div></div>{% if costo.motivo %}<p class="cost-card-meta">{{ costo.motivo }}</p>{% endif %}</div><div class="cost-card-actions"><button type="button" class="cost-action delete" data-cost-id="{{ costo.pk }}" data-cost-action="eliminar">Eliminar registro</button></div></article>{% endfor %}</div></section>{% empty %}<div class="cost-empty">No hay propuestas denegadas.</div>{% endfor %}</section>
+        </div><div class="modal-foot"><button type="button" class="button close-cost">Cerrar</button></div>
+    </div>
+</div>
+<script>
+const modal = document.getElementById('pricingModal');
+const formPrecio = document.getElementById('form-precio');
+const costoInput = document.getElementById('costo_compra');
+const margenInput = document.getElementById('margen_ganancia');
+const precioFinalInput = document.getElementById('precio_final');
+const promoInput = document.getElementById('modal-promocion');
+const filas = [...document.querySelectorAll('.product-row')];
+let ultimoActivador = null;
+
+function actualizarPrecioFinal() {
+    const costo = Number.parseFloat(costoInput.value);
+    let margen = Number.parseFloat(margenInput.value) || 0;
+    if (margen < 0) {
+        margenInput.value = '0';
+        margen = 0;
+    }
+    if (!Number.isFinite(costo) || costo < 0) {
+        precioFinalInput.value = '';
+        return;
+    }
+    const precio = costo * (1 + margen / 100);
+    precioFinalInput.value = Number.isFinite(precio) && precio >= 0 ? precio.toFixed(2) : '';
+    const margenBruto = precio > 0 ? ((precio - costo) / precio) * 100 : 0;
+    document.getElementById('fact-margen').textContent = `${margenBruto.toFixed(2)}%`;
+}
+
+function abrirModal(button) {
+    ultimoActivador = button;
+    const costo = Number.parseFloat(String(button.dataset.costo || '0').replace(',', '.')) || 0;
+    const precioActual = Number.parseFloat(String(button.dataset.precio || '0').replace(',', '.')) || 0;
+    const margenCalculado = costo > 0 ? ((precioActual - costo) / costo) * 100 : 0;
+    const margen = Number.parseFloat(String(button.dataset.margen || margenCalculado).replace(',', '.')) || 0;
+    document.getElementById('modal-id').value = button.dataset.id;
+    document.getElementById('modal-nombre').textContent = button.dataset.nombre || '';
+    document.getElementById('modal-meta').textContent = `${button.dataset.id} · ${button.dataset.categoria || 'Sin categoría'}`;
+    document.getElementById('modal-imagen').src = button.dataset.imagen || "{% static 'img/default-product.png' %}";
+    document.getElementById('fact-precio').textContent = `$${precioActual.toFixed(2)}`;
+    document.getElementById('fact-stock').textContent = `${button.dataset.stock || 0} unidades`;
+    document.getElementById('fact-iva').textContent = `${Number.parseFloat(button.dataset.iva || '0') || 0}%`;
+    document.getElementById('fact-promo').textContent = button.dataset.promocion === '1' ? 'Activa' : 'No activa';
+    costoInput.value = costo.toFixed(2);
+    promoInput.checked = button.dataset.promocion === '1';
+    margenInput.value = margen.toFixed(2);
+    actualizarPrecioFinal();
+    modal.classList.add('open');
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('modal-open');
+    margenInput.focus();
+}
+
+function cerrarModal() {
+    modal.classList.remove('open');
+    modal.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('modal-open');
+    if (ultimoActivador) ultimoActivador.focus();
+}
+
+function filtrarProductos() {
+    const consulta = document.getElementById('product-search').value.trim().toLocaleLowerCase('es');
+    const filtro = document.getElementById('status-filter').value;
+    let visibles = 0;
+    filas.forEach(fila => {
+        const coincideTexto = `${fila.dataset.name} ${fila.dataset.code}`.includes(consulta);
+        const stock = Number(fila.dataset.stock) || 0;
+        const coincideFiltro = filtro === 'all' || (filtro === 'promo' && fila.dataset.promo === '1') || (filtro === 'available' && stock > 0) || (filtro === 'out' && stock === 0);
+        const mostrar = coincideTexto && coincideFiltro;
+        fila.hidden = !mostrar;
+        if (mostrar) visibles += 1;
+    });
+    document.getElementById('visible-count').textContent = `${visibles} ${visibles === 1 ? 'producto' : 'productos'}`;
+    document.getElementById('no-results').hidden = visibles > 0 || filas.length === 0;
+}
+
+document.getElementById('metric-total').textContent = filas.length;
+document.getElementById('metric-promo').textContent = filas.filter(fila => fila.dataset.promo === '1').length;
+document.getElementById('metric-out').textContent = filas.filter(fila => Number(fila.dataset.stock) === 0).length;
+document.getElementById('metric-no-price').textContent = filas.filter(fila => Number(fila.dataset.precio) <= 0).length;
+document.getElementById('metric-no-cost').textContent = filas.filter(fila => Number(fila.dataset.costo) <= 0).length;
+document.getElementById('metric-loss').textContent = filas.filter(fila => Number(fila.dataset.precio) < Number(fila.dataset.costo)).length;
+document.getElementById('metric-no-price').classList.toggle('alert', Number(document.getElementById('metric-no-price').textContent) > 0);
+document.getElementById('metric-loss').classList.toggle('alert', Number(document.getElementById('metric-loss').textContent) > 0);
+filtrarProductos();
+document.querySelectorAll('.btn-editar').forEach(button => button.addEventListener('click', () => abrirModal(button)));
+document.getElementById('product-search').addEventListener('input', filtrarProductos);
+document.getElementById('status-filter').addEventListener('change', filtrarProductos);
+margenInput.addEventListener('input', actualizarPrecioFinal);
+ costoInput.addEventListener('input', actualizarPrecioFinal);
+document.getElementById('cerrar-modal-precio').addEventListener('click', cerrarModal);
+document.getElementById('cancelar-modal-precio').addEventListener('click', cerrarModal);
+modal.addEventListener('click', event => { if (event.target === modal) cerrarModal(); });
+promoInput.addEventListener('change', () => { document.getElementById('fact-promo').textContent = promoInput.checked ? 'Activa' : 'No activa'; });
+
+const herramientasModal = document.getElementById('toolsModal');
+const ordenModal = document.getElementById('orderModal');
+const comparacionModal = document.getElementById('compareModal');
+const costosModal = document.getElementById('costModal');
+const dialogos = [modal, herramientasModal, ordenModal, comparacionModal, costosModal];
+function mostrarDialogo(dialogo) {
+    dialogos.forEach(item => {
+        item.classList.toggle('open', item === dialogo);
+        item.setAttribute('aria-hidden', item === dialogo ? 'false' : 'true');
+    });
+    document.body.classList.add('modal-open');
+}
+function cerrarDialogo(dialogo) {
+    dialogo.classList.remove('open');
+    dialogo.setAttribute('aria-hidden', 'true');
+    if (!dialogos.some(item => item.classList.contains('open'))) document.body.classList.remove('modal-open');
+}
+function abrirHerramientas() { mostrarDialogo(herramientasModal); }
+function abrirOrden() { crearListaOrden(); mostrarDialogo(ordenModal); }
+function abrirComparacion() { mostrarDialogo(comparacionModal); }
+function abrirCostos() { mostrarDialogo(costosModal); seleccionarPestanaCostos('pending'); }
+
+document.getElementById('abrir-herramientas').addEventListener('click', abrirHerramientas);
+document.getElementById('atajo-ordenar').addEventListener('click', abrirOrden);
+document.getElementById('atajo-comparar').addEventListener('click', abrirComparacion);
+document.querySelectorAll('[data-tool="order"]').forEach(button => button.addEventListener('click', abrirOrden));
+document.querySelectorAll('[data-tool="compare"]').forEach(button => button.addEventListener('click', abrirComparacion));
+document.querySelectorAll('[data-tool="costs"]').forEach(button => button.addEventListener('click', abrirCostos));
+document.querySelectorAll('.close-tools').forEach(button => button.addEventListener('click', () => cerrarDialogo(herramientasModal)));
+document.querySelectorAll('.close-order').forEach(button => button.addEventListener('click', () => cerrarDialogo(ordenModal)));
+document.querySelectorAll('.close-compare').forEach(button => button.addEventListener('click', () => cerrarDialogo(comparacionModal)));
+document.querySelectorAll('.close-cost').forEach(button => button.addEventListener('click', () => cerrarDialogo(costosModal)));
+document.querySelector('[data-back-tools]').addEventListener('click', abrirHerramientas);
+document.querySelectorAll('.modal').forEach(dialogo => dialogo.addEventListener('click', event => { if (event.target === dialogo) cerrarDialogo(dialogo); }));
+document.addEventListener('keydown', event => {
+    if (event.key === 'Escape') {
+        const abierto = dialogos.find(dialogo => dialogo.classList.contains('open'));
+        if (abierto) cerrarDialogo(abierto);
+    }
+});
+
+function seleccionarPestanaCostos(nombre) {
+    document.querySelectorAll('[data-cost-tab]').forEach(tab => {
+        const activa = tab.dataset.costTab === nombre;
+        tab.setAttribute('aria-selected', String(activa));
+        document.getElementById(`cost-pane-${tab.dataset.costTab}`).hidden = !activa;
+    });
+}
+document.querySelectorAll('[data-cost-tab]').forEach(tab => tab.addEventListener('click', () => seleccionarPestanaCostos(tab.dataset.costTab)));
+
+const costForm = document.getElementById('form-costo-pendiente');
+const costProduct = document.getElementById('costo-producto');
+const costQuantity = document.getElementById('costo-cantidad');
+const costUnit = document.getElementById('costo-unidad');
+const proposedCost = document.getElementById('costo-propuesto');
+const costReason = document.getElementById('costo-motivo');
+const costModalElement = document.getElementById('costModal');
+const costEntryPanel = document.querySelector('.cost-entry-panel');
+function restablecerFormularioCosto() {
+    costForm.reset();
+    document.getElementById('costo-propuesta-id').value = '';
+    costProduct.disabled = false;
+    costQuantity.required = true;
+    costUnit.required = true;
+    document.getElementById('cost-quantity-wrap').hidden = false;
+    document.getElementById('cost-unit-wrap').hidden = false;
+    document.getElementById('guardar-costo').textContent = 'Guardar propuesta';
+}
+document.getElementById('ocultar-formulario-costos').addEventListener('click', () => {
+    costModalElement.classList.add('cost-review-mode');
+    costEntryPanel.inert = true;
+    costEntryPanel.setAttribute('aria-hidden', 'true');
+    document.getElementById('mostrar-formulario-costos').hidden = false;
+    document.getElementById('mostrar-formulario-costos').focus();
+});
+document.getElementById('mostrar-formulario-costos').addEventListener('click', () => {
+    costModalElement.classList.remove('cost-review-mode');
+    costEntryPanel.inert = false;
+    costEntryPanel.setAttribute('aria-hidden', 'false');
+    document.getElementById('mostrar-formulario-costos').hidden = true;
+    costProduct.focus();
+});
+document.getElementById('cancelar-costo').addEventListener('click', () => {
+    restablecerFormularioCosto();
+    costProduct.focus();
+});
+document.addEventListener('keydown', event => {
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'g' && costosModal.classList.contains('open') && !costForm.hidden) {
+        event.preventDefault();
+        costForm.requestSubmit();
+    }
+});
+
+async function enviarAccionCosto(payload, reload = true) {
+    const response = await fetch("{% url 'gestionar_costo_pendiente' %}", {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+        body: JSON.stringify(payload),
+    });
+    const data = await response.json();
+    if (!response.ok || !data.success) throw new Error(data.error || 'No se pudo actualizar la propuesta.');
+    if (reload) window.location.reload();
+    return data;
+}
+
+function normalizarFechaCosto(fecha) {
+    return fecha.replace(',', '').trim().toLocaleLowerCase('es');
+}
+
+function crearValorCosto(etiqueta, valor) {
+    const item = document.createElement('div');
+    item.className = 'cost-value';
+    const nombre = document.createElement('span');
+    nombre.textContent = etiqueta;
+    const dato = document.createElement('strong');
+    dato.textContent = valor;
+    item.append(nombre, dato);
+    return item;
+}
+
+function agregarTarjetaCosto(data) {
+    const history = document.getElementById('cost-history-groups');
+    const instant = new Date(data.creado_en);
+    const fechaKey = `${instant.getFullYear()}-${String(instant.getMonth() + 1).padStart(2, '0')}-${String(instant.getDate()).padStart(2, '0')}`;
+    const dateLabel = new Intl.DateTimeFormat('es-VE', {
+        weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+    }).format(instant).replace(',', '');
+    const normalizedDate = normalizarFechaCosto(dateLabel);
+    let group = history.querySelector(`.cost-day[data-day-key="${fechaKey}"]`);
+    if (!group) {
+        history.querySelector('.cost-empty')?.remove();
+        group = document.createElement('section');
+        group.className = 'cost-day';
+        const heading = document.createElement('h3');
+        heading.className = 'cost-day-title';
+        heading.textContent = dateLabel;
+        const cards = document.createElement('div');
+        cards.className = 'cost-cards';
+        group.dataset.dayKey = fechaKey;
+        group.append(heading, cards);
+        history.prepend(group);
+    }
+
+    const card = document.createElement('article');
+    card.className = `cost-card${data.state === 'espera_stock' ? ' waiting' : ''}`;
+    card.dataset.costId = data.id;
+    card.dataset.product = data.codigo;
+    card.dataset.manual = data.cantidad_compra ? '0' : '1';
+    card.dataset.quantity = data.cantidad_compra ?? '';
+    card.dataset.unit = data.unidad_key || 'unidades';
+    card.dataset.manual = data.cantidad_compra ? '0' : '1';
+    card.dataset.cost = data.costo_propuesto;
+    card.dataset.reason = data.motivo || '';
+
+    const details = document.createElement('div');
+    const title = document.createElement('h3');
+    title.className = 'cost-card-title';
+    title.textContent = `${data.codigo} · ${data.descripcion}`;
+    const badge = document.createElement('span');
+    badge.className = `cost-status ${data.state === 'espera_stock' ? 'waiting' : 'ready'}`;
+    badge.textContent = data.state === 'espera_stock' ? 'Esperando agotar lote caro' : 'Lista para aprobar';
+    title.append(badge);
+    const meta = document.createElement('p');
+    meta.className = 'cost-card-meta';
+    meta.textContent = `${new Intl.DateTimeFormat('es-VE', { hour: '2-digit', minute: '2-digit' }).format(instant)} · Propuesto por ${data.creado_por}`;
+    const values = document.createElement('div');
+    values.className = 'cost-card-values';
+    values.append(
+        crearValorCosto('Costo vigente', `$${Number(data.costo_actual).toFixed(2)}`),
+        crearValorCosto('Nuevo costo unitario', `$${Number(data.costo_propuesto).toFixed(2)}`),
+        crearValorCosto('Origen', data.cantidad_compra ? `${data.cantidad_compra} ${data.unidad}` : 'Propuesta manual'),
+    );
+    if (data.state === 'espera_stock') values.append(crearValorCosto('Stock caro restante', data.stock_caro));
+    details.append(title, meta, values);
+    if (data.motivo) {
+        const note = document.createElement('p');
+        note.className = 'cost-card-meta';
+        note.textContent = data.motivo;
+        details.append(note);
+    }
+
+    const actions = document.createElement('div');
+    actions.className = 'cost-card-actions';
+    const addAction = (action, text, className = '') => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = `cost-action ${className}`.trim();
+        button.dataset.costAction = action;
+        button.textContent = text;
+        actions.append(button);
+    };
+    if (data.state === 'pendiente') addAction('aprobar', 'Aprobar', 'approve');
+    addAction('denegar', 'Denegar', 'reject');
+    addAction('editar', 'Editar');
+    addAction('eliminar', 'Eliminar', 'delete');
+    card.append(details, actions);
+    group.querySelector('.cost-cards').prepend(card);
+
+    if (data.state === 'pendiente') {
+        document.getElementById('cost-count-pending').textContent = Number(document.getElementById('cost-count-pending').textContent || 0) + 1;
+        document.getElementById('tools-cost-count').textContent = Number(document.getElementById('tools-cost-count').textContent || 0) + 1;
+    } else {
+        const waitCounter = document.getElementById('cost-count-wait');
+        const currentWait = Number((waitCounter.textContent.match(/\d+/) || ['0'])[0]);
+        waitCounter.textContent = ` · ${currentWait + 1} en espera`;
+    }
+}
+
+costForm.addEventListener('submit', async event => {
+    event.preventDefault();
+    if (!costForm.reportValidity()) return;
+    const proposalId = document.getElementById('costo-propuesta-id').value;
+    const payload = {
+        accion: proposalId ? 'editar' : 'crear',
+        id: proposalId || undefined,
+        codigo: costProduct.value,
+        cantidad_compra: costQuantity.value,
+        unidad_compra: costUnit.value,
+        costo_propuesto: proposedCost.value,
+        motivo: costReason.value,
+    };
+    const submit = document.getElementById('guardar-costo');
+    submit.disabled = true;
+    try {
+        if (!proposalId) {
+            const data = await enviarAccionCosto(payload, false);
+            agregarTarjetaCosto(data);
+            restablecerFormularioCosto();
+            costProduct.focus();
+            return;
+        }
+        await enviarAccionCosto(payload);
+    } catch (error) {
+        Swal.fire({ icon: 'error', title: 'No se guardó el costo', text: error.message });
+    } finally {
+        submit.disabled = false;
+    }
+});
+
+const confirmacionesCosto = {
+    aprobar: ['¿Aprobar este costo?', 'El costo activo del producto se actualizará inmediatamente.', 'Aprobar costo'],
+    denegar: ['¿Denegar esta propuesta?', 'El costo actual del producto no cambiará.', 'Denegar propuesta'],
+    eliminar: ['¿Eliminar este registro?', 'Esta acción no se puede deshacer.', 'Eliminar'],
+    revertir: ['¿Revertir el costo aprobado?', 'El costo anterior se restaurará si no ha sido modificado después.', 'Revertir costo'],
+};
+async function manejarAccionCosto(button) {
+    const accion = button.dataset.costAction;
+    const card = button.closest('[data-cost-id]');
+    const id = button.dataset.costId || card.dataset.costId;
+    if (accion === 'editar') {
+        costModalElement.classList.remove('cost-review-mode');
+        costEntryPanel.inert = false;
+        costEntryPanel.setAttribute('aria-hidden', 'false');
+        document.getElementById('mostrar-formulario-costos').hidden = true;
+        document.getElementById('costo-propuesta-id').value = id;
+        costProduct.value = card.dataset.product;
+        costProduct.disabled = true;
+        costQuantity.value = card.dataset.quantity;
+        costUnit.value = card.dataset.unit;
+        const manual = card.dataset.manual === '1';
+        document.getElementById('cost-quantity-wrap').hidden = manual;
+        document.getElementById('cost-unit-wrap').hidden = manual;
+        costQuantity.required = !manual;
+        costUnit.required = !manual;
+        proposedCost.value = card.dataset.cost;
+        costReason.value = card.dataset.reason;
+        document.getElementById('guardar-costo').textContent = 'Guardar cambios';
+        costForm.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        proposedCost.focus();
+        return;
+    }
+    const [title, text, confirmButtonText] = confirmacionesCosto[accion];
+    const confirmacion = await Swal.fire({
+        icon: accion === 'aprobar' ? 'question' : 'warning',
+        title,
+        text,
+        showCancelButton: true,
+        confirmButtonText,
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: accion === 'aprobar' ? '#287b62' : '#e66b2e',
+    });
+    if (!confirmacion.isConfirmed) return;
+    button.disabled = true;
+    try {
+        await enviarAccionCosto({ accion, id });
+    } catch (error) {
+        Swal.fire({ icon: 'error', title: 'No se pudo completar la acción', text: error.message });
+    } finally {
+        button.disabled = false;
+    }
+}
+document.getElementById('cost-history-groups').addEventListener('click', event => {
+    const button = event.target.closest('[data-cost-action]');
+    if (button) manejarAccionCosto(button);
+});
+
+function moverElementoOrden(elemento, direccion) {
+    const vecino = direccion < 0 ? elemento.previousElementSibling : elemento.nextElementSibling;
+    if (!vecino) return;
+    if (direccion < 0) vecino.before(elemento);
+    else vecino.after(elemento);
+}
+
+function crearListaOrden() {
+    const lista = document.getElementById('sortable-products');
+    lista.replaceChildren();
+    filas.forEach(fila => {
+        const boton = fila.querySelector('.btn-editar');
+        const item = document.createElement('li');
+        item.className = 'order-item';
+        item.draggable = true;
+        item.dataset.code = boton.dataset.id;
+        const grip = document.createElement('span');
+        grip.className = 'drag-grip';
+        grip.textContent = '⠿';
+        grip.setAttribute('aria-hidden', 'true');
+        const info = document.createElement('span');
+        info.className = 'order-product';
+        const nombre = document.createElement('strong');
+        nombre.textContent = boton.dataset.nombre;
+        const codigo = document.createElement('small');
+        codigo.textContent = `${boton.dataset.id} · $${Number(boton.dataset.precio).toFixed(2)}`;
+        info.append(nombre, codigo);
+        const controles = document.createElement('span');
+        controles.className = 'order-move';
+        [['↑', -1, 'Subir'], ['↓', 1, 'Bajar']].forEach(([texto, direccion, etiqueta]) => {
+            const control = document.createElement('button');
+            control.type = 'button';
+            control.textContent = texto;
+            control.title = `${etiqueta} ${boton.dataset.nombre}`;
+            control.addEventListener('click', () => moverElementoOrden(item, direccion));
+            controles.append(control);
+        });
+        item.append(grip, info, controles);
+        item.addEventListener('dragstart', () => item.classList.add('dragging'));
+        item.addEventListener('dragend', () => item.classList.remove('dragging'));
+        lista.append(item);
+    });
+}
+
+document.getElementById('sortable-products').addEventListener('dragover', event => {
+    event.preventDefault();
+    const arrastrado = document.querySelector('.order-item.dragging');
+    const destino = event.target.closest('.order-item');
+    if (!arrastrado || !destino || arrastrado === destino) return;
+    const rect = destino.getBoundingClientRect();
+    destino.parentNode.insertBefore(arrastrado, event.clientY < rect.top + rect.height / 2 ? destino : destino.nextSibling);
+});
+
+document.getElementById('guardar-orden').addEventListener('click', async event => {
+    const button = event.currentTarget;
+    button.disabled = true;
+    try {
+        const orden = [...document.querySelectorAll('#sortable-products .order-item')].map(item => item.dataset.code);
+        const response = await fetch("{% url 'guardar_orden_productos' %}", { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' }, body: JSON.stringify({ orden }) });
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.error || 'No se pudo guardar el orden.');
+        window.location.reload();
+    } catch (error) {
+        Swal.fire({ icon: 'error', title: 'No se guardó el orden', text: error.message });
+    } finally {
+        button.disabled = false;
+    }
+});
+
+function productoSeleccionado(selectId, factsId) {
+    const select = document.getElementById(selectId);
+    const option = select.selectedOptions[0];
+    const facts = document.getElementById(factsId);
+    const valores = facts.querySelectorAll('strong');
+    if (!select.value) {
+        valores.forEach(value => { value.textContent = '—'; });
+        return null;
+    }
+    const precio = Number(option.dataset.price) || 0;
+    const costo = Number(option.dataset.cost) || 0;
+    const utilidad = precio - costo;
+    const margenBruto = precio > 0 ? utilidad / precio * 100 : 0;
+    [ `$${precio.toFixed(2)}`, `$${costo.toFixed(2)}`, `${margenBruto.toFixed(2)}%`, `$${utilidad.toFixed(2)}` ].forEach((value, index) => { valores[index].textContent = value; });
+    return { codigo: option.value, nombre: option.dataset.name, precio, costo, utilidad, margenBruto };
+}
+
+function actualizarComparacion() {
+    const productoA = productoSeleccionado('compare-a', 'compare-facts-a');
+    const productoB = productoSeleccionado('compare-b', 'compare-facts-b');
+    const resultado = document.getElementById('compare-result');
+    if (!productoA || !productoB) {
+        resultado.textContent = 'Selecciona dos productos para ver la diferencia de precio y rentabilidad.';
+        return;
+    }
+    const diferenciaPrecio = Math.abs(productoA.precio - productoB.precio);
+    const economico = productoA.precio === productoB.precio ? 'Ambos tienen el mismo precio.' : `${productoA.precio < productoB.precio ? productoA.nombre : productoB.nombre} es más económico por $${diferenciaPrecio.toFixed(2)}.`;
+    const rentable = productoA.utilidad === productoB.utilidad ? 'La utilidad por unidad es igual.' : `${productoA.utilidad > productoB.utilidad ? productoA.nombre : productoB.nombre} deja $${Math.abs(productoA.utilidad - productoB.utilidad).toFixed(2)} más de utilidad por unidad.`;
+    resultado.textContent = `${economico} ${rentable}`;
+}
+const compareA = document.getElementById('compare-a');
+const compareB = document.getElementById('compare-b');
+function sincronizarOpcionesComparacion(selectCambiado) {
+    const otroSelect = selectCambiado === compareA ? compareB : compareA;
+    if (selectCambiado.value && selectCambiado.value === otroSelect.value) otroSelect.value = '';
+    [...compareA.options].forEach(option => { option.disabled = Boolean(compareB.value && option.value === compareB.value); });
+    [...compareB.options].forEach(option => { option.disabled = Boolean(compareA.value && option.value === compareA.value); });
+    actualizarComparacion();
+}
+compareA.addEventListener('change', () => sincronizarOpcionesComparacion(compareA));
+compareB.addEventListener('change', () => sincronizarOpcionesComparacion(compareB));
+
+formPrecio.addEventListener('submit', async event => {
+    event.preventDefault();
+    if (!formPrecio.reportValidity()) return;
+    const codigo = document.getElementById('modal-id').value;
+    const nuevoPrecio = Number.parseFloat(precioFinalInput.value);
+    const nuevoCosto = Number.parseFloat(costoInput.value);
+    const payload = { codigo, costo: nuevoCosto, precio_venta: nuevoPrecio, en_promocion: promoInput.checked };
+    if (!Number.isFinite(nuevoCosto) || nuevoCosto < 0 || !Number.isFinite(nuevoPrecio) || nuevoPrecio <= 0) {
+        Swal.fire({ icon: 'warning', title: 'Precio o costo inválido', text: 'El costo debe ser cero o mayor y el precio de venta debe ser mayor que cero.' });
+        return;
+    }
+    try {
+        const response = await fetch("{% url 'actualizar_precio_venta' %}", { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' }, body: JSON.stringify(payload) });
+        const data = await response.json();
+        if (data.cost_pending) {
+            cerrarModal();
+            agregarTarjetaCosto(data);
+            mostrarDialogo(costosModal);
+            seleccionarPestanaCostos('pending');
+            return;
+        }
+        if (data.warning) {
+            cerrarModal();
+            const result = await Swal.fire({ icon: 'warning', title: 'Precio menor al costo', text: 'El precio calculado está por debajo del costo. ¿Deseas continuar?', showCancelButton: true, confirmButtonText: 'Continuar y guardar', cancelButtonText: 'Cancelar', confirmButtonColor: '#e66b2e' });
+            if (result.isConfirmed) await guardarPrecio({ ...payload, force: true });
+            else abrirModal(document.querySelector(`[data-id="${CSS.escape(codigo)}"]`));
+            return;
+        }
+        if (!data.success) throw new Error(data.error || 'No se pudo actualizar el precio.');
+        await guardarBorrador(codigo, nuevoPrecio);
+        cerrarModal();
+        Swal.fire({ icon: 'success', title: 'Precio actualizado', showConfirmButton: false, timer: 1200 }).then(() => window.location.reload());
+    } catch (error) {
+        Swal.fire({ icon: 'error', title: 'Error', text: error.message });
+    }
+});
+
+async function guardarPrecio(payload) {
+    try {
+        const response = await fetch("{% url 'actualizar_precio_venta' %}", { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' }, body: JSON.stringify(payload) });
+        const data = await response.json();
+        if (!data.success) throw new Error(data.error || 'No se pudo actualizar el precio.');
+        await guardarBorrador(payload.codigo, payload.precio_venta);
+        Swal.fire({ icon: 'success', title: 'Precio actualizado', showConfirmButton: false, timer: 1200 }).then(() => window.location.reload());
+    } catch (error) {
+        Swal.fire({ icon: 'error', title: 'Error', text: error.message });
+    }
+}
+
+async function guardarBorrador(codigo, nuevoPrecio) {
+    try {
+        const raw = localStorage.getItem('factura_draft');
+        if (!raw) return;
+        const draft = JSON.parse(raw);
+        if (Array.isArray(draft.productos)) draft.productos.forEach(producto => { if (producto.codigo === codigo) producto.precio = nuevoPrecio; });
+        if (draft.current_input && draft.current_input.codigo === codigo) draft.current_input.precio = nuevoPrecio;
+        localStorage.setItem('factura_draft', JSON.stringify(draft));
+    } catch (error) {
+        console.warn('No se pudo actualizar el borrador:', error);
+    }
+}
+
+(function autoOpenFromQuery() {
+    const params = new URLSearchParams(window.location.search);
+    const button = [...document.querySelectorAll('.btn-editar')].find(item => item.dataset.id === params.get('codigo'));
+    if (button && params.get('open') === '1') setTimeout(() => abrirModal(button), 120);
+})();
+try {
+    if (localStorage.getItem('factura_draft')) document.getElementById('volver-factura-container').hidden = false;
+} catch (error) {
+    // El almacenamiento local puede no estar disponible en algunos navegadores.
+}
+</script>
+</body>
+</html>

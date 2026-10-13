@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Iniciar sesión | FerreElectri PLUS{% endblock %}
+{% block body_class %}theme-dark auth-page{% endblock %}
+
+{% block content %}
+<main class="auth-viewport">
+  <div class="auth-layout auth-layout-login">
+    <aside class="auth-side">
+      <a class="auth-side-brand" href="{% url 'index' %}" aria-label="FerreElectri PLUS, inicio">
+        <img src="{% static 'img/logo.png' %}" alt="FerreElectri PLUS">
+        <span>ACCESO CLIENTES</span>
+      </a>
+      <div class="auth-side-copy">
+        <p class="auth-side-kicker">ELECTRICIDAD · HERRAMIENTAS · FERRETERÍA</p>
+        <h2>Tu proyecto<br>va en marcha.</h2>
+        <p>Entra para consultar tus pedidos y continuar donde lo dejaste.</p>
+      </div>
+      <div class="auth-side-footer"><span>COLONCITO, TÁCHIRA</span><span>FERREELECTRI PLUS</span></div>
+    </aside>
+    <section class="auth-panel auth-form-panel" aria-labelledby="login-title">
+    <div class="auth-heading">
+      <span class="eyebrow">¡Hola! Qué bueno verte</span>
+      <h1 id="login-title">Accede a tu cuenta</h1>
+      <p>Ingresa tus datos para continuar con tus compras.</p>
+    </div>
+
+    {% if messages %}
+      {% for message in messages %}
+        {% if 'admin-action' not in message.tags %}
+          <div class="auth-alert{% if 'error' in message.tags %} auth-alert-error{% elif 'success' in message.tags %} auth-alert-success{% endif %}" role="status">{{ message }}</div>
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+    {% if form.non_field_errors %}
+      <div class="auth-alert auth-alert-error" role="alert">{{ form.non_field_errors }}</div>
+    {% endif %}
+
+    <form method="post" class="auth-form" id="loginForm" novalidate>
+      {% csrf_token %}
+      <div class="auth-grid">
+        <div class="auth-field full">
+          <label for="id_username">Correo o usuario</label>
+          <div class="auth-input-wrap"><i class="fa-solid fa-user" aria-hidden="true"></i>{{ form.username }}</div>
+          {{ form.username.errors }}
+        </div>
+        <div class="auth-field full">
+          <label for="id_password">Contraseña</label>
+          <div class="auth-input-wrap"><i class="fa-solid fa-lock" aria-hidden="true"></i>{{ form.password }}</div>
+          {{ form.password.errors }}
+        </div>
+      </div>
+      <input type="hidden" name="next" value="{{ next }}">
+      <div class="auth-actions auth-actions-wide">
+        <button type="submit" class="auth-btn auth-btn-primary">Entrar a mi cuenta</button>
+        <a href="{% url 'cliente_registro' %}?next={{ next|urlencode }}" class="auth-btn secondary">Registrarme</a>
+      </div>
+      <p class="auth-help">¿Olvidaste tu contraseña? <a href="{% url 'recuperar_cliente' %}" class="text-electric hover:underline">Recupérala aquí</a>.</p>
+    </form>
+
+    <div class="auth-divider"><span>o continúa con</span></div>
+    <form method="post" action="{% url 'social:begin' 'google-oauth2' %}" class="auth-form auth-google-form">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ next|default:'/carrito/' }}">
+      <button type="submit" class="auth-btn auth-google"><i class="fa-brands fa-google"></i> Continuar con Google</button>
+    </form>
+    <a href="{% url 'index' %}" class="auth-back-link"><i class="fa-solid fa-arrow-left"></i> Volver a la página principal</a>
+    </section>
+  </div>
+</main>
+{% endblock %}

@@ -1,0 +1,124 @@
+{% extends 'base/pan_con_queso.html' %}
+
+{% block arroz_con_pollo %}
+<style>
+    .proveedor-card {
+        max-width: 900px;
+        margin: 40px auto 0 auto;
+        background: #fff;
+        border-radius: 18px;
+        box-shadow: 0 4px 16px rgba(76,175,80,0.10);
+        padding: 0 0 40px 0;
+        overflow: hidden;
+    }
+    .proveedor-header {
+        background: linear-gradient(90deg, #00b2ff 0%, #43e97b 100%);
+        color: #fff;
+        padding: 38px 20px 24px 20px;
+        border-radius: 18px 18px 48px 48px;
+        text-align: center;
+        font-size: 2.5rem;
+        font-weight: 800;
+        letter-spacing: 1px;
+    }
+    .proveedor-table {
+        width: 90%;
+        margin: 32px auto 0 auto;
+        border-collapse: collapse;
+        font-size: 1.13em;
+        background: transparent;
+    }
+    .proveedor-table th, .proveedor-table td {
+        padding: 10px 16px;
+        text-align: left;
+    }
+    .proveedor-table th {
+        color: #00b2ff;
+        font-weight: bold;
+        width: 220px;
+        font-size: 1.08em;
+        background: #f7fafc;
+    }
+    .proveedor-table td {
+        color: #222;
+        background: #f9fbfd;
+    }
+    .proveedor-table tr {
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    .proveedor-table tr:nth-child(even) th,
+    .proveedor-table tr:nth-child(even) td {
+        background: #f1f8fd;
+    }
+    .proveedor-actions {
+        text-align: center;
+        margin-top: 32px;
+    }
+    .btn-imprimir {
+        background: linear-gradient(90deg, #00b2ff 0%, #2196F3 100%);
+        color: #fff;
+        border: none;
+        padding: 14px 38px;
+        border-radius: 7px;
+        font-weight: bold;
+        font-size: 1.15em;
+        cursor: pointer;
+        transition: background 0.2s;
+        text-decoration: none;
+        display: inline-block;
+        margin: 0 8px;
+    }
+    .btn-imprimir:hover {
+        background: linear-gradient(90deg, #2196F3 0%, #00b2ff 100%);
+    }
+</style>
+<div class="proveedor-card">
+    <div class="proveedor-header">
+        Datos del Proveedor
+    </div>
+    <table class="proveedor-table">
+        <tr>
+            <th>Cédula:</th>
+            <td>{{ proveedor.cedula }}</td>
+        </tr>
+        <tr>
+            <th>Nombre:</th>
+            <td>{{ proveedor.nombre }}</td>
+        </tr>
+        <tr>
+            <th>Teléfono:</th>
+            <td>{{ proveedor.telefono }}</td>
+        </tr>
+        <tr>
+            <th>Dirección:</th>
+            <td>{{ proveedor.direccion }}</td>
+        </tr>
+        <tr>
+            <th>Email:</th>
+            <td>{{ proveedor.email }}</td>
+        </tr>
+        <tr>
+            <th>Registro:</th>
+            <td>{{ proveedor.Fecha_registro }}</td>
+        </tr>
+    </table>
+    <div class="proveedor-actions">
+        <a href="{% url 'reporte_proveedor_pdf' proveedor.id %}" class="btn-imprimir" target="_blank">
+            Imprimir PDF
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block help_content %}
+<div>
+    <h4>Ayuda: Ficha de Proveedor</h4>
+    <p>Detalles del proveedor y accesos rápidos.</p>
+    <ul>
+        <li><strong>Imprimir ficha:</strong> Usa el botón de PDF para exportar los datos del proveedor.</li>
+        <li><strong>Ver compras:</strong> Desde la ficha puedes revisar compras relacionadas (si aplica).</li>
+        <li><strong>Editar datos:</strong> Asegúrate del RIF/Cédula correcto para evitar duplicados.</li>
+    </ul>
+</div>
+{% endblock %}

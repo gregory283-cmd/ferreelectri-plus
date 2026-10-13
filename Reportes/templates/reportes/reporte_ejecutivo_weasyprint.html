@@ -1,0 +1,133 @@
+{% load static %}
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <style>
+    @page { size: A4 landscape; margin: 14mm 12mm 17mm; @bottom-right { content: "{{ report_number }} · Página " counter(page) " de " counter(pages); color: #687b8e; font-size: 8pt; } }
+    * { box-sizing: border-box; }
+    body { margin: 0; color: #1c2c3a; font-family: Arial, sans-serif; font-size: 8.5pt; }
+    .masthead { display: table; width: 100%; padding-bottom: 9px; border-bottom: 2px solid #167c91; }
+    .brand, .identity { display: table-cell; vertical-align: middle; }
+    .brand img { float: left; width: 48px; height: 48px; margin-right: 11px; object-fit: contain; }
+    .brand strong { display: block; padding-top: 8px; color: #16394e; font-size: 10pt; }
+    .brand span { color: #687b8e; font-size: 8pt; }
+    .identity { text-align: right; }
+    .identity b { display: block; color: #167c91; font-size: 8pt; }
+    .identity strong { display: block; margin: 3px 0; font-size: 9pt; }
+    h1 { margin: 13px 0 3px; color: #17364a; font-size: 19pt; }
+    .subtitle { margin: 0 0 10px; color: #64788a; }
+    .rate-note { margin: 0 0 10px; color: #687b8e; font-size: 7.5pt; }
+    .summary { width: 100%; margin: 7px 0 13px; border-collapse: separate; border-spacing: 5px 0; }
+    .summary td { width: 16.66%; padding: 8px 9px; border: 1px solid #d9e2e8; background: #f3f7f9; }
+    .summary label { display: block; margin-bottom: 4px; color: #657b8d; font-size: 7pt; }
+    .summary strong { color: #17364a; font-size: 11pt; }
+    .section-title { margin: 13px 0 6px; color: #167c91; font-size: 10pt; }
+    .channel-grid { width: 100%; border-collapse: separate; border-spacing: 5px 0; }
+    .channel-grid td { width: 50%; padding: 8px 10px; border: 1px solid #d9e2e8; }
+    .channel-grid h3 { margin: 0 0 5px; color: #17364a; font-size: 9pt; }
+    .channel-grid p { margin: 3px 0; color: #475d6e; }
+    table.detail { width: 100%; border-collapse: collapse; }
+    .detail th { padding: 6px 5px; background: #173b56; color: #fff; font-size: 7pt; text-align: left; }
+    .detail td { padding: 5px; border-bottom: 1px solid #dce4e9; }
+    .detail tbody tr:nth-child(even) td { background: #f6f9fb; }
+    .number { text-align: right !important; white-space: nowrap; }
+    .footnote { margin-top: 10px; padding-top: 6px; border-top: 1px solid #d9e2e8; color: #687b8e; font-size: 7pt; }
+    .warning { margin: 8px 0; padding: 7px; border: 1px solid #e0c16c; background: #fff8e4; color: #594a24; }
+    .page-break { page-break-before: always; }
+    .invoice-table { font-size: 7pt; }
+    .invoice-table th, .invoice-table td { padding: 4px; }
+    .chart-grid { display: table; width: 100%; table-layout: fixed; border-spacing: 8px 0; margin: 8px -8px 12px; }
+    .chart-panel { display: table-cell; width: 50%; padding: 8px; border: 1px solid #d9e2e8; vertical-align: top; }
+    .chart-panel h2 { margin: 0 0 7px; color: #167c91; font-size: 10pt; }
+    .chart-note { margin: 0 0 7px; color: #687b8e; font-size: 7pt; }
+    .timeline-plot { display: flex; align-items: flex-end; height: 105px; border-bottom: 1px solid #b9c8d2; }
+    .timeline-column { display: flex; flex: 1 1 0; flex-direction: column; justify-content: flex-end; min-width: 1px; }
+    .timeline-column i { display: block; width: 100%; }
+    .timeline-ecommerce { background: #26a6b8; }
+    .timeline-manual { background: #7187c8; }
+    .timeline-labels { display: flex; height: 14px; overflow: hidden; color: #687b8e; font-size: 5.5pt; }
+    .timeline-labels span { flex: 1 1 0; min-width: 0; white-space: nowrap; }
+    .chart-legend { margin-top: 5px; color: #475d6e; font-size: 6.5pt; }
+    .chart-legend b { margin-right: 12px; }
+    .legend-ecommerce { color: #16899a; }
+    .legend-manual { color: #6278bd; }
+    .bar-row { display: flex; align-items: center; gap: 6px; margin: 5px 0; font-size: 6.5pt; }
+    .bar-name { width: 38%; overflow: hidden; white-space: nowrap; }
+    .bar-track { flex: 1; height: 9px; background: #edf2f5; }
+    .bar-fill { height: 9px; background: #26a6b8; }
+    .bar-units { width: 45px; text-align: right; white-space: nowrap; }
+    .best-product { margin: 8px 0; padding: 9px 11px; border-left: 4px solid #d5a62e; background: #fff8e4; }
+    .best-product strong { color: #17364a; font-size: 10pt; }
+    .best-product span { display: block; margin-top: 3px; color: #596d7d; font-size: 7pt; }
+    .product-table { font-size: 7pt; }
+    .product-table th, .product-table td { padding: 4px; }
+    .product-table td:first-child { width: 34%; }
+  </style>
+</head>
+<body>
+  <header class="masthead">
+    <div class="brand"><img src="{% static 'img/logo.png' %}" alt=""><strong>FERREELECTRI PLUS</strong><span>Administración · Análisis financiero</span></div>
+    <div class="identity"><b>REPORTE EJECUTIVO</b><strong>{{ report_number }}</strong><span>Emitido {{ generado|date:'d/m/Y H:i' }} · Período {{ fecha }}</span></div>
+  </header>
+  <h1>Informe financiero</h1>
+  <p class="subtitle">Facturación, impuestos y utilidad bruta por canal.</p>
+  <p class="rate-note">Moneda del informe: {{ moneda_reporte }}{% if tasa_bcv %} · Tasa BCV aplicada: {{ tasa_bcv|floatformat:4 }} Bs./USD{% endif %} · IVA separado de utilidad.</p>
+  {% if costos_estimados or productos_sin_costo %}<p class="warning">{% if costos_estimados %}{{ costos_estimados }} facturas incluyen costo estimado.{% endif %} {% if productos_sin_costo %}{{ productos_sin_costo }} líneas sin costo no se incluyen en utilidad.{% endif %} Cobertura de costos: {{ cobertura_costos }}%.</p>{% endif %}
+
+  <table class="summary"><tr>
+    <td><label>Facturación con IVA</label><strong>{{ moneda_reporte }} {{ resumen.ventas|floatformat:2 }}</strong></td>
+    <td><label>Ventas netas</label><strong>{{ moneda_reporte }} {{ resumen.ventas_netas|floatformat:2 }}</strong></td>
+    <td><label>IVA facturado</label><strong>{{ moneda_reporte }} {{ resumen.iva|floatformat:2 }}</strong></td>
+    <td><label>Costo de ventas</label><strong>{{ moneda_reporte }} {{ resumen.costo_ventas|floatformat:2 }}</strong></td>
+    <td><label>Utilidad bruta</label><strong>{{ moneda_reporte }} {{ resumen.utilidad|floatformat:2 }}</strong></td>
+    <td><label>Margen bruto</label><strong>{{ resumen.margen_porcentaje|floatformat:2 }}%</strong></td>
+  </tr></table>
+
+  <h2 class="section-title">Resultados por canal</h2>
+  <table class="channel-grid"><tr>
+    <td><h3>E-commerce · {{ canales.ecommerce.facturas }} facturas</h3><p>Ventas netas: {{ moneda_reporte }} {{ canales.ecommerce.ventas_netas|floatformat:2 }} · IVA: {{ moneda_reporte }} {{ canales.ecommerce.iva|floatformat:2 }}</p><p>Costos: {{ moneda_reporte }} {{ canales.ecommerce.costo|floatformat:2 }} · Utilidad: {{ moneda_reporte }} {{ canales.ecommerce.utilidad|floatformat:2 }} · Margen: {{ canales.ecommerce.margen_porcentaje|floatformat:2 }}%</p></td>
+    <td><h3>Facturación manual · {{ canales.manual.facturas }} facturas</h3><p>Ventas netas: {{ moneda_reporte }} {{ canales.manual.ventas_netas|floatformat:2 }} · IVA: {{ moneda_reporte }} {{ canales.manual.iva|floatformat:2 }}</p><p>Costos: {{ moneda_reporte }} {{ canales.manual.costo|floatformat:2 }} · Utilidad: {{ moneda_reporte }} {{ canales.manual.utilidad|floatformat:2 }} · Margen: {{ canales.manual.margen_porcentaje|floatformat:2 }}%</p></td>
+  </tr></table>
+
+  <table class="chart-grid"><tr>
+    <td class="chart-panel">
+      <h2>Evolución de facturación por período</h2>
+      <p class="chart-note">Importes con IVA · {{ moneda_reporte }} · Rango {{ fecha }}</p>
+      <div class="timeline-plot" role="img" aria-label="Facturación por fecha y canal">
+        {% for punto in ventas_chart %}<div class="timeline-column" title="{{ punto.label }}: {{ moneda_reporte }} {{ punto.total|floatformat:2 }}"><i class="timeline-ecommerce" style="height:{{ punto.ecommerce_height|floatformat:0 }}px"></i><i class="timeline-manual" style="height:{{ punto.manual_height|floatformat:0 }}px"></i></div>{% endfor %}
+      </div>
+      <div class="timeline-labels">{% for punto in ventas_chart %}<span>{% if punto.mostrar_etiqueta %}{{ punto.label }}{% endif %}</span>{% endfor %}</div>
+      <div class="chart-legend"><b class="legend-ecommerce">■ E-commerce</b><b class="legend-manual">■ Facturación manual</b></div>
+    </td>
+    <td class="chart-panel">
+      <h2>Productos líderes por ventas netas</h2>
+      <p class="chart-note">Top {{ productos_top|length }} · {{ moneda_reporte }}</p>
+      {% for producto in productos_top %}<div class="bar-row"><span class="bar-name">{{ producto.nombre }}</span><div class="bar-track"><div class="bar-fill" style="width:{{ producto.participacion }}%"></div></div><span class="bar-units">{{ producto.ventas_netas|floatformat:2 }}</span></div>{% empty %}<p class="chart-note">Sin productos facturados en este período.</p>{% endfor %}
+    </td>
+  </tr></table>
+
+  <h2 class="section-title">IVA por alícuota</h2>
+  <table class="detail"><thead><tr><th>Alícuota</th><th class="number">Base imponible</th><th class="number">IVA</th></tr></thead><tbody>
+    {% for grupo in iva_resumen %}<tr><td>{{ grupo.alicuota|floatformat:2 }}%</td><td class="number">{{ moneda_reporte }} {{ grupo.base|floatformat:2 }}</td><td class="number">{{ moneda_reporte }} {{ grupo.iva|floatformat:2 }}</td></tr>{% empty %}<tr><td colspan="3">Sin base imponible en el período.</td></tr>{% endfor %}
+  </tbody></table>
+
+  {% if producto_mas_vendido %}<div class="best-product"><strong>Producto más vendido: {{ producto_mas_vendido.nombre }}</strong><span>{{ producto_mas_vendido.unidades }} unidades · Venta neta {{ moneda_reporte }} {{ producto_mas_vendido.ventas_netas|floatformat:2 }} · Utilidad {% if producto_mas_vendido.lineas_con_costo %}{{ moneda_reporte }} {{ producto_mas_vendido.utilidad|floatformat:2 }}{% else %}sin costo comparable{% endif %}</span></div>{% endif %}
+  <table class="chart-grid"><tr>
+    <td class="chart-panel"><h2>Unidades vendidas por producto</h2><p class="chart-note">Top {{ productos_mas_vendidos|length }} por cantidad</p>
+      {% for producto in productos_mas_vendidos|slice:":8" %}<div class="bar-row"><span class="bar-name">{{ producto.nombre }}</span><div class="bar-track"><div class="bar-fill" style="width:{{ producto.participacion_unidades }}%"></div></div><span class="bar-units">{{ producto.unidades }} uds.</span></div>{% empty %}<p class="chart-note">Sin productos facturados en este período.</p>{% endfor %}
+    </td>
+    <td class="chart-panel"><h2>Rentabilidad por producto</h2><p class="chart-note">Todos los productos del período · ordenados por unidades</p>
+      <table class="detail product-table"><thead><tr><th>Producto</th><th class="number">Uds.</th><th class="number">Neto</th><th class="number">IVA</th><th class="number">Costo</th><th class="number">Utilidad</th><th class="number">Margen</th></tr></thead><tbody>
+        {% for producto in productos_mas_vendidos %}<tr><td>{{ producto.nombre }}</td><td class="number">{{ producto.unidades }}</td><td class="number">{{ moneda_reporte }} {{ producto.ventas_netas|floatformat:2 }}</td><td class="number">{{ moneda_reporte }} {{ producto.iva|floatformat:2 }}</td><td class="number">{{ moneda_reporte }} {{ producto.costo|floatformat:2 }}</td><td class="number">{% if producto.lineas_con_costo %}{{ moneda_reporte }} {{ producto.utilidad|floatformat:2 }}{% else %}Sin costo{% endif %}</td><td class="number">{{ producto.margen_porcentaje|floatformat:2 }}%</td></tr>{% empty %}<tr><td colspan="7">Sin productos facturados.</td></tr>{% endfor %}
+      </tbody></table>
+    </td>
+  </tr></table>
+
+  <h2 class="section-title page-break">Facturas del período · {{ resumen.transacciones }} registros</h2>
+  <table class="detail invoice-table"><thead><tr><th>Factura</th><th>Fecha</th><th>Cliente</th><th>Canal</th><th class="number">Bruto</th><th class="number">Descuento</th><th class="number">Neto</th><th class="number">IVA</th><th class="number">Total</th><th class="number">Costo</th><th class="number">Utilidad bruta</th></tr></thead><tbody>
+    {% for venta in ventas %}<tr><td>#{{ venta.numero }}{% if venta.costo_estimado %} · Est.{% endif %}</td><td>{{ venta.fecha|date:'d/m/Y H:i' }}</td><td>{{ venta.cliente }}</td><td>{{ venta.canal }}</td><td class="number">{{ moneda_reporte }} {{ venta.ventas_brutas|floatformat:2 }}</td><td class="number">{{ moneda_reporte }} {{ venta.descuentos|floatformat:2 }}</td><td class="number">{{ moneda_reporte }} {{ venta.venta_neta|floatformat:2 }}</td><td class="number">{{ moneda_reporte }} {{ venta.iva|floatformat:2 }}</td><td class="number">{{ moneda_reporte }} {{ venta.total|floatformat:2 }}</td><td class="number">{{ moneda_reporte }} {{ venta.costo|floatformat:2 }}</td><td class="number">{{ moneda_reporte }} {{ venta.utilidad|floatformat:2 }}</td></tr>{% empty %}<tr><td colspan="11">Sin facturas para el período.</td></tr>{% endfor %}
+  </tbody></table>
+  <p class="footnote">Utilidad bruta calculada como venta neta menos costos conocidos; no descuenta gastos operativos, financieros ni administrativos. Los importes de origen en USD se convierten con la tasa BCV actual, no con una tasa histórica por factura.</p>
+</body>
+</html>

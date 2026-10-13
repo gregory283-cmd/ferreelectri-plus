@@ -1,0 +1,264 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Reporte de Clientes</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 0;
+        }
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background: #fff;
+            color: #222;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            box-sizing: border-box;
+        }
+        body {
+            min-width: 100%;
+            min-height: 100%;
+        }
+        .main-container {
+            width: 100%;
+            padding: 32px 24px 0 24px; /* margen arriba y laterales */
+            box-sizing: border-box;
+        }
+        .header-bar {
+            background: #027581;
+            color: #fff;
+            padding: 14px 0 8px 40px; /* padding-left aumentado */
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.18em;
+            font-weight: 600;
+            letter-spacing: 1px;
+            border-radius: 6px 6px 0 0;
+        }
+        .header-bar .icon {
+            width: 1.3em;
+            height: 1.3em;
+            margin: 0;
+            flex-shrink: 0;
+        }
+        .header-meta {
+            background: #027581;
+            color: #fff;
+            padding: 0 0 10px 40px; 
+            font-size: 1em;
+            display: flex;
+            align-items: center;
+            gap: 32px;
+            border-radius: 0 0 6px 6px;
+        }
+        .header-meta span {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding-left: 0px; 
+        }
+        .header-meta .icon {
+            width: 1em;
+            height: 1em;
+        }
+        .title-section {
+            text-align: center;
+            margin: 18px 0 12px 0;
+            font-size: 1.18em;
+            color: #027581;
+            font-weight: 600;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .title-section .icon {
+            width: 1.1em;
+            height: 1.1em;
+        }
+        .table-container {
+            width: 100%;
+            margin: 14px 0 8px 0;
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 8px 24px rgba(2,117,129,0.06);
+            overflow: hidden;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #fff;
+            font-size: 0.97em;
+        }
+        th, td {
+            padding: 12px 10px;
+            text-align: left;
+            font-size: 0.98em;
+        }
+        th {
+            background: linear-gradient(90deg,#027581,#01676a);
+            color: #fff;
+            font-size: 1rem;
+            letter-spacing: 0.6px;
+            border-right: 1px solid rgba(255,255,255,0.08);
+            font-weight: 700;
+            vertical-align: middle;
+        }
+        th .icon {
+            width: 0.95em;
+            height: 0.95em;
+            margin-right: 2px;
+        }
+        th:last-child, td:last-child { border-right: none; }
+        tr:nth-child(even) { background: #fbfefe; }
+        td {
+            border-bottom: 1px solid #f3f7f8;
+            font-weight: 500;
+            color: #12363f;
+        }
+        /* Ajustes de ancho y alineación por columna */
+        th:nth-child(1), td:nth-child(1) { width: 16%; }
+        th:nth-child(2), td:nth-child(2) { width: 18%; }
+        th:nth-child(3), td:nth-child(3) { width: 16%; }
+        th:nth-child(4), td:nth-child(4) { width: 14%; text-align:left }
+        th:nth-child(5), td:nth-child(5) { width: 20%; }
+        th:nth-child(6), td:nth-child(6) { width: 16%; text-align:left }
+        .footer {
+            margin-top: 14px;
+            text-align: center;
+            color: #fff;
+            background: #027581;
+            font-size: 0.97em;
+            border-top: 1px solid #e6f7ff;
+            padding: 8px 0 8px 0;
+            letter-spacing: 1px;
+            width: 100%;
+            border-radius: 0 0 6px 6px;
+        }
+        /* Paginación para impresión: máximo 55 filas por página */
+        .report-page { page-break-after: always; page-break-inside: avoid; padding-bottom: 18px; }
+        @media print {
+            .report-page { page-break-after: always; }
+            .no-print { display: none !important; }
+        }
+    </style>
+    {% include 'reportes/pdf_design.html' %}
+</head>
+<body>
+<div class="main-container">
+    <div class="header-bar">
+        <svg class="icon" viewBox="0 0 24 24" fill="#fff">
+            <circle cx="12" cy="8" r="4"/>
+            <path d="M4 20v-2a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v2" fill="none" stroke="#fff" stroke-width="2"/>
+        </svg>
+        Reporte de Clientes
+        <div style="flex:1"></div>
+        <!-- Puedes dejar este espacio vacío para centrar el título -->
+    </div>
+    <div class="header-meta">
+        <span>
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="3" fill="#fff" opacity="0.08"/><path d="M16 3v4M8 3v4M3 9h18"/></svg>
+            {{ file_creation_date|date:"d/m/Y H:i" }}
+        </span>
+        <span>
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="3" fill="#fff" opacity="0.08"/><path d="M8 8h8M8 12h8M8 16h4"/></svg>
+            N°: {{ report_number }}
+        </span>
+        <span>
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><circle cx="12" cy="12" r="10" opacity="0.08" fill="#fff"/><path d="M12 8v4l3 3"/></svg>
+            Total: {{ clientes|length }}
+        </span>
+    </div>
+    <div class="title-section">
+        <svg class="icon" viewBox="0 0 24 24" fill="#027581"><rect x="4" y="6" width="16" height="2"/><rect x="4" y="11" width="16" height="2"/><rect x="4" y="16" width="16" height="2"/></svg>
+        Lista de Clientes
+    </div>
+    <div class="table-pages">
+        {% comment %} Renderizamos páginas con máximo 55 filas cada una. {% endcomment %}
+        {% for c in clientes %}
+            {% if forloop.first or forloop.counter0|divisibleby:55 %}
+                <div class="report-page">
+                    <div class="title-section no-print">
+                        <svg class="icon" viewBox="0 0 24 24" fill="#027581"><rect x="4" y="6" width="16" height="2"/><rect x="4" y="11" width="16" height="2"/><rect x="4" y="16" width="16" height="2"/></svg>
+                        Lista de Clientes
+                    </div>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>
+                                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="3" fill="#fff" opacity="0.08"/><path d="M8 8h8M8 12h8M8 16h4"/></svg>
+                                        Cédula
+                                    </th>
+                                    <th>
+                                        <svg class="icon" viewBox="0 0 24 24" fill="#fff"><circle cx="12" cy="8" r="4"/><path d="M4 20v-2a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v2" fill="none" stroke="#fff" stroke-width="2"/></svg>
+                                        Nombre
+                                    </th>
+                                    <th>
+                                        <svg class="icon" viewBox="0 0 24 24" fill="#fff"><circle cx="12" cy="8" r="4"/><path d="M4 20v-2a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v2" fill="none" stroke="#fff" stroke-width="2"/></svg>
+                                        Apellido
+                                    </th>
+                                    <th>
+                                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M22 16.92V21a2 2 0 0 1-2.18 2A19.72 19.72 0 0 1 3 5.18 2 2 0 0 1 5 3h4.09a2 2 0 0 1 2 1.72l.57 4.06a2 2 0 0 1-1.1 2.18l-2.2 1.10a16 16 0 0 0 6.29 6.29l1.1-2.2a2 2 0 0 1 2.18-1.1l4.06.57A2 2 0 0 1 21 18.91z"/></svg>
+                                        Teléfono
+                                    </th>
+                                    <th>
+                                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                                        Dirección
+                                    </th>
+                                    <th>
+                                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="4" fill="#fff" opacity="0.08"/><path d="M16 2v4M8 2v4M3 10h18"/><circle cx="12" cy="16" r="2"/></svg>
+                                        Fecha de Nacimiento
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+            {% endif %}
+
+            <tr>
+                <td>{{ c.cedula }}</td>
+                <td>{{ c.nombre }}</td>
+                <td>{{ c.apellido }}</td>
+                <td>{{ c.telefono }}</td>
+                <td>{{ c.direccion }}</td>
+                <td>
+                    {% if c.fecha_nacimiento %}
+                        {{ c.fecha_nacimiento|date:"d/m/Y" }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+            </tr>
+
+            {% if forloop.counter|divisibleby:55 or forloop.last %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="footer">
+                        © {{ file_creation_date|date:"Y" }} FerreElectri PLUS. Todos los derechos reservados.
+                    </div>
+                </div>
+                {% if not forloop.last %}
+                    <div style="page-break-after:always"></div>
+                {% endif %}
+            {% endif %}
+        {% empty %}
+            <div class="report-page">
+                <div class="title-section">Lista de Clientes</div>
+                <div class="table-container"><p>No hay clientes para mostrar.</p></div>
+                <div class="footer">© {{ file_creation_date|date:"Y" }} FerreElectri PLUS. Todos los derechos reservados.</div>
+            </div>
+        {% endfor %}
+    </div>
+    <div class="footer">
+        © {{ file_creation_date|date:"Y" }} FerreElectri PLUS. Todos los derechos reservados.
+    </div>
+</div>
+</body>
+</html>

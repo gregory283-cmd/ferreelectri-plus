@@ -1,0 +1,240 @@
+{% extends 'base/pan_con_queso.html' %}
+{% load static %}
+
+{% block arroz_con_pollo %}
+<section class="page-panel clients-panel">
+    <div class="page-header">
+        <div>
+            <p class="module-eyebrow">RELACIONES COMERCIALES</p>
+            <h2>Clientes</h2>
+            <p>Consulta los datos y administra el registro de tus clientes.</p>
+        </div>
+        <div class="clients-header-actions">
+            <form class="module-search" method="get" action="{% url 'usuarios' %}" role="search">
+                <label class="sr-only" for="buscar-cliente">Buscar clientes</label>
+                <input id="buscar-cliente" type="search" name="q" value="{{ search_query }}" placeholder="Cédula, nombre, correo o teléfono">
+                <button type="submit" class="search-submit" aria-label="Buscar clientes"><span class="material-symbols-outlined" aria-hidden="true">search</span></button>
+                {% if search_query %}<a class="search-clear" href="{% url 'usuarios' %}" aria-label="Limpiar búsqueda">Limpiar</a>{% endif %}
+            </form>
+            <a href="{% url 'addUser' %}" class="btn btn-primary"><span class="material-symbols-outlined" aria-hidden="true">person_add</span> Registrar cliente</a>
+        </div>
+    </div>
+
+    {% if messages %}
+    <div class="message-stack">
+        {% for message in messages %}
+        <div class="alert-banner {% if message.tags %}alert-{{ message.tags }}{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="table-card">
+        <div class="table-caption"><span>Directorio de clientes</span><span>{{ clientes.paginator.count }} registros</span></div>
+        <div class="table-scroll">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Cédula</th>
+                    <th>Cliente</th>
+                    <th>Teléfono</th>
+                    <th>Dirección</th>
+                    <th>Email</th>
+                    <th>Fecha nacimiento</th>
+                    <th>Registro</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if clientes %}
+                    {% for c in clientes %}
+                    <tr>
+                        <td>{{ c.cedula }}</td>
+                        <td>{{ c.nombre }} {{ c.apellido }}</td>
+                        <td>{{ c.telefono }}</td>
+                        <td>{{ c.direccion }}</td>
+                        <td>{{ c.email }}</td>
+                        <td>{{ c.fecha_nacimiento }}</td>
+                        <td>{{ c.fecha_registro }}</td>
+                        <td class="actions-cell">
+                            {% if perms.Usuario.view_cliente %}
+                            <a href="{% url 'ver_cliente' c.id %}" class="action-btn view">Ver</a>
+                            {% endif %}
+                            {% if perms.Usuario.change_cliente %}
+                            <a href="{% url 'updtUser' c.id %}" class="action-btn edit">Editar</a>
+                            {% endif %}
+                            {% if perms.Usuario.delete_cliente %}
+                            <form method="post" action="{% url 'dltUser' c.id %}" class="delete-form" onsubmit="return confirm('¿Eliminar a {{ c.nombre|escapejs }} {{ c.apellido|escapejs }}?');">
+                                {% csrf_token %}
+                                <button type="submit" class="action-btn delete">Eliminar</button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="8" class="empty-state">No hay clientes registrados.</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+        </div>
+    </div>
+
+    <div class="pagination">
+        {% if clientes.has_previous %}
+            <a href="?q={{ search_query|urlencode }}&page=1" class="page-link">&laquo; Primera</a>
+            <a href="?q={{ search_query|urlencode }}&page={{ clientes.previous_page_number }}" class="page-link">Anterior</a>
+        {% endif %}
+        <span class="page-label">Página {{ clientes.number }} de {{ clientes.paginator.num_pages }}</span>
+        {% if clientes.has_next %}
+            <a href="?q={{ search_query|urlencode }}&page={{ clientes.next_page_number }}" class="page-link">Siguiente</a>
+            <a href="?q={{ search_query|urlencode }}&page={{ clientes.paginator.num_pages }}" class="page-link">Última &raquo;</a>
+        {% endif %}
+    </div>
+</section>
+
+<style>
+/* Base: estilos pensados para claro; luego ajustamos en dark */
+.page-panel {
+    padding: 28px 30px 34px;
+    background: #ffffff;
+    border-radius: 24px;
+    box-shadow: 0 18px 45px rgba(15,23,42,0.08);
+    border: 1px solid rgba(148,163,184,0.24);
+}
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-radius: 999px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s;
+    text-decoration: none;
+    font-weight: 700;
+}
+.btn-primary { background: linear-gradient(135deg, #2563eb, #0891b2); color: #fff; }
+.btn-primary:hover { background: linear-gradient(135deg, #1d4ed8, #0f766e); }
+.btn-secondary { background: #f8fafc; color: #0f172a; border: 1px solid rgba(148,163,184,0.35); }
+.btn-secondary:hover { background: #e2e8f0; }
+
+.page-header { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
+.page-header h2 { margin: 0; font-size: 2rem; color:#0b1220; }
+.page-header p { margin: 6px 0 0; color: rgba(11,18,32,0.72); }
+.message-stack { display: grid; gap: 12px; margin-bottom: 22px; }
+
+.alert-banner { padding: 14px 18px; border-radius: 14px; border: 1px solid rgba(0,0,0,0.08); }
+.alert-success { background: rgba(56,211,131,0.14); color: #1b5e20; border-color: rgba(56,211,131,0.26); }
+.alert-error { background: rgba(244,67,54,0.14); color: #b71c1c; border-color: rgba(244,67,54,0.26); }
+
+.table-card { padding: 0; border-radius: 22px; overflow: hidden; background: transparent; border: none; box-shadow: none; }
+    .data-table { width: 100%; border-collapse: collapse; min-width: 820px; background: transparent; }
+    .data-table th, .data-table td {
+        padding: 14px 16px;
+        text-align: left;
+        border-bottom: 1px solid rgba(148,163,184,0.16);
+    }
+    .data-table thead { background: #dbeafe; }
+    .data-table th { color: #0f172a; font-weight: 800; }
+    .data-table td { color: #334155; }
+    .data-table tbody tr:nth-child(odd) { background: #f8fbff; }
+    .data-table tbody tr:hover { background: #eff6ff; }
+
+/* ✅ Alinear botones horizontalmente */
+.actions-cell {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 8px;
+    align-items: center;
+    justify-content: flex-start;
+}
+.action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-radius: 999px;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 0.95rem;
+    transition: background 0.2s, transform 0.15s;
+    white-space: nowrap;
+    min-height: 42px;
+}
+.action-btn.view { background: rgba(56,189,248,0.16); color: #0369a1; }
+.action-btn.view:hover { background: rgba(56,189,248,0.24); }
+.action-btn.edit { /* keeps same shape as create button */ }
+.action-btn.delete { background: #a4443b; color: #fff; }
+.action-btn.delete:hover { background: #8f372f; }
+.btn-danger { background: #a4443b; color: #fff; }
+.btn-danger:hover { background: #8f372f; }
+
+.empty-state { text-align: center; color: rgba(11,18,32,0.62); padding: 24px 0; }
+.pagination { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; align-items: center; margin-top: 24px; color: rgba(11,18,32,0.78); }
+    .page-link { display: inline-flex; align-items: center; justify-content: center; padding: 10px 16px; border-radius: 10px; background: #f8fafc; color: #0b1220; text-decoration: none; border:1px solid rgba(148,163,184,0.35); }
+    .page-link:hover { background: #e2e8f0; }
+
+@media(max-width:900px) {
+    .page-panel { padding: 20px; }
+    .data-table { min-width: 100%; }
+    .actions-cell { justify-content: flex-start; }
+}
+.clients-panel { padding: 28px; border: 1px solid var(--admin-line, #d8e2e9); border-radius: 12px; background: var(--admin-surface, #fff); color: var(--admin-text, #193247); box-shadow: var(--admin-shadow, 0 12px 32px rgba(18,43,61,.07)); }
+.clients-panel .page-header { align-items: flex-end; margin-bottom: 21px; }
+.clients-panel .page-header h2 { color: var(--admin-text, #193247); font-size: 25px; font-weight: 750; }
+.clients-panel .page-header p:not(.module-eyebrow) { margin: 5px 0 0; color: var(--admin-muted, #647b8b); font-size: 13px; }
+.module-eyebrow { margin: 0 0 5px; color: #197c83; font-size: 10px; font-weight: 800; letter-spacing: .12em; }
+.clients-header-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 9px; }
+.module-search { display: flex; min-width: min(390px, 100%); align-items: center; gap: 0; }
+.module-search input { width: 100%; min-width: 0; min-height: 42px; border: 1px solid var(--admin-line-strong, #cbd8df); border-right: 0; border-radius: 6px 0 0 6px; background: var(--admin-surface-soft, #f4f7f9); color: var(--admin-text, #193247); padding: 0 12px; font: inherit; font-size: 12px; }
+.search-submit { display: grid; width: 42px; height: 42px; flex: 0 0 42px; place-items: center; border: 1px solid #176b78; border-radius: 0 6px 6px 0; background: #176b78; color: white; cursor: pointer; }
+.search-clear { margin-left: 8px; color: #526b7a; font-size: 12px; font-weight: 700; text-decoration: none; }
+.clients-panel .btn-primary { min-height: 42px; border: 1px solid #176b78; border-radius: 6px; background: #176b78; color: #fff; box-shadow: none; font-size: 12px; }
+.clients-panel .btn-primary { background: #176b78!important; background-image: none!important; border-color: #176b78!important; }
+.clients-panel .btn-primary:hover { background: #115762; }
+.table-caption { display: flex; justify-content: space-between; gap: 12px; border: 1px solid var(--admin-line, #d8e2e9); border-bottom: 0; border-radius: 8px 8px 0 0; background: var(--admin-surface, #fff); padding: 13px 15px; color: var(--admin-text, #193247); font-size: 12px; font-weight: 700; }
+.table-caption span:last-child { color: var(--admin-muted, #647b8b); font-size: 11px; font-weight: 600; }
+.table-scroll { overflow-x: auto; border: 1px solid var(--admin-line, #d8e2e9); border-radius: 0 0 8px 8px; }
+.clients-panel .table-card { overflow: visible; }
+.clients-panel .data-table { min-width: 980px; border-collapse: separate; border-spacing: 0; }
+.clients-panel .data-table thead { background: var(--admin-table-head, #eaf1f5); }
+.clients-panel .data-table th { color: var(--admin-text, #193247); font-size: 10px; letter-spacing: .07em; text-transform: uppercase; white-space: nowrap; }
+.clients-panel .data-table td { color: var(--admin-text, #334b5b); font-size: 12px; }
+.clients-panel .data-table tbody tr:nth-child(odd) { background: var(--admin-surface, #fff); }
+.clients-panel .data-table tbody tr:nth-child(even) { background: var(--admin-surface-soft, #f7f9fa); }
+.clients-panel .data-table tbody tr:hover { background: rgba(23,107,120,.07); }
+.clients-panel .actions-cell { display: flex; min-width: 210px; align-items: center; gap: 6px; }
+.clients-panel .action-btn { min-height: 32px; border: 1px solid var(--admin-line-strong, #cbd8df); border-radius: 5px; background: var(--admin-surface, #fff); padding: 0 10px; color: var(--admin-text, #314b5c); font-size: 11px; font-weight: 700; cursor: pointer; }
+.clients-panel .action-btn.view { border-color: #b8d4dd; color: #176b78; }
+.clients-panel .action-btn.edit { border-color: #cad7e1; color: #345c76; }
+.clients-panel .action-btn.delete { border-color: #e7c2bd; color: #a4443b; }
+.clients-panel .action-btn.delete { background:#a4443b!important; background-image:none!important; color:#fff!important; }
+.delete-form { display: inline-flex; margin: 0; }
+.clients-panel .pagination { color: var(--admin-muted, #647b8b); }
+.clients-panel .page-link { min-height: 36px; border-radius: 5px; background: var(--admin-surface, #fff); color: var(--admin-text, #193247); font-size: 11px; }
+html[data-theme="dark"] .clients-panel { --admin-surface: #101d2b; --admin-surface-soft: #142435; --admin-line: #2a3b4d; --admin-line-strong: #3a5064; --admin-text: #e8f0f6; --admin-muted: #a6b7c5; background: #101d2b; }
+html[data-theme="dark"] .clients-panel .data-table td { color: #dce6ed; }
+html[data-theme="dark"] .clients-panel .action-btn { background: #162739; }
+@media(max-width:900px) { .clients-panel { padding: 20px; } .clients-header-actions, .module-search { width: 100%; } .clients-panel .btn-primary { width: 100%; } }
+@media(max-width:560px) { .clients-panel { padding: 15px; } .clients-panel .page-header { align-items: stretch; } .table-caption { align-items: flex-start; flex-direction: column; gap: 3px; } }
+</style>
+{% endblock %}
+
+{% block help_content %}
+<div>
+    <h4>Ayuda: Usuarios / Clientes</h4>
+    <p>Revisa la lista completa de clientes con acciones rápidas de ver, editar y eliminar.</p>
+    <ul>
+        <li>Presiona <strong>Registrar cliente</strong> para añadir un cliente nuevo al sistema.</li>
+        <li>Los botones de acción se muestran juntos y se mantienen alineados incluso en pantallas pequeñas.</li>
+        <li>Si ves un cliente con datos incompletos, edítalo desde la acción correspondiente.</li>
+    </ul>
+</div>
+{% endblock %}
+

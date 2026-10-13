@@ -1,0 +1,383 @@
+<!-- filepath: c:\Users\Dell\Desktop\FERREELECTRI_PLUS\Inventario\templates\Inventario\movimientos_inventario.html -->
+{% extends 'base/pan_con_queso.html' %}
+
+{% block arroz_con_pollo %}
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+<style>
+    body {
+        background: #f9fbfd;
+    }
+    .movimientos-main {
+        margin: 40px 20px;
+        max-width: calc(100vw - 40px);
+        background: #fff;
+        border-radius: 18px;
+        box-shadow: 0 4px 24px 0 rgba(0,0,0,0.07);
+        padding: 32px 28px;
+        animation: fadeIn 0.7s;
+        overflow-x: auto;
+        min-width: 0;
+    }
+    .movimientos-title {
+        color: #00b2ff;
+        font-size: 2.2rem;
+        font-weight: 800;
+        margin-bottom: 28px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        justify-content: flex-start;
+        flex-wrap: wrap;
+        text-align: left;
+    }
+    .movimientos-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0 12px;
+        font-size: 1.08rem;
+        min-width: 700px;
+        background: transparent;
+    }
+    .movimientos-table th,
+    .movimientos-table td {
+        text-align: center;
+        padding: 14px 10px;
+    }
+    .movimientos-table th {
+        background: #e6f7ff;
+        color: #00b2ff;
+        font-weight: 700;
+        border-radius: 10px 10px 0 0;
+    }
+    .movimientos-table td {
+        background: #fff;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px 0 rgba(0,178,255,0.08);
+        transition: transform 0.2s, box-shadow 0.2s;
+        position: relative;
+    }
+    .movimientos-table tr.entrada td {
+        border-left: 6px solid #4CAF50;
+        animation: entradaAnim 0.7s;
+    }
+    .movimientos-table tr.salida td {
+        border-left: 6px solid #e74c3c;
+        animation: salidaAnim 0.7s;
+    }
+    .movimientos-table tr:hover td {
+        transform: scale(1.02);
+        box-shadow: 0 4px 16px 0 rgba(0,178,255,0.13);
+        z-index: 2;
+    }
+    .tipo-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-weight: 700;
+        padding: 6px 16px;
+        border-radius: 20px;
+        font-size: 1em;
+        animation: popIn 0.6s;
+    }
+    .tipo-entrada {
+        background: #e8f5e9;
+        color: #388e3c;
+        border: 1.5px solid #4CAF50;
+    }
+    .tipo-salida {
+        background: #ffebee;
+        color: #c0392b;
+        border: 1.5px solid #e74c3c;
+    }
+    .cantidad-anim {
+        font-weight: 800;
+        font-size: 1.1em;
+        transition: color 0.2s;
+    }
+    .movimientos-table tr.entrada .cantidad-anim {
+        color: #43a047;
+        animation: cantidadIn 0.7s;
+    }
+    .movimientos-table tr.salida .cantidad-anim {
+        color: #e74c3c;
+        animation: cantidadOut 0.7s;
+    }
+    .descripcion-mov {
+        color: #888;
+        font-size: 0.98em;
+        font-style: italic;
+    }
+    .fecha-mov {
+        color: #1976d2;
+        font-size: 0.98em;
+        font-weight: 600;
+    }
+    .filtro-movimientos {
+        margin: 0 0 24px 0;
+        display: flex;
+        gap: 12px;
+        align-items: flex-end;
+        flex-wrap: wrap;
+    }
+    .filtro-movimientos .filtro-campo {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .filtro-movimientos label {
+        font-weight: 600;
+        color: #1976d2;
+        margin-right: 4px;
+    }
+    .filtro-movimientos select,
+    .filtro-movimientos input {
+        padding: 6px 12px;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+        font-size: 1em;
+        width: 100%;
+        max-width: 200px;
+    }
+    .filtro-movimientos button,
+    .filtro-movimientos a {
+        padding: 8px 20px;
+        border-radius: 8px;
+        background: #00b2ff;
+        color: #fff;
+        border: none;
+        font-weight: 700;
+        cursor: pointer;
+        text-align: center;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .filtro-movimientos a {
+        background: #e6f7ff;
+        color: #00b2ff;
+        text-decoration: none;
+    }
+    /* Responsive */
+    @media (max-width: 1200px) {
+        .movimientos-main {
+            margin-left: 0;
+            max-width: calc(100vw - 40px);
+        }
+        .filtro-movimientos { margin-left: 0; }
+    }
+    @media (max-width: 900px) {
+        .movimientos-main {
+            margin-left: 0;
+            max-width: 99vw;
+            padding: 10px 2vw;
+        }
+        .movimientos-title {
+            font-size: 1.3rem;
+            margin-bottom: 18px;
+        }
+        .movimientos-table {
+            min-width: 480px;
+            font-size: 0.95em;
+        }
+        .movimientos-table th,
+        .movimientos-table td {
+            padding: 8px 4px;
+        }
+        .filtro-movimientos { margin-left: 0; gap: 8px; }
+    }
+    @media (max-width: 600px) {
+        .movimientos-main {
+            margin-left: 0;
+            max-width: 100vw;
+            padding: 4px 0;
+        }
+        .movimientos-title {
+            font-size: 1.1rem;
+            gap: 6px;
+        }
+        .movimientos-table {
+            min-width: 380px;
+            font-size: 0.90em;
+        }
+        .movimientos-table th,
+        .movimientos-table td {
+            padding: 6px 2px;
+        }
+        .filtro-movimientos { flex-direction: column; align-items: stretch; gap: 6px; margin-left: 0; }
+    }
+    .movimientos-main {
+        width: 100%;
+        max-width: 100%;
+        margin: 0;
+        background: var(--surface-soft, #fff);
+        border: 1px solid rgba(100, 116, 139, .16);
+        border-radius: 14px;
+        box-sizing: border-box;
+    }
+    .movimientos-table {
+        min-width: 760px;
+        table-layout: fixed;
+        border-collapse: separate;
+        border-spacing: 0;
+        overflow: hidden;
+        border: 1px solid #d7e1e9;
+        border-radius: 10px;
+        background: #fff;
+    }
+    .movimientos-table th,
+    .movimientos-table td {
+        overflow-wrap: anywhere;
+        border-radius: 0;
+        box-shadow: none;
+    }
+    .movimientos-table th {
+        background: #19425d;
+        color: #fff;
+        border-bottom: 1px solid #315d78;
+        white-space: nowrap;
+    }
+    .movimientos-table td {
+        background: #fff;
+        color: #1b2d3d;
+        border-bottom: 1px solid #e0e8ee;
+        transition: background-color .18s ease;
+    }
+    .movimientos-table tbody tr:last-child td { border-bottom: 0; }
+    .movimientos-table tr.entrada td,
+    .movimientos-table tr.salida td { border-left: 0; }
+    .movimientos-table tr.entrada td:first-child { border-left: 4px solid #2f9e67; }
+    .movimientos-table tr.salida td:first-child { border-left: 4px solid #dc5260; }
+    .movimientos-table tr:hover td {
+        transform: none;
+        background: #f1f7fa;
+        box-shadow: none;
+    }
+    .movimientos-table tr:hover { transform: none; }
+    .tipo-entrada { background: #e7f6ed; color: #176b3b; }
+    .tipo-salida { background: #fff0ef; color: #a92f3b; }
+    .descripcion-mov { color: #536779; }
+    :root[data-theme="dark"] .main-content .movimientos-main {
+        background: rgba(10, 18, 34, .92);
+        border-color: rgba(255,255,255,.12);
+        box-shadow: 0 24px 60px rgba(0,0,0,.28);
+    }
+    :root[data-theme="dark"] .main-content .movimientos-main .movimientos-table {
+        background: #101b2a !important;
+        border-color: rgba(255,255,255,.12);
+    }
+    :root[data-theme="dark"] .main-content .movimientos-main .movimientos-table thead th {
+        background: #1b405a !important;
+        color: #f2f7fb !important;
+        border-color: #315a73;
+    }
+    :root[data-theme="dark"] .main-content .movimientos-main .movimientos-table tbody tr td {
+        background: #111d2c !important;
+        color: #e8f0f7 !important;
+        border-color: rgba(255,255,255,.08);
+    }
+    :root[data-theme="dark"] .main-content .movimientos-main .movimientos-table tbody tr:nth-child(even) td {
+        background: #152235 !important;
+    }
+    :root[data-theme="dark"] .main-content .movimientos-main .movimientos-table tbody tr:hover td {
+        background: #203248 !important;
+    }
+    :root[data-theme="dark"] .main-content .movimientos-main .descripcion-mov { color: #b9c8d6 !important; }
+    :root[data-theme="dark"] .main-content .movimientos-main .fecha-mov { color: #9bd5ff !important; }
+    :root[data-theme="dark"] .main-content .movimientos-main .tipo-entrada { background: #193d32 !important; color: #a5edc3 !important; }
+    :root[data-theme="dark"] .main-content .movimientos-main .tipo-salida { background: #48262d !important; color: #ffc1c5 !important; }
+    @media (max-width: 600px) {
+        .movimientos-main { padding: 16px 12px; }
+        .movimientos-table { min-width: 760px; }
+    }
+</style>
+<div class="movimientos-main" style="overflow-x:auto;">
+    <div class="movimientos-title">
+        <span class="material-symbols-outlined" style="font-size:2.2rem;">compare_arrows</span>
+        Movimientos de Inventario
+    </div>
+    <form method="get" class="filtro-movimientos">
+        <div class="filtro-campo">
+            <label for="producto">
+                <span class="material-symbols-outlined filtro-icono">inventory_2</span>
+                Artículo:
+            </label>
+            <select name="producto" id="producto">
+                <option value="">Todos</option>
+                {% for prod in productos %}
+                    <option value="{{ prod.id }}" {% if producto_id == prod.id %}selected{% endif %}>{{ prod.Nombre }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="filtro-campo">
+            <label for="fecha_inicio">
+                <span class="material-symbols-outlined filtro-icono">calendar_month</span>
+                Desde:
+            </label>
+            <input type="date" name="fecha_inicio" id="fecha_inicio" value="{{ fecha_inicio }}">
+        </div>
+        <div class="filtro-campo">
+            <label for="fecha_fin">
+                <span class="material-symbols-outlined filtro-icono">calendar_month</span>
+                Hasta:
+            </label>
+            <input type="date" name="fecha_fin" id="fecha_fin" value="{{ fecha_fin }}">
+        </div>
+        <button type="submit" class="filtro-btn">
+            <span class="material-symbols-outlined">search</span> Filtrar
+        </button>
+        {% if fecha_inicio or fecha_fin or producto_id %}
+        <a href="{% url 'movimientos_inventario' %}" class="filtro-btn limpiar">
+            <span class="material-symbols-outlined">restart_alt</span> Limpiar
+        </a>
+        {% endif %}
+    </form>
+    <div style="overflow-x:auto;">
+        <table class="movimientos-table">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Producto</th>
+                    <th>Tipo</th>
+                    <th>Cantidad</th>
+                    <th>Descripción</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for mov in movimientos %}
+                <tr class="{{ mov.tipo }}">
+                    <td class="fecha-mov">{{ mov.fecha|date:"d/m/Y H:i" }}</td>
+                    <td>{{ mov.producto.Descripcion }}</td>
+                    <td>
+                        <span class="tipo-badge tipo-{{ mov.tipo }}">
+                            {% if mov.tipo == 'entrada' %}
+                                <span class="material-symbols-outlined">arrow_downward</span> Entrada
+                            {% else %}
+                                <span class="material-symbols-outlined">arrow_upward</span> Salida
+                            {% endif %}
+                        </span>
+                    </td>
+                    <td><span class="cantidad-anim">{% if mov.tipo == 'entrada' %}+{% else %}-{% endif %}{{ mov.cantidad }}</span></td>
+                    <td><span class="descripcion-mov">{{ mov.descripcion|default:"—" }}</span></td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5">No hay movimientos registrados.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block help_content %}
+<div>
+    <h4>Ayuda: Movimientos de Inventario</h4>
+    <p>Visualiza entradas y salidas de stock.</p>
+    <ul>
+        <li><strong>Filtrar:</strong> Selecciona producto y rango de fechas para acotar resultados.</li>
+        <li><strong>Tipo:</strong> Las filas muestran si el movimiento es <em>entrada</em> o <em>salida</em>.</li>
+        <li><strong>Revisar:</strong> Verifica descripciones y cantidades para auditoría.</li>
+    </ul>
+</div>
+{% endblock %}

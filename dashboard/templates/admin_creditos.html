@@ -1,0 +1,521 @@
+{% extends 'base/pan_con_queso.html' %}
+{% load static %}
+
+{% block arroz_con_pollo %}
+<style>
+  .credits-page {
+    --credits-bg: var(--admin-page, #0b1220);
+    --credits-surface: var(--admin-surface, #101a29);
+    --credits-raised: var(--admin-surface-raised, #162235);
+    --credits-line: var(--admin-line, rgba(148, 163, 184, .2));
+    --credits-text: var(--admin-text, #e7edf5);
+    --credits-muted: var(--admin-muted, #a3b0c1);
+    display: grid;
+    gap: 24px;
+    width: 100%;
+    min-height: calc(100vh - 150px);
+    padding: 28px clamp(16px, 3vw, 42px);
+    color: var(--credits-text);
+    background-color: var(--credits-bg);
+    background-image: linear-gradient(rgba(148, 163, 184, .035) 1px, transparent 1px), linear-gradient(90deg, rgba(148, 163, 184, .035) 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
+
+  .credits-heading {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 20px;
+    width: 100%;
+  }
+
+  .credits-heading p { margin: 0; color: var(--credits-muted); }
+  .credits-eyebrow { color: var(--admin-accent, #45a6d2); font-size: .72rem; font-weight: 800; text-transform: uppercase; }
+  .credits-title { margin: 6px 0 5px; color: var(--credits-text); font-size: 1.9rem; font-weight: 850; }
+  .credits-count { flex: 0 0 auto; padding: 8px 12px; border: 1px solid var(--credits-line); border-radius: 8px; color: var(--credits-muted); font-size: .8rem; }
+
+  .credits-gallery {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+    width: 100%;
+    align-items: stretch;
+    perspective: 1100px;
+  }
+
+  .credits-card {
+    --credit-accent: #45a6d2;
+    position: relative;
+    display: grid;
+    grid-template-rows: minmax(180px, 31vh) 1fr;
+    min-width: 0;
+    overflow: hidden;
+    padding: 0;
+    border: 1px solid var(--credits-line);
+    border-radius: 8px;
+    background: var(--credits-surface);
+    color: var(--credits-text);
+    text-align: left;
+    cursor: pointer;
+    box-shadow: 0 14px 34px rgba(0, 0, 0, .12);
+    transition: transform .28s ease, opacity .28s ease, border-color .28s ease, box-shadow .28s ease;
+  }
+
+  .credits-card[data-tone="amber"] { --credit-accent: #e9ad43; }
+  .credits-card[data-tone="cyan"] { --credit-accent: #42b7d5; }
+  .credits-card[data-tone="mint"] { --credit-accent: #42b994; }
+  .credits-gallery:has(.credits-card:hover) .credits-card:not(:hover),
+  .credits-gallery:has(.credits-card:focus-visible) .credits-card:not(:focus-visible) { opacity: .7; transform: scale(.985); }
+  .credits-card:hover,
+  .credits-card:focus-visible { z-index: 2; transform: translateY(-5px) rotateY(-1.5deg) scale(1.015); border-color: var(--credit-accent); box-shadow: 0 20px 42px rgba(0, 0, 0, .2); outline: none; }
+  .credits-card:focus-visible { box-shadow: 0 0 0 3px color-mix(in srgb, var(--credit-accent) 55%, transparent), 0 20px 42px rgba(0, 0, 0, .2); }
+
+  .credits-portrait {
+    position: relative;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    border-bottom: 1px solid var(--credits-line);
+    background: linear-gradient(135deg, color-mix(in srgb, var(--credit-accent) 16%, var(--credits-surface)), var(--credits-surface) 68%);
+    isolation: isolate;
+  }
+
+  .credits-portrait::before {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: repeating-linear-gradient(118deg, transparent 0 28px, color-mix(in srgb, var(--credit-accent) 12%, transparent) 29px 30px, transparent 31px 58px);
+    content: "";
+    opacity: .75;
+  }
+
+  .credits-mirror {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(108deg, transparent 12%, rgba(255,255,255,.025) 36%, rgba(255,255,255,.14) 48%, rgba(255,255,255,.025) 58%, transparent 82%);
+    clip-path: polygon(12% 0, 78% 0, 52% 100%, 0 100%);
+    opacity: .62;
+    transition: transform .4s ease, opacity .4s ease;
+  }
+
+  .credits-card:hover .credits-mirror,
+  .credits-card:focus-visible .credits-mirror { transform: translateX(8%); opacity: .95; }
+  .credits-monogram { color: var(--credits-text); font-size: clamp(3.4rem, 7vw, 6rem); font-weight: 850; letter-spacing: .04em; text-shadow: 0 12px 32px rgba(0,0,0,.32); }
+  .credits-monogram-reflection { position: absolute; top: 55%; color: var(--credit-accent); font-size: clamp(3.4rem, 7vw, 6rem); font-weight: 850; opacity: .12; transform: scaleY(-1) scaleX(-1); mask-image: linear-gradient(to bottom, rgba(0,0,0,.6), transparent 75%); }
+  .credits-index { position: absolute; top: 14px; left: 16px; color: var(--credit-accent); font-size: .72rem; font-weight: 800; }
+  .credits-open-label { position: absolute; right: 14px; bottom: 14px; color: var(--credits-text); font-size: .72rem; font-weight: 750; opacity: .8; }
+
+  .credits-copy { display: grid; align-content: start; gap: 14px; padding: 20px; }
+  .credits-name-row { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px; }
+  .credits-name { margin: 0; color: var(--credits-text); font-size: 1.2rem; font-weight: 800; }
+  .credits-role { color: var(--credit-accent); font-size: .68rem; font-weight: 800; text-transform: uppercase; }
+  .credits-description { margin: 0; color: var(--credits-muted); font-size: .86rem; line-height: 1.6; }
+  .credits-stack-title { margin: 0 0 7px; color: var(--credits-muted); font-size: .66rem; font-weight: 800; text-transform: uppercase; }
+  .credits-stack { display: flex; flex-wrap: wrap; gap: 6px; }
+  .credits-stack span { padding: 5px 8px; border: 1px solid var(--credits-line); border-radius: 6px; background: var(--credits-raised); color: var(--credits-text); font-size: .68rem; }
+  .credits-links { display: flex; gap: 8px; }
+  .credits-links a { display: inline-grid; width: 32px; height: 32px; place-items: center; border: 1px solid var(--credits-line); border-radius: 50%; color: var(--credits-muted); text-decoration: none; transition: color .18s ease, border-color .18s ease; }
+  .credits-links a:hover { border-color: var(--credit-accent); color: var(--credit-accent); }
+
+  .credits-manual { justify-self: end; display: inline-flex; align-items: center; gap: 9px; min-height: 42px; padding: 0 15px; border: 1px solid var(--credits-line); border-radius: 8px; background: var(--credits-raised); color: var(--credits-text); font-size: .82rem; font-weight: 750; text-decoration: none; transition: border-color .18s ease, background .18s ease; }
+  .credits-manual:hover { border-color: var(--admin-accent, #45a6d2); background: var(--credits-surface); color: var(--credits-text); }
+
+  .credit-detail-dialog { width: min(560px, calc(100vw - 32px)); max-height: min(80vh, 720px); padding: 0; overflow: auto; border: 1px solid var(--credits-line); border-radius: 10px; background: var(--credits-surface); color: var(--credits-text); box-shadow: 0 30px 90px rgba(0,0,0,.45); }
+  .credit-detail-dialog::backdrop { background: rgba(2, 8, 20, .72); backdrop-filter: blur(4px); }
+  .credit-dialog-inner { padding: 26px; }
+  .credit-dialog-top { display: flex; justify-content: space-between; gap: 18px; align-items: start; }
+  .credit-dialog-close { display: grid; width: 36px; height: 36px; flex: 0 0 auto; place-items: center; border: 1px solid var(--credits-line); border-radius: 8px; background: var(--credits-raised); color: var(--credits-text); cursor: pointer; }
+  .credit-detail-dialog h2 { margin: 8px 0 4px; color: var(--credits-text); font-size: 1.45rem; }
+  .credit-detail-dialog p { color: var(--credits-muted); line-height: 1.65; }
+  .credit-dialog-stack { margin: 18px 0 0; padding-top: 16px; border-top: 1px solid var(--credits-line); }
+
+  @media (max-width: 950px) { .credits-gallery { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 620px) { .credits-page { padding: 20px 12px; } .credits-heading { align-items: start; flex-direction: column; } .credits-gallery { grid-template-columns: 1fr; } .credits-card { grid-template-rows: 190px 1fr; } }
+  @media (prefers-reduced-motion: reduce) { .credits-card, .credits-mirror, .credits-manual, .credits-links a { transition: none !important; } }
+
+  .credits-page { gap: 20px; }
+  .credits-gallery {
+    display: flex;
+    height: clamp(410px, 62vh, 620px);
+    gap: 0;
+    overflow: hidden;
+    perspective: none;
+  }
+  .credits-shard {
+    --credit-accent: #e9ad43;
+    position: relative;
+    flex: 1 1 0;
+    min-width: 0;
+    overflow: hidden;
+    clip-path: polygon(8% 0, 100% 0, 92% 100%, 0 100%);
+    background: var(--credits-surface);
+    transition: flex-grow .55s cubic-bezier(.2,.8,.2,1), filter .3s ease;
+  }
+  .credits-shard + .credits-shard { margin-left: -3.5%; }
+  .credits-shard[data-tone="cyan"] { --credit-accent: #42b7d5; }
+  .credits-shard[data-tone="mint"] { --credit-accent: #42b994; }
+  .credits-shard:hover, .credits-shard:focus-within { z-index: 2; flex-grow: 2.4; }
+  .credits-gallery:has(.credits-shard:hover) .credits-shard:not(:hover) { filter: saturate(.72) brightness(.82); }
+  .credits-card-open {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    overflow: hidden;
+    border: 0;
+    background: linear-gradient(180deg, transparent 45%, rgba(3, 10, 20, .88) 100%);
+    color: var(--credits-text);
+    text-align: left;
+    cursor: pointer;
+  }
+  .credits-card-open:focus-visible { outline: 3px solid var(--credit-accent); outline-offset: -6px; }
+  .credits-portrait {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    border: 0;
+    background: radial-gradient(ellipse at 50% 34%, color-mix(in srgb, var(--credit-accent) 28%, var(--credits-surface)), var(--credits-bg) 72%);
+  }
+  .credits-portrait::before { z-index: 0; opacity: .34; }
+  .credits-photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .35s ease, transform .8s ease; }
+  .credits-photo.is-loaded { opacity: .86; }
+  .credits-card-open:hover .credits-photo { transform: scale(1.045); }
+  .credits-portrait::after { position: absolute; inset: 35% 0 0; z-index: 0; background: linear-gradient(transparent, rgba(3, 10, 20, .92)); content: ""; }
+  .credits-monogram, .credits-index, .credits-open-label, .credits-copy { z-index: 1; }
+  .credits-monogram { position: relative; font-size: clamp(4rem, 8vw, 8rem); opacity: .82; }
+  .credits-monogram-reflection { display: none; }
+  .credits-index { top: 24px; left: 11%; padding: 7px 10px; border: 1px solid rgba(255,255,255,.2); border-radius: 20px; background: rgba(4, 12, 24, .36); color: #fff; }
+  .credits-open-label { right: 11%; bottom: 26px; }
+  .credits-copy { position: absolute; right: 11%; bottom: 58px; left: 11%; gap: 8px; padding: 0; pointer-events: none; }
+  .credits-name-row { display: grid; justify-content: start; gap: 4px; }
+  .credits-name { font-size: clamp(1.05rem, 1.6vw, 1.5rem); }
+  .credits-role { color: var(--credit-accent); }
+  .credits-description { display: none; }
+  .credits-photo-control {
+    position: absolute;
+    top: 18px;
+    right: 10%;
+    z-index: 4;
+    display: grid;
+    width: 42px;
+    height: 42px;
+    place-items: center;
+    border: 1px solid rgba(255,255,255,.5);
+    border-radius: 50%;
+    background: rgba(5, 15, 29, .72);
+    color: #fff;
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: background .2s ease, transform .2s ease;
+  }
+  .credits-photo-control:hover { transform: scale(1.08); background: var(--credit-accent); }
+  .credits-photo-input { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; clip-path: inset(50%); }
+  .credits-photo-status { min-height: 1.2em; color: var(--credits-muted); font-size: .75rem; }
+  .credit-detail-dialog { width: min(860px, calc(100vw - 32px)); max-height: min(82vh, 680px); overflow: hidden; }
+  .credit-dialog-inner { display: grid; grid-template-columns: minmax(220px, .78fr) minmax(0, 1.22fr); min-height: 430px; padding: 0; }
+  .credit-dialog-visual { position: relative; display: grid; min-height: 100%; place-items: center; overflow: hidden; background: radial-gradient(ellipse at 50% 35%, color-mix(in srgb, var(--dialog-accent, #45a6d2) 30%, var(--credits-surface)), #080e18 78%); }
+  .credit-dialog-visual::after { position: absolute; inset: 45% 0 0; background: linear-gradient(transparent, rgba(3, 10, 20, .68)); content: ""; }
+  .credit-dialog-visual img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; }
+  .credit-dialog-visual img.is-loaded { opacity: .9; }
+  .credit-dialog-monogram { color: var(--credits-text); font-size: clamp(5rem, 10vw, 8rem); font-weight: 850; }
+  .credit-dialog-content { position: relative; display: flex; flex-direction: column; justify-content: center; padding: clamp(24px, 4vw, 42px); overflow-y: auto; }
+  .credit-dialog-top { align-items: start; }
+  .credit-dialog-top h2 { margin: 10px 0 6px; font-size: clamp(1.5rem, 3vw, 2rem); }
+  .credit-detail-dialog p { margin: 24px 0 0; }
+  .credit-dialog-stack { margin-top: 26px; }
+  .credit-dialog-close { position: absolute; top: 18px; right: 18px; z-index: 2; }
+  @media (max-width: 720px) {
+    .credits-gallery { height: min(68vh, 530px); min-height: 360px; overflow-x: auto; overflow-y: hidden; }
+    .credits-shard { flex: 0 0 78vw; }
+    .credits-shard:hover, .credits-shard:focus-within { flex-grow: 0; }
+    .credits-shard + .credits-shard { margin-left: -5vw; }
+    .credits-name { font-size: 1.15rem; }
+    .credit-dialog-inner { grid-template-columns: 1fr; max-height: 82vh; overflow-y: auto; }
+    .credit-dialog-visual { min-height: 250px; }
+    .credit-dialog-content { min-height: 300px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .credits-shard, .credits-photo, .credits-photo-control { transition: none !important; } }
+
+  .credits-page {
+    --credits-bg: #f3f6f8;
+    --credits-surface: #e5edf2;
+    --credits-raised: #edf3f6;
+    --credits-line: rgba(20, 48, 70, .2);
+    --credits-text: #132d46;
+    --credits-muted: #526779;
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: 14px;
+    min-height: calc(100vh - 72px);
+    min-height: calc(100dvh - 72px);
+    padding: 18px clamp(16px, 2.2vw, 32px) 20px;
+    background-color: transparent;
+    background-image: linear-gradient(rgba(20, 48, 70, .025) 1px, transparent 1px), linear-gradient(90deg, rgba(20, 48, 70, .025) 1px, transparent 1px);
+    background-size: 30px 30px;
+  }
+  :root[data-theme="dark"] .credits-page {
+    --credits-bg: #080e18;
+    --credits-surface: #101a29;
+    --credits-raised: #162235;
+    --credits-line: rgba(148, 163, 184, .2);
+    --credits-text: #e7edf5;
+    --credits-muted: #a3b0c1;
+    background-image: linear-gradient(rgba(148, 163, 184, .035) 1px, transparent 1px), linear-gradient(90deg, rgba(148, 163, 184, .035) 1px, transparent 1px);
+  }
+  .credits-toolbar {
+    display: flex;
+    min-height: 46px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .credits-toolbar-label { color: #17647a; font-size: .76rem; font-weight: 800; text-transform: uppercase; }
+  :root[data-theme="dark"] .credits-toolbar-label { color: #70cde3; }
+  .credits-toolbar-actions { display: flex; align-items: center; justify-content: end; gap: 10px; }
+  .credits-count { padding: 7px 11px; border-color: var(--credits-line); color: var(--credits-muted); }
+  .credits-photo-status { max-width: 250px; }
+  .credits-gallery {
+    height: auto;
+    min-height: 0;
+    overflow: hidden;
+    isolation: isolate;
+  }
+  .credits-shard { transition: flex-grow .55s cubic-bezier(.2,.8,.2,1), filter .35s ease, transform .55s ease; }
+  .credits-shard:nth-child(1) { flex-grow: 1.08; }
+  .credits-shard:nth-child(2) { flex-grow: .94; }
+  .credits-shard:nth-child(3) { flex-grow: 1; }
+  .credits-shard:hover, .credits-shard:focus-within { flex-grow: 2.35; filter: none; transform: scale(1.012); }
+  .credits-gallery:has(.credits-shard:hover) .credits-shard:not(:hover),
+  .credits-gallery:has(.credits-shard:focus-within) .credits-shard:not(:focus-within) {
+    filter: blur(2.5px) saturate(.58) brightness(.82);
+    transform: scale(.98);
+  }
+  .credits-card-open { background: linear-gradient(180deg, transparent 46%, rgba(3, 10, 20, .9) 100%); }
+  .credits-portrait { background: radial-gradient(ellipse at 50% 32%, color-mix(in srgb, var(--credit-accent) 24%, #dce7ed), #aebfca 100%); }
+  .credits-photo-control { right: 10%; }
+  .credits-manual {
+    min-height: 40px;
+    border-color: var(--credits-line);
+    background: var(--credits-raised);
+    color: var(--credits-text);
+    transition: color .2s ease, border-color .2s ease, background .2s ease, transform .2s ease;
+  }
+  .credits-manual:hover {
+    transform: translateY(-2px);
+    border-color: #167a98;
+    background: #e1f3f7;
+    color: #124a5c;
+  }
+  :root[data-theme="dark"] .credits-manual:hover { background: #153344; color: #c4f2ff; }
+  .credit-detail-dialog {
+    position: fixed;
+    inset: 50% auto auto 50%;
+    width: min(880px, calc(100vw - 36px));
+    height: min(540px, calc(100dvh - 36px));
+    max-height: calc(100dvh - 36px);
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    transform: translate(-50%, -50%);
+    border: 1px solid rgba(255,255,255,.18);
+    border-radius: 14px;
+    background: #111c29;
+    color: #f4f7fa;
+    box-shadow: 0 32px 100px rgba(0,0,0,.5);
+  }
+  .credit-detail-dialog::backdrop { background: rgba(7, 15, 25, .72); backdrop-filter: blur(7px); }
+  .credit-dialog-inner { height: 100%; min-height: 0; grid-template-columns: minmax(260px, .85fr) minmax(0, 1.15fr); }
+  .credit-dialog-visual { min-height: 0; background: radial-gradient(ellipse at 50% 35%, color-mix(in srgb, var(--dialog-accent, #45a6d2) 32%, #172737), #08111d 78%); }
+  .credit-dialog-content { min-width: 0; color: #f4f7fa; }
+  .credit-dialog-content h2 { color: #fff !important; }
+  .credit-dialog-content p { color: #d3dde6 !important; }
+  .credit-dialog-content .credits-eyebrow { color: #74d4ed; }
+  .credit-dialog-content .credits-role { color: #88d9ed; }
+  .credit-dialog-content .credits-stack-title { color: #b3c2cf; }
+  .credit-dialog-content .credits-stack span { border-color: rgba(255,255,255,.16); background: #1b2a39; color: #f2f6f8; }
+  .credit-dialog-close { border-color: rgba(255,255,255,.18); background: #263747; color: #fff; }
+  .credit-dialog-close:hover { background: #354b5e; }
+  @media (max-width: 720px) {
+    .credits-page { min-height: calc(100dvh - 30px); padding: 12px; }
+    .credits-toolbar { align-items: start; }
+    .credits-toolbar-actions { flex-wrap: wrap; }
+    .credits-photo-status { order: 3; flex-basis: 100%; text-align: right; }
+    .credits-gallery { min-height: 0; overflow-x: auto; overflow-y: hidden; }
+    .credits-shard { flex: 0 0 78vw; }
+    .credits-shard:hover, .credits-shard:focus-within { flex-grow: 0; transform: none; }
+    .credits-gallery:has(.credits-shard:hover) .credits-shard:not(:hover),
+    .credits-gallery:has(.credits-shard:focus-within) .credits-shard:not(:focus-within) { filter: none; transform: none; }
+    .credit-detail-dialog { width: calc(100vw - 24px); height: min(760px, calc(100dvh - 24px)); max-height: calc(100dvh - 24px); }
+    .credit-dialog-inner { grid-template-columns: 1fr; grid-template-rows: minmax(190px, 34%) minmax(0, 1fr); }
+    .credit-dialog-visual { min-height: 0; }
+    .credit-dialog-content { min-height: 0; padding: 24px; }
+  }
+  .credits-copy { bottom: 76px; gap: 5px; }
+  .credits-name-row { justify-content: start; }
+  .credits-name {
+    display: block;
+    color: #fff !important;
+    font-size: clamp(1rem, 1.45vw, 1.35rem);
+    line-height: 1.2;
+    text-shadow: 0 2px 12px rgba(0,0,0,.7);
+  }
+  .credits-role { display: block; font-size: .7rem; text-shadow: 0 1px 8px rgba(0,0,0,.8); }
+  .credits-shard[data-tone="amber"] .credits-role { color: #ffdf9a; }
+  .credits-shard[data-tone="cyan"] .credits-role { color: #9beaff; }
+  .credits-shard[data-tone="mint"] .credits-role { color: #9af0ce; }
+  .credits-open-label {
+    right: 10%;
+    bottom: 17px;
+    max-width: 78%;
+    padding: 7px 10px;
+    border: 1px solid rgba(255,255,255,.22);
+    border-radius: 20px;
+    background: rgba(5, 14, 25, .78);
+    color: #fff;
+    font-size: .68rem;
+    line-height: 1.25;
+    text-align: right;
+    opacity: 1;
+  }
+</style>
+
+<section class="credits-page">
+  <div class="credits-toolbar">
+    <span class="credits-toolbar-label">Equipo del proyecto</span>
+    <div class="credits-toolbar-actions">
+      <span class="credits-photo-status" id="creditsPhotoStatus" role="status" aria-live="polite"></span>
+      <span class="credits-count">03 integrantes</span>
+      <a href="{% url 'manual_usuario' %}" target="_blank" rel="noopener noreferrer" class="credits-manual"><i class="fa-solid fa-file-lines" aria-hidden="true"></i> Manual de usuario</a>
+    </div>
+  </div>
+
+  <div class="credits-gallery" aria-label="Integrantes del equipo">
+    <article class="credits-shard" data-tone="amber">
+      <button type="button" class="credits-card-open" data-credit-card data-name="Yulimar Cabeza" data-initials="YC" data-role="Ingeniería en Informática" data-area="Arquitectura y operación" data-description="Participó en la estructuración del sistema, la lógica operativa y la optimización funcional del flujo administrativo." data-stack="Python|Lógica Core|MariaDB" aria-label="Abrir ficha de Yulimar Cabeza">
+        <span class="credits-portrait"><img class="credits-photo" alt="" data-photo-image="yulimar"><span class="credits-monogram">YC</span><span class="credits-index">01 / 03</span><span class="credits-open-label">Presiona aquí para ver la ficha</span><span class="credits-copy"><span class="credits-name-row"><span class="credits-name">Yulimar Cabeza</span><span class="credits-role">Arquitectura</span></span></span></span>
+      </button>
+      <label class="credits-photo-control" for="photoYulimar" title="Agregar foto de Yulimar Cabeza" aria-label="Agregar foto de Yulimar Cabeza">+</label>
+      <input class="credits-photo-input" id="photoYulimar" type="file" accept="image/*" data-photo-input="yulimar">
+    </article>
+
+    <article class="credits-shard" data-tone="cyan">
+      <button type="button" class="credits-card-open" data-credit-card data-name="Gregory Gómez" data-initials="GG" data-role="Ingeniería en Informática" data-area="Interfaz y experiencia" data-description="Contribuyó al diseño de interfaces, la experiencia de usuario y la implementación visual del sistema." data-stack="Tailwind CSS|Django Templates|UI/UX" aria-label="Abrir ficha de Gregory Gómez">
+        <span class="credits-portrait"><img class="credits-photo" alt="" data-photo-image="gregory"><span class="credits-monogram">GG</span><span class="credits-index">02 / 03</span><span class="credits-open-label">Presiona aquí para ver la ficha</span><span class="credits-copy"><span class="credits-name-row"><span class="credits-name">Gregory Gómez</span><span class="credits-role">UI / UX</span></span></span></span>
+      </button>
+      <label class="credits-photo-control" for="photoGregory" title="Agregar foto de Gregory Gómez" aria-label="Agregar foto de Gregory Gómez">+</label>
+      <input class="credits-photo-input" id="photoGregory" type="file" accept="image/*" data-photo-input="gregory">
+    </article>
+
+    <article class="credits-shard" data-tone="mint">
+      <button type="button" class="credits-card-open" data-credit-card data-name="Yeferson Ramírez" data-initials="YR" data-role="Ingeniería en Informática" data-area="Calidad y seguridad" data-description="Aportó a la ingeniería del producto, la calidad funcional y el desarrollo del entorno operativo." data-stack="Arquitectura Backend|Seguridad|Testing" aria-label="Abrir ficha de Yeferson Ramírez">
+        <span class="credits-portrait"><img class="credits-photo" alt="" data-photo-image="yeferson"><span class="credits-monogram">YR</span><span class="credits-index">03 / 03</span><span class="credits-open-label">Presiona aquí para ver la ficha</span><span class="credits-copy"><span class="credits-name-row"><span class="credits-name">Yeferson Ramírez</span><span class="credits-role">Calidad</span></span></span></span>
+      </button>
+      <label class="credits-photo-control" for="photoYeferson" title="Agregar foto de Yeferson Ramírez" aria-label="Agregar foto de Yeferson Ramírez">+</label>
+      <input class="credits-photo-input" id="photoYeferson" type="file" accept="image/*" data-photo-input="yeferson">
+    </article>
+  </div>
+</section>
+
+<dialog class="credit-detail-dialog" id="creditDetailDialog" aria-labelledby="creditDetailName">
+  <div class="credit-dialog-inner">
+    <div class="credit-dialog-visual"><img id="creditDetailPhoto" alt=""><span class="credit-dialog-monogram" id="creditDetailInitials">YC</span></div>
+    <div class="credit-dialog-content">
+      <div class="credit-dialog-top">
+        <div><span class="credits-eyebrow" id="creditDetailArea"></span><h2 id="creditDetailName"></h2><span class="credits-role" id="creditDetailRole"></span></div>
+        <button class="credit-dialog-close" type="button" data-close-credit aria-label="Cerrar ficha"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+      </div>
+      <p id="creditDetailDescription"></p>
+      <div class="credit-dialog-stack"><span class="credits-stack-title">Stack principal</span><div class="credits-stack" id="creditDetailStack"></div></div>
+    </div>
+  </div>
+</dialog>
+
+<script>
+  (function () {
+    var dialog = document.getElementById('creditDetailDialog');
+    if (!dialog) return;
+    var name = document.getElementById('creditDetailName');
+    var role = document.getElementById('creditDetailRole');
+    var area = document.getElementById('creditDetailArea');
+    var description = document.getElementById('creditDetailDescription');
+    var stack = document.getElementById('creditDetailStack');
+    var photo = document.getElementById('creditDetailPhoto');
+    var initials = document.getElementById('creditDetailInitials');
+    var photoStatus = document.getElementById('creditsPhotoStatus');
+    var photoKeyPrefix = 'ferreelectri-credit-photo-';
+
+    function applyPhoto(key, source) {
+      var galleryImage = document.querySelector('[data-photo-image="' + key + '"]');
+      if (galleryImage) {
+        galleryImage.src = source;
+        galleryImage.classList.add('is-loaded');
+        galleryImage.closest('.credits-portrait').querySelector('.credits-monogram').hidden = true;
+      }
+    }
+
+    document.querySelectorAll('[data-photo-input]').forEach(function (input) {
+      var key = input.dataset.photoInput;
+      var savedPhoto = localStorage.getItem(photoKeyPrefix + key);
+      if (savedPhoto) applyPhoto(key, savedPhoto);
+      input.addEventListener('change', function () {
+        var file = input.files && input.files[0];
+        if (!file) return;
+        if (!file.type.startsWith('image/')) {
+          photoStatus.textContent = 'Selecciona un archivo de imagen.';
+          input.value = '';
+          return;
+        }
+        var reader = new FileReader();
+        reader.onload = function () {
+          var sourceImage = new Image();
+          sourceImage.onload = function () {
+            var scale = Math.min(1, 1200 / Math.max(sourceImage.width, sourceImage.height));
+            var canvas = document.createElement('canvas');
+            canvas.width = Math.round(sourceImage.width * scale);
+            canvas.height = Math.round(sourceImage.height * scale);
+            canvas.getContext('2d').drawImage(sourceImage, 0, 0, canvas.width, canvas.height);
+            var compressedPhoto = canvas.toDataURL('image/jpeg', .84);
+            try {
+              localStorage.setItem(photoKeyPrefix + key, compressedPhoto);
+              applyPhoto(key, compressedPhoto);
+              photoStatus.textContent = 'Foto agregada. Se conserva en este navegador.';
+            } catch (error) {
+              photoStatus.textContent = 'No se pudo guardar la foto en el almacenamiento del navegador.';
+            }
+          };
+          sourceImage.src = reader.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    });
+
+    document.querySelectorAll('[data-credit-card]').forEach(function (card) {
+      card.addEventListener('click', function () {
+        name.textContent = card.dataset.name || '';
+        role.textContent = card.dataset.role || '';
+        area.textContent = card.dataset.area || '';
+        description.textContent = card.dataset.description || '';
+        stack.textContent = '';
+        (card.dataset.stack || '').split('|').filter(Boolean).forEach(function (item) {
+          var tag = document.createElement('span');
+          tag.textContent = item;
+          stack.appendChild(tag);
+        });
+        initials.textContent = card.dataset.initials || '';
+        var cardPhoto = localStorage.getItem(photoKeyPrefix + card.closest('.credits-shard').querySelector('[data-photo-input]').dataset.photoInput);
+        if (cardPhoto) photo.src = cardPhoto;
+        else photo.removeAttribute('src');
+        photo.classList.toggle('is-loaded', Boolean(cardPhoto));
+        initials.hidden = Boolean(cardPhoto);
+        dialog.style.setProperty('--dialog-accent', getComputedStyle(card.closest('.credits-shard')).getPropertyValue('--credit-accent'));
+        dialog.showModal();
+      });
+    });
+    dialog.querySelector('[data-close-credit]').addEventListener('click', function () { dialog.close(); });
+    dialog.addEventListener('click', function (event) { if (event.target === dialog) dialog.close(); });
+  }());
+</script>
+{% endblock %}

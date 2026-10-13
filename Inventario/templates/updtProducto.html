@@ -1,0 +1,207 @@
+{% extends 'base/pan_con_queso.html' %}
+{% load static %}
+
+{% block arroz_con_pollo %}
+<section class="section-panel form-card add-product-page">
+    <header class="section-header">
+        <div class="brand-top">
+            <img src="{% static 'img/logo.png' %}" alt="FERREELECTRI PLUS" class="brand-icon">
+            <div>
+                <h2>Actualizar producto</h2>
+                <p>Edite los datos del producto y sus presentaciones de venta.</p>
+            </div>
+        </div>
+    </header>
+
+    <div class="form-layout">
+        <aside class="summary-card">
+            <div class="summary-badge"><span class="material-symbols-outlined">inventory_2</span></div>
+            <h3>Producto actualizado</h3>
+            <p>Gestiona el inventario con precios, existencias, imágenes y equivalencias organizadas.</p>
+            <ul class="summary-list">
+                <li><span class="material-symbols-outlined">price_check</span> Precios claros</li>
+                <li><span class="material-symbols-outlined">inventory_2</span> Control total del stock</li>
+                <li><span class="material-symbols-outlined">photo_camera</span> Imágenes limpias</li>
+            </ul>
+        </aside>
+
+        <div class="form-panel">
+            <form id="productForm" method="post" enctype="multipart/form-data" autocomplete="off">
+                {% csrf_token %}
+                <div class="form-actions form-actions-top" role="group" aria-label="Acciones de producto">
+                    <a href="{% url 'listar_productos' %}" class="btn btn-secondary" title="Volver al inventario"><span class="material-symbols-outlined">arrow_back</span> Inventario</a>
+                    <button type="submit" class="btn btn-primary" title="Actualizar producto"><span class="material-symbols-outlined">save</span> Guardar cambios</button>
+                </div>
+                {{ productos.non_field_errors }}
+                <div class="form-grid grid grid-cols-1 md:grid-cols-2 gap-6">{{ productos.as_p }}</div>
+
+                <section class="presentaciones-panel" role="region" aria-labelledby="presentaciones-title">
+                    <div class="presentaciones-heading">
+                        <h3 id="presentaciones-title">Presentaciones de Venta y Equivalencias</h3>
+                        <p>Define caja, paquete o unidad y su factor de conversión respecto a la unidad base.</p>
+                    </div>
+                    <div class="presentaciones-table-wrap">
+                        <table id="presentacionesTable" class="presentaciones-table">
+                            <thead>
+                                <tr>
+                                    <th>Presentación</th>
+                                    <th>Cantidad / Factor</th>
+                                    <th>Unidad de Medida</th>
+                                    <th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="presentacionesBody">
+                                {% for presentacion in presentaciones %}
+                                <tr class="presentacion-row">
+                                    <td><select name="presentacion_nombre[]" required><option value="">Selecciona una presentación</option><option value="Unidad"{% if presentacion.nombre|lower == 'unidad' %} selected{% endif %}>Unidad</option><option value="Caja"{% if presentacion.nombre|lower == 'caja' %} selected{% endif %}>Caja</option><option value="Paquete"{% if presentacion.nombre|lower == 'paquete' %} selected{% endif %}>Paquete</option><option value="Bulto"{% if presentacion.nombre|lower == 'bulto' %} selected{% endif %}>Bulto</option><option value="Docena"{% if presentacion.nombre|lower == 'docena' %} selected{% endif %}>Docena</option><option value="Rollo"{% if presentacion.nombre|lower == 'rollo' %} selected{% endif %}>Rollo</option></select></td>
+                                    <td><input type="number" step="0.01" min="0" name="presentacion_factor[]" value="{{ presentacion.factor|stringformat:'f' }}" placeholder="Ej: 12" required></td>
+                                    <td><select name="presentacion_unidad[]" required><option value="">Selecciona una unidad</option><option value="Piezas"{% if presentacion.unidad_medida|lower == 'piezas' %} selected{% endif %}>Piezas</option><option value="Unidades"{% if presentacion.unidad_medida|lower == 'unidades' %} selected{% endif %}>Unidades</option><option value="Kilogramos"{% if presentacion.unidad_medida|lower == 'kilogramos' %} selected{% endif %}>Kilogramos</option><option value="Litros"{% if presentacion.unidad_medida|lower == 'litros' %} selected{% endif %}>Litros</option><option value="Metros"{% if presentacion.unidad_medida|lower == 'metros' %} selected{% endif %}>Metros</option><option value="Rollos"{% if presentacion.unidad_medida|lower == 'rollos' %} selected{% endif %}>Rollos</option></select></td>
+                                    <td class="presentacion-action-cell"><button type="button" class="remove-presentacion-btn" title="Eliminar presentación" aria-label="Eliminar presentación"><span class="material-symbols-outlined">delete</span></button></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <button id="addPresentacionBtn" type="button" class="add-presentacion-btn"><span class="material-symbols-outlined">add</span> Agregar otra presentación</button>
+                    <input type="hidden" id="presentacionesJson" name="presentations_json" value="[]">
+                </section>
+
+            </form>
+        </div>
+    </div>
+
+    <style>
+    .section-panel.add-product-page { padding: 32px !important; background: var(--admin-surface) !important; color: var(--admin-text); border: 1px solid var(--admin-line) !important; border-radius: 16px !important; box-shadow: var(--admin-shadow) !important; }
+    .brand-top { display:flex; align-items:center; gap:18px; }
+    .brand-icon { width:60px; height:60px; object-fit:contain; border-radius:12px; background:var(--admin-surface-raised); padding:10px; }
+    .add-product-page .section-header { display:block !important; width:100% !important; margin:0 !important; padding:0 0 20px !important; background:transparent !important; border:0 !important; border-bottom:1px solid var(--admin-line) !important; box-shadow:none !important; }
+    .add-product-page .section-header h2 { margin:0 0 6px !important; color:var(--admin-text) !important; font-size:1.7rem !important; font-weight:800 !important; }
+    .add-product-page .section-header p { margin:0 !important; color:var(--admin-muted) !important; line-height:1.5 !important; }
+    .form-layout { display:grid; grid-template-columns:300px minmax(0,1fr); gap:24px; margin-top:28px; }
+    .summary-card, .form-panel { background:var(--admin-surface-raised); border:1px solid var(--admin-line); border-radius:12px; padding:24px; color:var(--admin-text); }
+    .summary-card { display:flex; flex-direction:column; gap:16px; }
+    .summary-badge { width:54px; height:54px; display:grid; place-items:center; border-radius:12px; background:var(--admin-table-head); color:var(--admin-accent); }
+    .summary-card h3 { margin:0; color:var(--admin-text); font-size:1.15rem; }
+    .summary-card p { margin:0; color:var(--admin-muted); line-height:1.5; }
+    .summary-list { list-style:none; padding:0; margin:0; display:grid; gap:12px; }
+    .summary-list li { display:flex; align-items:center; gap:10px; color:var(--admin-text); font-weight:600; }
+    .summary-list .material-symbols-outlined { color:var(--admin-accent); }
+    .form-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; }
+    .form-grid p { margin:0; padding:0; border:0; border-radius:0; background:transparent; }
+    .form-grid label { display:block; margin-bottom:8px; color:var(--admin-text); font-weight:700; }
+    .form-panel input, .form-panel select, .form-panel textarea { width:100%; box-sizing:border-box; padding:12px 14px; border:1px solid var(--admin-line-strong); border-radius:8px; background:var(--admin-surface-soft); color:var(--admin-text); outline:none; transition:border-color 200ms, box-shadow 200ms; }
+    .form-panel input:focus, .form-panel select:focus, .form-panel textarea:focus { border-color:var(--admin-accent); box-shadow:0 0 0 3px color-mix(in srgb, var(--admin-accent) 22%, transparent); }
+    .presentaciones-panel { margin-top:24px; padding:20px; border:1px solid var(--admin-line); border-radius:12px; background:var(--admin-surface); box-shadow:var(--admin-shadow); }
+    .presentaciones-heading h3 { margin:0; color:var(--admin-text); font-size:1.1rem; }
+    .presentaciones-heading p { margin:6px 0 18px; color:var(--admin-muted); font-size:.9rem; }
+    .presentaciones-table-wrap { width:100%; overflow-x:auto; }
+    .presentaciones-table { width:100%; min-width:700px; border-collapse:collapse; }
+    .presentaciones-table th { padding:12px; background:var(--admin-table-head); border-bottom:1px solid var(--admin-line-strong); color:var(--admin-text); font-size:.75rem; text-align:left; text-transform:uppercase; }
+    .presentaciones-table td { padding:10px 12px; border-bottom:1px solid var(--admin-line); }
+    .presentaciones-table input { padding:11px 12px; border-radius:10px; }
+    .presentacion-action-cell { width:70px; text-align:center; }
+    .remove-presentacion-btn { display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; border:1px solid var(--admin-line-strong); border-radius:8px; background:var(--admin-surface-soft); color:#dc2626; cursor:pointer; }
+    .remove-presentacion-btn:hover { background:var(--admin-table-alt); }
+    .add-presentacion-btn { display:inline-flex; align-items:center; gap:6px; margin-top:16px; padding:10px 14px; border:1px solid var(--admin-line-strong); border-radius:8px; background:var(--admin-surface-soft); color:var(--admin-accent); font-weight:700; cursor:pointer; }
+    .add-presentacion-btn:hover { filter:brightness(1.08); }
+    .form-actions { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin:0 0 22px; padding-bottom:18px; border-bottom:1px solid var(--admin-line); }
+    .form-actions-top .btn { padding:8px 10px; gap:6px; font-size:.86rem; white-space:nowrap; }
+    .btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:11px 16px; border:1px solid transparent; border-radius:8px; font-weight:700; text-decoration:none; cursor:pointer; }
+    .btn-primary { background:var(--admin-accent); color:#fff; }
+    .btn-primary:hover { filter:brightness(1.08); }
+    .btn-secondary { background:var(--admin-surface-soft); color:var(--admin-text); border-color:var(--admin-line-strong); }
+    .btn-secondary:hover { filter:brightness(1.08); }
+    @media (max-width:900px) { .form-layout { grid-template-columns:minmax(0,1fr); width:100%; min-width:0; } .summary-card, .form-panel { width:100%; min-width:0; box-sizing:border-box; } .form-panel form, .form-grid, .presentaciones-panel, .presentaciones-table-wrap { width:100%; min-width:0; max-width:100%; box-sizing:border-box; } }
+    @media (max-width:680px) { .section-panel.add-product-page { padding:20px !important; } .form-grid { grid-template-columns:minmax(0,1fr); } .form-actions { justify-content:stretch; } .form-actions .btn { flex:1 1 100%; justify-content:center; } }
+    html[data-theme="dark"] .section-panel { background:var(--admin-surface) !important; border-color:var(--admin-line); }
+    html[data-theme="dark"] .summary-card, html[data-theme="dark"] .form-panel { background:var(--admin-surface-raised); border-color:var(--admin-line); }
+    html[data-theme="dark"] .section-header h2, html[data-theme="dark"] .section-header p, html[data-theme="dark"] .summary-card h3, html[data-theme="dark"] .summary-card p, html[data-theme="dark"] .summary-list li { color:var(--admin-text); }
+    html[data-theme="dark"] .form-grid p, html[data-theme="dark"] .presentaciones-panel { background:var(--admin-surface); border-color:var(--admin-line); }
+    html[data-theme="dark"] .form-grid label, html[data-theme="dark"] .presentaciones-heading h3 { color:var(--admin-text); }
+    html[data-theme="dark"] .presentaciones-heading p { color:var(--admin-muted); }
+    html[data-theme="dark"] .presentaciones-table th { background:var(--admin-table-head); border-color:var(--admin-line-strong); color:var(--admin-text); }
+    html[data-theme="dark"] .presentaciones-table td { border-color:var(--admin-line); }
+    html[data-theme="dark"] .form-panel input, html[data-theme="dark"] .form-panel select, html[data-theme="dark"] .form-panel textarea { background:var(--admin-surface-soft); border-color:var(--admin-line-strong); color:var(--admin-text); }
+    html[data-theme="dark"] .add-presentacion-btn { background:var(--admin-surface-soft); border-color:var(--admin-line-strong); color:var(--admin-accent); }
+    html[data-theme="dark"] .remove-presentacion-btn { background:var(--admin-surface-soft); border-color:var(--admin-line-strong); color:#fca5a5; }
+    :root[data-theme] .main-content .section-panel.add-product-page { background:var(--admin-surface)!important; color:var(--admin-text)!important; border-color:var(--admin-line)!important; box-shadow:var(--admin-shadow)!important; }
+    :root[data-theme] .main-content .add-product-page .section-header { background:transparent!important; border:0!important; box-shadow:none!important; }
+    :root[data-theme] .main-content .add-product-page .brand-icon { background:var(--admin-surface-raised); }
+    :root[data-theme] .main-content .add-product-page .summary-card,
+    :root[data-theme] .main-content .add-product-page .form-panel { background:var(--admin-surface-raised)!important; border-color:var(--admin-line)!important; color:var(--admin-text)!important; }
+    :root[data-theme] .main-content .add-product-page .summary-card h3,
+    :root[data-theme] .main-content .add-product-page .section-header h2,
+    :root[data-theme] .main-content .add-product-page .presentaciones-heading h3 { color:var(--admin-text)!important; }
+    :root[data-theme] .main-content .add-product-page .summary-card p,
+    :root[data-theme] .main-content .add-product-page .section-header p,
+    :root[data-theme] .main-content .add-product-page .presentaciones-heading p { color:var(--admin-muted)!important; }
+    :root[data-theme] .main-content .add-product-page .summary-list li,
+    :root[data-theme] .main-content .add-product-page .form-grid label { color:var(--admin-text)!important; }
+    :root[data-theme] .main-content .add-product-page .summary-badge { background:var(--admin-table-head); color:var(--admin-accent); }
+    :root[data-theme] .main-content .add-product-page .presentaciones-panel { background:var(--admin-surface)!important; border-color:var(--admin-line)!important; box-shadow:var(--admin-shadow)!important; }
+    :root[data-theme] .main-content .add-product-page .presentaciones-table th { background:var(--admin-table-head)!important; color:var(--admin-text)!important; border-color:var(--admin-line-strong)!important; }
+    :root[data-theme] .main-content .add-product-page .presentaciones-table td { border-color:var(--admin-line)!important; }
+    :root[data-theme] .main-content .add-product-page .form-panel input,
+    :root[data-theme] .main-content .add-product-page .form-panel select,
+    :root[data-theme] .main-content .add-product-page .form-panel textarea { background:var(--admin-surface-soft)!important; border-color:var(--admin-line-strong)!important; color:var(--admin-text)!important; }
+    :root[data-theme] .main-content .add-product-page .form-panel input:focus,
+    :root[data-theme] .main-content .add-product-page .form-panel select:focus,
+    :root[data-theme] .main-content .add-product-page .form-panel textarea:focus { border-color:var(--admin-accent)!important; box-shadow:0 0 0 3px color-mix(in srgb, var(--admin-accent) 22%, transparent)!important; }
+    :root[data-theme] .main-content .add-product-page .btn-primary { background:var(--admin-accent)!important; color:#fff!important; box-shadow:none!important; }
+    :root[data-theme] .main-content .add-product-page .btn-primary:hover { filter:brightness(1.08); }
+    :root[data-theme] .main-content .add-product-page .btn-secondary { background:var(--admin-surface-soft)!important; color:var(--admin-text)!important; border-color:var(--admin-line-strong)!important; }
+    :root[data-theme] .main-content .add-product-page .add-presentacion-btn { background:var(--admin-surface-soft)!important; border-color:var(--admin-line-strong)!important; color:var(--admin-accent)!important; }
+    :root[data-theme] .main-content .add-product-page .form-actions-top { justify-content:space-between; margin:0 0 22px; padding-bottom:18px; border-bottom:1px solid var(--admin-line); }
+    @media (max-width:680px) { .main-content .add-product-page .form-actions-top { flex-direction:column-reverse; align-items:stretch; } }
+    </style>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var form = document.getElementById('productForm');
+        var addButton = document.getElementById('addPresentacionBtn');
+        var body = document.getElementById('presentacionesBody');
+        var hidden = document.getElementById('presentacionesJson');
+        if (!form || !addButton || !body) return;
+
+        function createRow() {
+            var row = document.createElement('tr');
+            row.className = 'presentacion-row';
+            row.innerHTML = '<td><select name="presentacion_nombre[]" required><option value="">Selecciona una presentación</option><option value="Unidad">Unidad</option><option value="Caja">Caja</option><option value="Paquete">Paquete</option><option value="Bulto">Bulto</option><option value="Docena">Docena</option><option value="Rollo">Rollo</option></select></td>' +
+                '<td><input type="number" step="0.01" min="0" name="presentacion_factor[]" value="1" placeholder="Ej: 12" required></td>' +
+                '<td><select name="presentacion_unidad[]" required><option value="">Selecciona una unidad</option><option value="Piezas">Piezas</option><option value="Unidades">Unidades</option><option value="Kilogramos">Kilogramos</option><option value="Litros">Litros</option><option value="Metros">Metros</option><option value="Rollos">Rollos</option></select></td>' +
+                '<td class="presentacion-action-cell"><button type="button" class="remove-presentacion-btn" title="Eliminar presentación" aria-label="Eliminar presentación"><span class="material-symbols-outlined">delete</span></button></td>';
+            return row;
+        }
+
+        addButton.addEventListener('click', function () {
+            body.appendChild(createRow());
+        });
+
+        document.addEventListener('click', function (event) {
+            var button = event.target.closest('.remove-presentacion-btn');
+            if (!button) return;
+            var row = button.closest('.presentacion-row');
+            if (row) row.remove();
+        });
+
+        form.addEventListener('submit', function () {
+            if (!hidden) return;
+            hidden.value = JSON.stringify(Array.from(body.querySelectorAll('.presentacion-row')).map(function (row) {
+                return {
+                    type: row.querySelector('[name="presentacion_nombre[]"]').value.trim(),
+                    factor: row.querySelector('[name="presentacion_factor[]"]').value,
+                    unit: row.querySelector('[name="presentacion_unidad[]"]').value.trim()
+                };
+            }));
+        });
+    });
+    </script>
+</section>
+{% endblock %}
+
+{% block help_content %}
+<div>
+    <h4>Ayuda: Actualizar producto</h4>
+    <p>Edita los datos del producto y administra sus presentaciones de venta.</p>
+</div>
+{% endblock %}

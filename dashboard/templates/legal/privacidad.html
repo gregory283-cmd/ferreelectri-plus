@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Política de privacidad | FerreElectri PLUS{% endblock %}
+{% block body_class %}theme-dark legal-document-page{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/legal.css' %}">
+<main class="legal-page">
+  <nav class="legal-nav" aria-label="Documentos legales">
+    <a href="#datos">Datos tratados</a>
+    <a href="#uso">Finalidades</a>
+    <a href="#resguardo">Resguardo</a>
+    <a href="#cookies">Cookies</a>
+    <a href="#derechos">Tus opciones</a>
+    <a href="{% url 'condiciones_servicio' %}">Términos y condiciones</a>
+  </nav>
+  <article class="legal-copy">
+    <span class="legal-eyebrow">Información legal</span>
+    <h1>Política de privacidad</h1>
+    <p class="legal-updated">Vigente desde el 4 de octubre de 2026</p>
+    <p class="legal-intro">FerreElectri PLUS utiliza los datos necesarios para administrar cuentas, preparar pedidos, coordinar entregas y revisar pagos. Esta página explica qué información puede tratarse y para qué.</p>
+
+    <section id="datos">
+      <h2>1. Datos que podemos recibir</h2>
+      <ul>
+        <li>Datos de identidad y contacto: nombre, correo, teléfono, cédula o RIF y dirección de entrega o fiscal.</li>
+        <li>Datos de operación: productos, cantidades, pedidos, facturas, método de pago, banco de origen, cédula del pagador y número de referencia.</li>
+        <li>Cuando se utiliza un método manual, la imagen del comprobante que adjunta el cliente.</li>
+        <li>Datos técnicos necesarios para seguridad y funcionamiento, como identificadores de sesión, protección CSRF y preferencia visual del sitio.</li>
+      </ul>
+    </section>
+
+    <section id="uso">
+      <h2>2. Cómo utilizamos la información</h2>
+      <p>Los datos se utilizan para gestionar la cuenta, validar disponibilidad, preparar pedidos, coordinar entrega, revisar comprobantes, atender consultas, emitir facturas después de aprobar un pago y proteger el sistema contra accesos o transacciones no autorizados.</p>
+      <p>Los comprobantes manuales son revisados por personal autorizado. La imagen puede ayudar a la revisión, pero no constituye por sí misma una confirmación bancaria.</p>
+    </section>
+
+    <section id="resguardo">
+      <h2>3. Acceso, almacenamiento y conservación</h2>
+      <p>Los datos de pago y las imágenes de comprobantes no se publican en el catálogo. Los comprobantes se almacenan en un espacio privado y la descarga requiere acceso administrativo autorizado.</p>
+      <p>El acceso se limita a las personas que necesitan atender la operación. La información se conserva durante el tiempo necesario para gestionar pedidos, pagos, soporte, seguridad y obligaciones legales o contables aplicables.</p>
+      <p>Cuando el pago se procesa mediante un proveedor externo, dicho proveedor puede tratar la información necesaria bajo sus propios términos y avisos de privacidad.</p>
+    </section>
+
+    <section id="cookies">
+      <h2>4. Cookies y almacenamiento local</h2>
+      <p>Utilizamos cookies necesarias para mantener la sesión y proteger los formularios. El sitio también puede guardar localmente preferencias de visualización y la elección sobre cookies. Actualmente no activamos cookies de analítica ni publicidad.</p>
+      <p>Puedes cambiar tu elección en cualquier momento desde el pie de página.</p>
+      <button type="button" class="legal-contact js-open-cookie-preferences">Revisar preferencias de cookies</button>
+    </section>
+
+    <section id="derechos">
+      <h2>5. Solicitudes sobre tus datos</h2>
+      <p>Puedes solicitar acceso o corrección de tus datos escribiendo desde el correo asociado a tu cuenta a <a class="legal-contact" href="mailto:ferreelectriplus@gmail.com">ferreelectriplus@gmail.com</a>. Para proteger la cuenta, podríamos pedir información razonable para verificar tu identidad. Algunos registros de pedidos, pagos o facturas pueden conservarse cuando exista una obligación legal o contable.</p>
+      <p>Si tienes dudas sobre esta política, también puedes llamar al <a class="legal-contact" href="tel:+584247362445">+58 424-7362445</a>.</p>
+    </section>
+
+    <section id="cambios">
+      <h2>6. Actualizaciones</h2>
+      <p>Esta política puede actualizarse cuando cambien las funciones del sitio o los requisitos aplicables. La fecha de vigencia se actualizará en esta página.</p>
+    </section>
+  </article>
+</main>
+{% endblock %}

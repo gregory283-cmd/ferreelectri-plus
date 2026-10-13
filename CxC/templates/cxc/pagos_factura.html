@@ -1,0 +1,173 @@
+{% extends "base/pan_con_queso.html" %}
+{% load static %}
+
+{% block help_content %}
+Pagos por factura (CxC). Anula/revierte pagos desde aquí.
+{% endblock %}
+
+{% block arroz_con_pollo %}
+<div class="glass-panel">
+  <style>
+    .pagos-summary-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 18px;
+      justify-content: space-between;
+      align-items: stretch;
+      margin-bottom: 40px;
+    }
+    .pagos-summary-row .summary-card-modern {
+      flex: 1 1 calc(33.333% - 12px);
+      max-width: calc(33.333% - 12px);
+      min-width: 240px;
+    }
+    @media (max-width: 1050px) {
+      .pagos-summary-row .summary-card-modern {
+        flex: 1 1 calc(50% - 12px);
+        max-width: calc(50% - 12px);
+      }
+    }
+    @media (max-width: 720px) {
+      .pagos-summary-row .summary-card-modern {
+        flex: 1 1 100%;
+        max-width: 100%;
+      }
+    }
+    .revert-payment-button {
+      padding: 10px 16px !important;
+      font-size: 0.98rem !important;
+      background: rgba(255,255,255,0.9) !important;
+      color: #01243f !important;
+      border: 1px solid rgba(0,178,255,0.25) !important;
+      box-shadow: 0 4px 16px rgba(0,178,255,0.08) !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 10px !important;
+      border-radius: 14px !important;
+      transition: transform 180ms ease, background 180ms ease, box-shadow 180ms ease, color 180ms ease;
+    }
+    .revert-payment-button:hover,
+    .revert-payment-button:focus {
+      background: rgba(0,178,255,0.16) !important;
+      color: #01243f !important;
+      box-shadow: 0 10px 26px rgba(0,178,255,0.16) !important;
+      transform: translateY(-1px);
+    }
+  </style>
+  <div class="header" style="display:flex; justify-content:space-between; gap:14px; align-items:flex-start;">
+    <div>
+      <h2 style="margin:0; color:#01243f; font-weight:900; display:flex; align-items:center; gap:10px;">
+        <i class="fa-solid fa-receipt"></i> Pagos de la Factura #{{ cuenta.factura.numero }}
+      </h2>
+      <p style="margin:6px 0 0 0; color:#1976d2; font-weight:800;">
+        Cliente: {{ cuenta.cliente.cedula }} • Estado CxC: {{ cuenta.estado }}
+      </p>
+    </div>
+
+    <div style="display:flex; gap:12px; flex-wrap:wrap; justify-content:flex-end;">
+      <a class="btn-modern" style="background:#fff; color:#01243f; border:1px solid rgba(0,178,255,.25); box-shadow:none;"
+         href="{% url 'listar_cxc' %}">
+        <i class="fa-solid fa-arrow-left"></i> CxC
+      </a>
+
+      {% if cuenta.estado == 'anulada' %}
+        <form method="post" action="{% url 'reactivar_factura_cxc' cuenta.factura.numero %}" style="margin:0;">
+          {% csrf_token %}
+          <button class="btn-modern" type="submit" style="border:none;">
+            <i class="fa-solid fa-rotate-right"></i> Reactivar venta
+          </button>
+        </form>
+      {% else %}
+        <a class="btn-modern"
+           href="{% url 'registrar_pago_form' cuenta.factura.numero %}">
+          <i class="fa-solid fa-plus"></i> Registrar pago
+        </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="summary-modern-row pagos-summary-row" style="margin-top:16px; margin-bottom:22px;">
+    <div class="summary-card-modern" style="cursor:default; min-width: unset;">
+      <span class="icon material-symbols-outlined ani-scale-in" style="background:#e6f7ff;">attach_money</span>
+      <div class="info">
+        <h5 style="margin:0;">{{ total }}</h5>
+        <small><span class="material-symbols-outlined ani-rotate-in">payments</span> Total</small>
+      </div>
+    </div>
+    <div class="summary-card-modern" style="cursor:default; min-width: unset; flex: 1 1 220px; max-width: 420px;">
+      <span class="icon material-symbols-outlined ani-scale-in" style="background:#e6f7ff;">monetization_on</span>
+      <div class="info">
+        <h5 style="margin:0;">{{ pagado }}</h5>
+        <small><span class="material-symbols-outlined ani-rotate-in">paid</span> Pagado</small>
+      </div>
+    </div>
+    <div class="summary-card-modern" style="cursor:default; min-width: unset; flex: 1 1 220px; max-width: 420px;">
+      <span class="icon material-symbols-outlined ani-scale-in" style="background:#e6f7ff; color:#1976d2;">money_off</span>
+      <div class="info">
+        <h5 style="margin:0; color:#1976d2;">{{ pendiente }}</h5>
+        <small><span class="material-symbols-outlined ani-rotate-in">schedule</span> Pendiente</small>
+      </div>
+    </div>
+  </div>
+
+  <div class="table-glass" style="margin-bottom:0;">
+    <table style="margin:0;">
+      <thead>
+        <tr>
+          <th>Método</th>
+          <th class="right">Monto</th>
+          <th>Referencia</th>
+          <th>Banco</th>
+          <th>Fecha</th>
+          <th>Estado</th>
+          <th style="width: 220px;">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in pagos %}
+        <tr>
+          <td><b>{{ p.get_metodo_display }}</b></td>
+          <td class="right"><b>{{ p.monto }}</b></td>
+          <td>{{ p.referencia }}</td>
+          <td>{{ p.banco }}</td>
+          <td>{{ p.fecha_pago|date:"d/m/Y" }}</td>
+          <td>
+            {% if p.estado == "registrado" %}
+              <span class="badge" style="background: rgba(67,233,123,.14); color:#1b7a34; border:1px solid rgba(67,233,123,.28); padding:6px 12px; border-radius:999px; font-weight:900;">
+                registrado
+              </span>
+            {% else %}
+              <span class="badge" style="background: rgba(211,47,47,.12); color:#b71c1c; border:1px solid rgba(211,47,47,.22); padding:6px 12px; border-radius:999px; font-weight:900;">
+                anulado
+              </span>
+            {% endif %}
+          </td>
+          <td>
+            <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+              {% if p.estado == "registrado" and cuenta.estado == "activa" %}
+                <form method="post" action="{% url 'anular_pago' p.id %}" style="margin:0;">
+                  {% csrf_token %}
+                  <input type="hidden" name="motivo" value="Anulado desde CxC" />
+                  <button class="btn-modern revert-payment-button" type="submit"
+                          onclick="return confirm('¿Anular/revertir este pago?')">
+                    <i class="fa-solid fa-rotate-left"></i> Anular
+                  </button>
+                </form>
+              {% else %}
+                <span style="display:inline-flex; align-items:center; padding:10px 16px; border-radius:14px; border:1px solid rgba(0,178,255,.18); background:rgba(255,255,255,.12); opacity:.65; font-weight:900;">
+                  —
+                </span>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7" class="muted">No hay pagos registrados para esta factura.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

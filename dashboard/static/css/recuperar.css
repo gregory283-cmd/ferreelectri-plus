@@ -1,0 +1,115 @@
+body {
+    background: radial-gradient(circle at top, #07101d 0%, #020814 45%, #01050d 100%);
+    color: #eef6ff;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: 170px 52%; /* Center the form horizontally and adjust vertical margin */
+    padding: 70px;
+    border: none; /* Removed border */
+    border-radius: 16px; /* Reduced border-radius for a more minimalistic look */
+    width: fit-content; /* Adjust width to fit content */
+    background: rgba(10,18,34,0.96); /* Dark form background */
+    border: 1px solid rgba(255,255,255,0.12);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35); /* Sutil sombra para darle profundidad */
+}
+.logo {
+    position: absolute;
+    top: 30%;
+    left: 250px;
+    animation: fade-ino 1.5s ease-in-out;
+    font-size: 500px;
+}
+@keyframes fade-ino {
+    0% {
+        opacity: 0;
+        transform: translatey(-1000px);
+    }
+    100% {
+        opacity: 1;
+        transform: translatey(0);
+    }
+}
+
+p {
+    margin-top: 20px;
+    text-align: center;
+    font-size: 18px; /* Increased font size */
+    color: #388E3C; /* Darker green color for text */
+    font-family: 'Helvetica', sans-serif; /* Changed font family */
+    font-weight: bold; /* Made text bold */
+}
+
+input {
+    width: 350px;
+    height: 30px;
+    margin: 10px;
+    padding: 10px;
+    border: 1px solid rgba(255,255,255,0.14);
+    border-radius: 8px;
+    font-size: 16px;
+    background: rgba(255,255,255,0.05);
+    color: #eef6ff;
+}
+
+h1 {
+    text-align: center;
+    margin-top: 10px;
+    font-size: 40px; /* Slightly larger for emphasis */
+    color: #2E7D32; /* Consistent green tone */
+    font-weight: bold;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2); /* Subtle shadow for depth */
+    letter-spacing: 1.5px; /* Slightly increased spacing for elegance */
+    animation: fade-in 1.5s ease-in-out; /* Smooth fade-in effect */
+}
+
+@keyframes fade-in {
+    0% {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+p {
+    margin-top: 20px;
+    text-align: center;
+}
+p a {
+    text-decoration: none;
+}
+p a:hover {
+    color: #1acab0;
+    text-shadow: #1acab0 0px 0px 3px;
+    font-size: 25px;
+    transition: 0.75s ease;
+}
+.boton {
+    width: 300px;
+    height: 40px;
+    margin: 10px;
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    background-color: #388E3C; /* Green background */
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s, box-shadow 0.3s; /* Smooth transition for hover effects */
+    display: inline-block; /* Display buttons inline */
+}
+
+.boton:hover {
+    background-color: #ff8000; /* Darker green on hover */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    font-size: 20px;
+    transition: 0.75s ease;
+}

@@ -1,0 +1,129 @@
+{% extends 'base/pan_con_queso.html' %}
+{% block arroz_con_pollo %}
+<style>
+  .shipment-queue { --sq-surface:var(--admin-surface,#fff); --sq-raised:var(--admin-surface-raised,#f8fafc); --sq-soft:var(--admin-surface-soft,#edf2f7); --sq-line:var(--admin-line,#d7e0ea); --sq-strong:var(--admin-line-strong,#c3cfdd); --sq-ink:var(--admin-text,#17263c); --sq-muted:var(--admin-muted,#5f6f83); --sq-accent:#167c80; --sq-accent-soft:#e7f2f1; --sq-table-head:#e6eef2; --sq-table-alt:#f6f8f9; --sq-table-hover:#edf5f4; --sq-review-bg:#fff3dc; --sq-review-ink:#92520d; --sq-state-bg:#e8f4ef; --sq-state-ink:#23664f; width:100%; max-width:1480px; min-width:0; min-height:calc(100vh - 125px); margin:0 auto; padding:8px 0 28px; color:var(--sq-ink); font-family:'DM Sans','Segoe UI',sans-serif; }
+  :root[data-theme="dark"] .shipment-queue { --sq-accent:#55c4bd; --sq-accent-soft:#17383d; --sq-table-head:#1b3040; --sq-table-alt:#142536; --sq-table-hover:#1a3540; --sq-review-bg:#3a2d1a; --sq-review-ink:#ffd18a; --sq-state-bg:#17382f; --sq-state-ink:#a8dec9; }
+  .main-content .shipment-queue > header.shipment-heading { background:transparent !important; box-shadow:none !important; }
+  .shipment-heading { display:flex; align-items:flex-end; justify-content:space-between; gap:20px; margin:0 0 19px; border-bottom:1px solid var(--sq-line); padding:0 0 17px; }
+  .shipment-heading-copy { min-width:0; }
+  .shipment-eyebrow { display:flex; align-items:center; gap:7px; margin:0 0 7px; color:var(--sq-accent); font-size:10px; font-weight:800; letter-spacing:.11em; }
+  .shipment-heading h1 { margin:0; color:var(--sq-ink); font:800 26px/1.18 'DM Sans','Segoe UI',sans-serif; }
+  .shipment-heading p { margin:6px 0 0; color:var(--sq-muted); font-size:13px; }
+  .shipment-heading-actions { display:flex; flex-wrap:wrap; gap:8px; }
+  .shipment-heading-actions a { display:inline-flex; min-height:38px; align-items:center; gap:7px; border:1px solid var(--sq-strong); border-radius:6px; background:var(--sq-surface); color:var(--sq-ink); padding:0 12px; font-size:12px; font-weight:700; text-decoration:none; }
+  .shipment-heading-actions a:hover { border-color:var(--sq-accent); color:var(--sq-accent); }
+  .shipment-stats { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); margin-bottom:18px; border:1px solid var(--sq-line); border-radius:7px; background:var(--sq-surface); overflow:hidden; }
+  .shipment-stat { min-width:0; padding:13px 15px; border-right:1px solid var(--sq-line); }
+  .shipment-stat:last-child { border-right:0; }
+  .shipment-stat-label { display:flex; align-items:center; gap:7px; color:var(--sq-muted); font-size:10px; font-weight:800; letter-spacing:.045em; text-transform:uppercase; }
+  .shipment-stat-label .material-symbols-outlined { color:var(--sq-accent); font-size:17px; }
+  .shipment-stat strong { display:block; margin-top:6px; color:var(--sq-ink); font:800 21px/1 'DM Sans','Segoe UI',sans-serif; font-variant-numeric:tabular-nums; }
+  .shipment-toolbar { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:11px; margin-bottom:11px; }
+  .shipment-filters { display:flex; flex-wrap:wrap; gap:5px; }
+  .shipment-filter { display:inline-flex; min-height:34px; align-items:center; gap:6px; border:1px solid transparent; border-radius:5px; background:transparent; color:var(--sq-muted); padding:0 10px; font-size:11px; font-weight:700; text-decoration:none; }
+  .shipment-filter:hover { background:var(--sq-soft); color:var(--sq-ink); }
+  .shipment-filter.active { border-color:var(--sq-line); background:var(--sq-accent-soft); color:var(--sq-accent); }
+  .shipment-filter-count { display:inline-grid; min-width:18px; height:18px; place-items:center; border-radius:4px; background:var(--sq-review-bg); color:var(--sq-review-ink); padding:0 4px; font-size:10px; }
+  .shipment-search { display:flex; width:min(100%,390px); min-height:39px; align-items:center; gap:8px; border:1px solid var(--sq-strong); border-radius:6px; background:var(--sq-surface); padding:4px 5px 4px 10px; }
+  .shipment-search:focus-within { border-color:var(--sq-accent); box-shadow:0 0 0 3px rgba(70,170,170,.18); }
+  .shipment-search > .material-symbols-outlined { color:var(--sq-muted); font-size:18px; }
+  .main-content .shipment-queue .shipment-search input { min-width:0; min-height:29px; flex:1; border:0 !important; outline:0; background:transparent !important; color:var(--sq-ink) !important; padding:0 2px; font-size:12px; box-shadow:none !important; }
+  .main-content .shipment-queue .shipment-search input::placeholder { color:var(--sq-muted) !important; opacity:.9; }
+  .shipment-search button { display:inline-flex; min-height:30px; align-items:center; gap:5px; border:0; border-radius:4px; background:var(--sq-accent); color:#fff; padding:0 10px; font-size:11px; font-weight:800; cursor:pointer; }
+  .shipment-search button:hover { filter:brightness(1.08); }
+  .shipment-result-note { margin:0 0 7px; color:var(--sq-muted); font-size:11px; }
+  .shipment-table-wrap { overflow-x:auto; border:1px solid var(--sq-line); border-radius:7px; background:var(--sq-surface); }
+  .shipment-table { width:100%; min-width:1020px; border-collapse:collapse; }
+  .main-content .shipment-queue .shipment-table thead th { border-bottom:1px solid var(--sq-line) !important; background:var(--sq-table-head) !important; color:var(--sq-ink) !important; padding:11px 12px; text-align:left; font-size:9px; font-weight:800; letter-spacing:.055em; text-transform:uppercase; white-space:nowrap; }
+  .main-content .shipment-queue .shipment-table tbody tr { background:var(--sq-surface) !important; box-shadow:none !important; transform:none !important; }
+  .main-content .shipment-queue .shipment-table tbody tr:nth-child(even) { background:var(--sq-table-alt) !important; }
+  .main-content .shipment-queue .shipment-table tbody tr:hover { background:var(--sq-table-hover) !important; }
+  .shipment-table td { border-bottom:1px solid var(--sq-line); color:var(--sq-ink); padding:12px; vertical-align:middle; font-size:12px; }
+  .shipment-table tr:last-child td { border-bottom:0; }
+  .shipment-table tr.needs-review td:first-child { box-shadow:inset 3px 0 0 #d39237; }
+  .shipment-primary { display:block; color:var(--sq-accent); font-weight:800; text-decoration:none; font-variant-numeric:tabular-nums; }
+  .shipment-primary:hover { text-decoration:underline; }
+  .shipment-secondary { display:block; max-width:260px; margin-top:3px; color:var(--sq-muted); font-size:11px; overflow-wrap:anywhere; }
+  .shipment-status { display:inline-flex; align-items:center; min-height:24px; border:1px solid transparent; border-radius:4px; background:var(--sq-accent-soft); color:var(--sq-accent); padding:3px 7px; font-size:10px; font-weight:800; white-space:nowrap; }
+  .shipment-status.status-despachado, .shipment-status.status-en_transito, .shipment-status.status-entregado { background:var(--sq-state-bg); color:var(--sq-state-ink); }
+  .shipment-status.status-incidencia { background:var(--sq-review-bg); color:var(--sq-review-ink); }
+  .shipment-review { display:inline-flex; align-items:center; gap:4px; border-radius:4px; background:var(--sq-review-bg); color:var(--sq-review-ink); padding:4px 6px; font-size:10px; font-weight:800; white-space:nowrap; }
+  .shipment-open { display:inline-flex; min-height:32px; align-items:center; gap:5px; border:1px solid var(--sq-strong); border-radius:5px; background:var(--sq-surface); color:var(--sq-ink); padding:0 9px; font-size:11px; font-weight:700; text-decoration:none; white-space:nowrap; }
+  .shipment-open:hover { border-color:var(--sq-accent); color:var(--sq-accent); }
+  .shipment-empty { padding:42px 20px !important; color:var(--sq-muted) !important; text-align:center; }
+  .shipment-pagination { display:flex; align-items:center; justify-content:center; gap:12px; margin-top:13px; color:var(--sq-muted); font-size:11px; }
+  .shipment-pagination a { display:inline-flex; min-height:32px; align-items:center; border:1px solid var(--sq-line); border-radius:5px; background:var(--sq-surface); color:var(--sq-ink); padding:0 10px; text-decoration:none; font-weight:700; }
+  .shipment-pagination a:hover { border-color:var(--sq-accent); color:var(--sq-accent); }
+  @media (max-width:980px) { .shipment-stats { grid-template-columns:repeat(3,minmax(0,1fr)); } .shipment-stat:nth-child(3) { border-right:0; } .shipment-stat:nth-child(n+4) { border-top:1px solid var(--sq-line); } }
+  @media (max-width:650px) { .shipment-queue { min-height:calc(100vh - 100px); padding:4px 0 22px; } .shipment-heading { align-items:flex-start; flex-direction:column; gap:12px; } .shipment-heading h1 { font-size:23px; } .shipment-stats { grid-template-columns:repeat(2,minmax(0,1fr)); } .shipment-stat { border-top:1px solid var(--sq-line); } .shipment-stat:nth-child(odd) { border-right:1px solid var(--sq-line); } .shipment-stat:nth-child(even) { border-right:0; } .shipment-stat:last-child { grid-column:1/-1; border-right:0; } .shipment-toolbar { align-items:stretch; flex-direction:column; } .shipment-search { width:100%; } }
+</style>
+
+<main class="shipment-queue">
+  <header class="shipment-heading">
+    <div class="shipment-heading-copy">
+      <p class="shipment-eyebrow">ABASTECIMIENTO · DESPACHOS</p>
+      <h1>Cola de envíos</h1>
+      <p>Prepara pedidos confirmados, revisa direcciones e inspecciona incidencias.</p>
+    </div>
+    <div class="shipment-heading-actions">
+      <a href="{% url 'dashboard' %}"><span class="material-symbols-outlined" aria-hidden="true">arrow_back</span> Panel</a>
+    </div>
+  </header>
+
+  <section class="shipment-stats" aria-label="Resumen de envíos">
+    <div class="shipment-stat"><span class="shipment-stat-label"><span class="material-symbols-outlined" aria-hidden="true">local_shipping</span>Envíos</span><strong>{{ stats.total }}</strong></div>
+    <div class="shipment-stat"><span class="shipment-stat-label"><span class="material-symbols-outlined" aria-hidden="true">fact_check</span>Revisión</span><strong>{{ stats.revision }}</strong></div>
+    <div class="shipment-stat"><span class="shipment-stat-label"><span class="material-symbols-outlined" aria-hidden="true">inventory_2</span>Preparación</span><strong>{{ stats.preparacion }}</strong></div>
+    <div class="shipment-stat"><span class="shipment-stat-label"><span class="material-symbols-outlined" aria-hidden="true">route</span>En tránsito</span><strong>{{ stats.transito }}</strong></div>
+    <div class="shipment-stat"><span class="shipment-stat-label"><span class="material-symbols-outlined" aria-hidden="true">warning</span>Incidencias</span><strong>{{ stats.incidencias }}</strong></div>
+  </section>
+
+  <div class="shipment-toolbar">
+    <nav class="shipment-filters" aria-label="Filtrar envíos">
+      <a class="shipment-filter{% if not estado %} active{% endif %}" href="{% url 'admin_envios' %}?q={{ query|urlencode }}">Todos</a>
+      <a class="shipment-filter{% if estado == 'revision' %} active{% endif %}" href="{% url 'admin_envios' %}?estado=revision&amp;q={{ query|urlencode }}">Revisión <span class="shipment-filter-count">{{ stats.revision }}</span></a>
+      <a class="shipment-filter{% if estado == 'preparacion' %} active{% endif %}" href="{% url 'admin_envios' %}?estado=preparacion&amp;q={{ query|urlencode }}">Preparación</a>
+      <a class="shipment-filter{% if estado == 'en_transito' %} active{% endif %}" href="{% url 'admin_envios' %}?estado=en_transito&amp;q={{ query|urlencode }}">En tránsito</a>
+      <a class="shipment-filter{% if estado == 'incidencia' %} active{% endif %}" href="{% url 'admin_envios' %}?estado=incidencia&amp;q={{ query|urlencode }}">Incidencias</a>
+    </nav>
+    <form class="shipment-search" method="get" action="{% url 'admin_envios' %}" role="search">
+      {% if estado %}<input type="hidden" name="estado" value="{{ estado }}">{% endif %}
+      <label class="sr-only" for="shipment-query">Buscar envío</label>
+      <span class="material-symbols-outlined" aria-hidden="true">search</span>
+      <input id="shipment-query" type="search" name="q" value="{{ query }}" placeholder="Pedido, cliente, transportista o guía">
+      <button type="submit">Buscar</button>
+    </form>
+  </div>
+
+  <p class="shipment-result-note">{{ envios.paginator.count }} envío{{ envios.paginator.count|pluralize }} en esta cola</p>
+  <div class="shipment-table-wrap">
+    <table class="shipment-table">
+      <thead><tr><th>Pedido</th><th>Destinatario</th><th>Dirección</th><th>Estado</th><th>Transportista / guía</th><th>Revisión</th><th>Actualizado</th><th></th></tr></thead>
+      <tbody>
+        {% for envio in envios %}
+        <tr{% if envio.requiere_revision or envio.pedido.requiere_revision_operativa %} class="needs-review"{% endif %}>
+          <td><a class="shipment-primary" href="{% url 'detalle_pedido_admin' envio.pedido_id %}">#{{ envio.pedido_id }}</a><span class="shipment-secondary">{{ envio.pedido.fecha_creacion|date:'d/m/Y H:i' }}</span></td>
+          <td><strong>{{ envio.nombre_destinatario|default:envio.pedido.cliente.get_full_name|default:envio.pedido.cliente.username }}</strong><span class="shipment-secondary">{{ envio.pedido.cliente.email }}</span></td>
+          <td><span class="shipment-secondary">{{ envio.direccion|default:'Dirección pendiente de verificar'|truncatechars:72 }}</span></td>
+          <td><span class="shipment-status status-{{ envio.estado }}">{{ envio.get_estado_display }}</span></td>
+          <td><strong>{{ envio.transportista|default:'Sin asignar' }}</strong><span class="shipment-secondary">{{ envio.numero_guia|default:'Sin guía' }}</span></td>
+          <td>{% if envio.requiere_revision or envio.pedido.requiere_revision_operativa %}<span class="shipment-review"><span class="material-symbols-outlined" aria-hidden="true">priority_high</span> Revisar</span>{% else %}<span class="shipment-secondary">Completa</span>{% endif %}</td>
+          <td>{{ envio.actualizado|date:'d/m/Y H:i' }}</td>
+          <td><a class="shipment-open" href="{% url 'detalle_pedido_admin' envio.pedido_id %}"><span class="material-symbols-outlined" aria-hidden="true">open_in_new</span> Abrir</a></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="8" class="shipment-empty">No hay envíos que coincidan con estos filtros.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if envios.paginator.num_pages > 1 %}
+  <nav class="shipment-pagination" aria-label="Paginación de envíos">
+    {% if envios.has_previous %}<a href="?estado={{ estado|urlencode }}&amp;q={{ query|urlencode }}&amp;page={{ envios.previous_page_number }}">Anterior</a>{% endif %}
+    <span>Página {{ envios.number }} de {{ envios.paginator.num_pages }}</span>
+    {% if envios.has_next %}<a href="?estado={{ estado|urlencode }}&amp;q={{ query|urlencode }}&amp;page={{ envios.next_page_number }}">Siguiente</a>{% endif %}
+  </nav>
+  {% endif %}
+</main>
+{% endblock %}

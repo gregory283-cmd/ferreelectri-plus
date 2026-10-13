@@ -1,0 +1,400 @@
+{% extends 'base/pan_con_queso.html' %}
+
+{% block arroz_con_pollo %}
+<section id="agregar-proveedor" class="section-panel form-card">
+    <div class="section-header">
+        <div>
+            <h2>Agregar proveedor</h2>
+            <p>Registra a tu proveedor con datos claros y validación en tiempo real.</p>
+        </div>
+    </div>
+
+    <div class="form-layout">
+        <aside class="summary-card">
+            <div class="summary-badge">
+                <span class="material-symbols-outlined">storefront</span>
+            </div>
+            <h3>Flujo moderno de proveedores</h3>
+            <p>Llena los datos del proveedor para mantener el control sobre compras, pagos y stock.</p>
+            <ul class="summary-list">
+                <li><span class="material-symbols-outlined">shield</span> Validación instantánea</li>
+                <li><span class="material-symbols-outlined">support_agent</span> Gestión centralizada</li>
+                <li><span class="material-symbols-outlined">inventory_2</span> Datos listos para uso</li>
+            </ul>
+        </aside>
+
+        <div class="form-panel">
+            <form id="proveedorForm" action="" method="POST" autocomplete="off">
+                {% csrf_token %}
+                <div id="form-error" class="alert-banner alert-error" style="display:none;"></div>
+
+                <div class="form-grid grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="form-field">
+                        <label for="prefijo_cedula" class="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white mb-2"><span class="field-icon material-symbols-outlined">badge</span> Tipo de RIF</label>
+                        <select name="prefijo_cedula" id="prefijo_cedula" class="provider-control w-full px-4 py-3 bg-gray-50 dark:bg-slate-900/50 border border-gray-200 dark:border-slate-700 rounded-xl text-sm outline-none transition-all duration-200 shadow-sm focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-blue-600/50 focus:border-blue-600 focus:shadow-md">
+                            <option value="V">V</option>
+                            <option value="E">E</option>
+                            <option value="J">J</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label for="cedula" class="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white mb-2"><span class="field-icon material-symbols-outlined">fingerprint</span> RIF / Cédula</label>
+                        <input type="text" name="cedula" id="cedula" maxlength="10" required inputmode="numeric" placeholder="Solo números" class="provider-control w-full px-4 py-3 bg-gray-50 dark:bg-slate-900/50 border border-gray-200 dark:border-slate-700 rounded-xl text-sm outline-none transition-all duration-200 shadow-sm focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-blue-600/50 focus:border-blue-600 focus:shadow-md">
+                    </div>
+                    <div class="form-field">
+                        <label for="nombre" class="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white mb-2"><span class="field-icon material-symbols-outlined">store</span> Nombre</label>
+                        <input type="text" name="nombre" id="nombre" maxlength="50" required placeholder="Nombre del proveedor" class="provider-control w-full px-4 py-3 bg-gray-50 dark:bg-slate-900/50 border border-gray-200 dark:border-slate-700 rounded-xl text-sm outline-none transition-all duration-200 shadow-sm focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-blue-600/50 focus:border-blue-600 focus:shadow-md">
+                    </div>
+                    <div class="form-field">
+                        <label for="telefono" class="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white mb-2"><span class="field-icon material-symbols-outlined">phone</span> Teléfono</label>
+                        <input type="text" name="telefono" id="telefono" maxlength="11" required inputmode="numeric" placeholder="Ej: 04141234567" class="provider-control w-full px-4 py-3 bg-gray-50 dark:bg-slate-900/50 border border-gray-200 dark:border-slate-700 rounded-xl text-sm outline-none transition-all duration-200 shadow-sm focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-blue-600/50 focus:border-blue-600 focus:shadow-md">
+                    </div>
+                    <div class="form-field md:col-span-2">
+                        <label for="correo" class="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white mb-2"><span class="field-icon material-symbols-outlined">mail</span> Correo electrónico</label>
+                        <input type="email" name="correo" id="correo" required placeholder="ejemplo@dominio.com" class="provider-control w-full px-4 py-3 bg-gray-50 dark:bg-slate-900/50 border border-gray-200 dark:border-slate-700 rounded-xl text-sm outline-none transition-all duration-200 shadow-sm focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-blue-600/50 focus:border-blue-600 focus:shadow-md">
+                    </div>
+                    <div class="form-field md:col-span-2 full-width">
+                        <label for="direccion" class="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white mb-2"><span class="field-icon material-symbols-outlined">location_on</span> Dirección</label>
+                        <textarea name="direccion" id="direccion" rows="4" maxlength="200" required placeholder="Dirección del proveedor" class="provider-control w-full px-4 py-3 bg-gray-50 dark:bg-slate-900/50 border border-gray-200 dark:border-slate-700 rounded-xl text-sm outline-none transition-all duration-200 shadow-sm focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-blue-600/50 focus:border-blue-600 focus:shadow-md"></textarea>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary bg-blue-950 hover:bg-blue-900 text-white font-bold rounded-xl px-8 py-3 shadow-lg hover:shadow-blue-900/30 transition-all duration-300 w-full md:w-auto flex items-center justify-center gap-2"><span class="material-symbols-outlined">save</span> Guardar proveedor</button>
+                    <a href="{% url 'Proveedor' %}" class="btn btn-secondary"><span class="material-symbols-outlined">arrow_back</span> Volver a proveedores</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <style>
+    #agregar-proveedor {
+        padding: 32px;
+        background: #ffffff;
+        border-radius: 28px;
+        box-shadow: 0 30px 80px rgba(15, 23, 42, 0.12);
+        border: 1px solid rgba(148, 163, 184, 0.2);
+    }
+    .section-header h2 {
+        margin: 0 0 10px;
+        color: #0f172a;
+        font-size: clamp(2rem, 2.3vw, 2.5rem);
+    }
+    .section-header p {
+        margin: 0;
+        max-width: 720px;
+        color: #475569;
+        line-height: 1.75;
+    }
+    .form-layout {
+        display: grid;
+        grid-template-columns: 300px minmax(360px, 1fr);
+        gap: 24px;
+        margin-top: 28px;
+    }
+    .summary-card,
+    .form-panel {
+        background: #f8fafc;
+        border: 1px solid rgba(148, 163, 184, 0.35);
+        border-radius: 24px;
+        padding: 24px;
+    }
+    .summary-card {
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+    }
+    .summary-badge {
+        width: 64px;
+        height: 64px;
+        display: grid;
+        place-items: center;
+        border-radius: 20px;
+        background: rgba(59, 130, 246, 0.12);
+        color: #2563eb;
+    }
+    .summary-card h3 {
+        margin: 0;
+        color: #0f172a;
+        font-size: 1.25rem;
+    }
+    .summary-card p {
+        margin: 0;
+        color: #475569;
+    }
+    .summary-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: grid;
+        gap: 12px;
+    }
+    .summary-list li {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: #334155;
+        font-weight: 600;
+    }
+    .summary-list .material-symbols-outlined {
+        color: #1d4ed8;
+        font-size: 1.15rem;
+    }
+    .alert-banner {
+        margin-bottom: 18px;
+        padding: 14px 16px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 600;
+        color: #0f172a;
+        background: #fef3c7;
+        border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+    .alert-error {
+        background: #fee2e2;
+        border: 1px solid rgba(239, 68, 68, 0.2);
+        color: #991b1b;
+    }
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 24px;
+    }
+    .form-field {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+    }
+    .form-field.full-width {
+        grid-column: 1 / -1;
+    }
+    .form-field.md\:col-span-2 {
+        grid-column: 1 / -1;
+    }
+    .form-field label {
+        margin-bottom: 8px;
+        color: #334155;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.96rem;
+    }
+    .field-icon {
+        color: #2563eb;
+        font-size: 1.15rem;
+        min-width: 1.5rem;
+    }
+    .form-field input,
+    .form-field select,
+    .form-field textarea {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        outline: none;
+        font-size: 0.875rem;
+        color: #0f172a;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+        transition: background-color 300ms, border-color 300ms, box-shadow 300ms;
+    }
+    .form-field input:focus,
+    .form-field select:focus,
+    .form-field textarea:focus {
+        background: #fff;
+        border-color: transparent;
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2), 0 0 0 2px #2563eb;
+    }
+    .form-field textarea { resize: vertical; min-height: 110px; }
+    .form-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        justify-content: flex-end;
+        margin-top: 24px;
+    }
+    .btn { display: inline-flex; align-items: center; gap: 8px; border-radius: 12px; font-weight: 700; padding: 12px 22px; text-decoration: none; border: none; cursor: pointer; }
+    .btn-primary { background: #172554; color: #fff; box-shadow: 0 10px 20px rgba(23, 37, 84, 0.25); }
+    .btn-primary:hover { background: #1e3a8a; transform: translateY(-2px); box-shadow: 0 12px 24px rgba(30, 58, 138, 0.3); }
+    .btn-secondary { background: #fff; color: #334155; border: 1px solid #e5e7eb; }
+    .btn-secondary:hover { background: #f9fafb; }
+    @media (max-width: 900px) {
+        .form-layout { grid-template-columns: 1fr; }
+        .form-panel { padding: 20px; }
+        #agregar-proveedor { padding: 22px; }
+    }
+
+    /* =========================
+       PREMIUM: overrides modo oscuro (addProveedor)
+       ========================= */
+    html[data-theme="dark"] #agregar-proveedor{
+        background: rgba(11,18,32,0.96) !important;
+        border-color: rgba(148,163,184,0.18) !important;
+        box-shadow: 0 30px 80px rgba(0,0,0,0.45) !important;
+        color: rgba(255,255,255,0.94) !important;
+    }
+    html[data-theme="dark"] .section-header h2{
+        color: rgba(233,247,255,0.98) !important;
+    }
+    html[data-theme="dark"] .section-header p{
+        color: rgba(203,213,225,0.80) !important;
+    }
+    html[data-theme="dark"] .summary-card,
+    html[data-theme="dark"] .form-panel{
+        background: rgba(255,255,255,0.05) !important;
+        border-color: rgba(148,163,184,0.18) !important;
+    }
+    html[data-theme="dark"] .summary-badge{
+        background: rgba(0,178,255,0.14) !important;
+        color: rgba(56,189,248,0.95) !important;
+    }
+    html[data-theme="dark"] .summary-card h3,
+    html[data-theme="dark"] .summary-list li{
+        color: rgba(233,247,255,0.95) !important;
+    }
+    html[data-theme="dark"] .summary-list .material-symbols-outlined{
+        color: rgba(0,178,255,0.95) !important;
+    }
+    html[data-theme="dark"] .alert-banner{
+        color: rgba(255,255,255,0.95) !important;
+        background: rgba(239,68,68,0.12) !important;
+        border-color: rgba(239,68,68,0.22) !important;
+    }
+    html[data-theme="dark"] .alert-error{
+        background: rgba(239,68,68,0.14) !important;
+        border-color: rgba(239,68,68,0.22) !important;
+        color: rgba(255,197,197,0.98) !important;
+    }
+
+    html[data-theme="dark"] .form-field label{
+        color: rgba(233,247,255,0.92) !important;
+    }
+    html[data-theme="dark"] .form-field input,
+    html[data-theme="dark"] .form-field select,
+    html[data-theme="dark"] .form-field textarea{
+        background: rgba(15,23,42,0.5) !important;
+        border-color: rgba(148,163,184,0.35) !important;
+        color: rgba(233,247,255,0.95) !important;
+    }
+    html[data-theme="dark"] .form-field input:focus,
+    html[data-theme="dark"] .form-field select:focus,
+    html[data-theme="dark"] .form-field textarea:focus{
+        background: rgba(30,41,59,0.95) !important;
+        border-color: transparent !important;
+        box-shadow: 0 4px 12px rgba(37,99,235,0.2), 0 0 0 2px #2563eb !important;
+    }
+
+    html[data-theme="dark"] .btn{
+        box-shadow: 0 18px 70px rgba(0,0,0,0.22) !important;
+    }
+    html[data-theme="dark"] .btn-primary{
+        background: #172554 !important;
+        color: #fff !important;
+    }
+    html[data-theme="dark"] .btn-primary:hover{
+        background: #1e3a8a !important;
+    }
+    html[data-theme="dark"] .btn-secondary{
+        background: rgba(255,255,255,0.07) !important;
+        color: rgba(233,247,255,0.95) !important;
+        border: 1px solid rgba(148,163,184,0.18) !important;
+    }
+    html[data-theme="dark"] .btn-secondary:hover{
+        background: rgba(255,255,255,0.10) !important;
+    }
+
+</style>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+    window.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('proveedorForm');
+        const cedula = document.getElementById('cedula');
+        const prefijo = document.getElementById('prefijo_cedula');
+        const nombre = document.getElementById('nombre');
+        const telefono = document.getElementById('telefono');
+        const correo = document.getElementById('correo');
+        const direccion = document.getElementById('direccion');
+        const alertBox = document.getElementById('form-error');
+
+        const showError = message => {
+            alertBox.textContent = message;
+            alertBox.style.display = 'flex';
+            setTimeout(() => { alertBox.style.display = 'none'; }, 5000);
+        };
+
+        cedula.addEventListener('input', () => {
+            cedula.value = cedula.value.replace(/\D/g, '');
+        });
+
+        telefono.addEventListener('input', () => {
+            telefono.value = telefono.value.replace(/\D/g, '');
+        });
+
+        form.addEventListener('submit', function(e) {
+            const fullCedula = prefijo.value + cedula.value;
+            if (!/^\d{6,10}$/.test(cedula.value)) {
+                e.preventDefault();
+                showError('La cédula debe tener entre 6 y 10 dígitos numéricos.');
+                cedula.focus();
+                return;
+            }
+            if (!nombre.value.trim()) {
+                e.preventDefault();
+                showError('Por favor ingresa el nombre del proveedor.');
+                nombre.focus();
+                return;
+            }
+            if (!/^0(2|4)\d{9}$/.test(telefono.value)) {
+                e.preventDefault();
+                showError('El teléfono debe tener 11 dígitos y comenzar con 02 o 04.');
+                telefono.focus();
+                return;
+            }
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo.value.trim())) {
+                e.preventDefault();
+                showError('Por favor ingresa un correo válido.');
+                correo.focus();
+                return;
+            }
+            if (!direccion.value.trim() || direccion.value.trim().length < 5) {
+                e.preventDefault();
+                showError('Por favor ingresa una dirección válida (mínimo 5 caracteres).');
+                direccion.focus();
+                return;
+            }
+
+            if (Array.isArray(window.cedulasRegistradas) && window.cedulasRegistradas.includes(fullCedula)) {
+                e.preventDefault();
+                Swal.fire({ icon: 'error', title: 'Cédula ya registrada', text: 'Ya existe un proveedor con esa cédula/RIF.' });
+                cedula.focus();
+                return;
+            }
+            if (Array.isArray(window.correosRegistrados) && window.correosRegistrados.includes(correo.value.trim().toLowerCase())) {
+                e.preventDefault();
+                Swal.fire({ icon: 'error', title: 'Correo ya registrado', text: 'Ya existe un proveedor con ese correo electrónico.' });
+                correo.focus();
+                return;
+            }
+        });
+    });
+
+    window.cedulasRegistradas = {{ cedulas_registradas|safe }};
+    window.correosRegistrados = {{ correos_registrados|safe }};
+    </script>
+{% endblock %}
+
+{% block help_content %}
+<div>
+    <h4>Ayuda: Agregar proveedor</h4>
+    <p>Registra un proveedor nuevo con su RIF, contacto y dirección.</p>
+    <ul>
+        <li>El formulario valida que el teléfono sea un número válido de 11 dígitos.</li>
+        <li>Verifica que el correo y la cédula/RIF no estén duplicados antes de guardar.</li>
+        <li>Puedes volver a la lista de proveedores con el botón correspondiente.</li>
+    </ul>
+</div>
+{% endblock %}

@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Factura</title>
+    <style>
+        @page { size:A4 portrait; margin:12mm; }
+        :root {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            color: #0f172a;
+            background: #ffffff;
+        }
+        body { margin: 0; padding: 0; }
+        .w-full { width: 100%; }
+        .max-w-7xl { max-width: 1180px; }
+        .mx-auto { margin-left: auto; margin-right: auto; }
+        .px-4 { padding-left: 1rem; padding-right: 1rem; }
+        .sm\:px-6 { padding-left: 1.5rem; padding-right: 1.5rem; }
+        .lg\:px-8 { padding-left: 2rem; padding-right: 2rem; }
+        .py-8 { padding-top: 2rem; padding-bottom: 2rem; }
+        .bg-slate-50 { background: #f8fafc; }
+        .bg-slate-900 { background: #0f172a; }
+        .bg-slate-800 { background: #1e293b; }
+        .bg-white { background: #ffffff; }
+        .border { border: 1px solid #e2e8f0; }
+        .border-slate-200 { border-color: #e2e8f0; }
+        .border-b { border-bottom: 1px solid #e2e8f0; }
+        .border-b-2 { border-bottom: 2px solid #cbd5e1; }
+        .rounded-xl { border-radius: 0.75rem; }
+        .rounded-2xl { border-radius: 1rem; }
+        .shadow-sm { box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08); }
+        .text-slate-900 { color: #0f172a; }
+        .text-slate-700 { color: #334155; }
+        .text-slate-600 { color: #475569; }
+        .text-slate-500 { color: #64748b; }
+        .text-slate-100 { color: #f8fafc; }
+        .text-white { color: #ffffff; }
+        .text-sm { font-size: 0.875rem; }
+        .text-base { font-size: 1rem; }
+        .text-lg { font-size: 1.125rem; }
+        .text-xl { font-size: 1.25rem; }
+        .font-semibold { font-weight: 600; }
+        .font-bold { font-weight: 700; }
+        .uppercase { text-transform: uppercase; letter-spacing: 0.08em; }
+        .tracking-tight { letter-spacing: -0.01em; }
+        .tracking-wide { letter-spacing: 0.02em; }
+        .leading-tight { line-height: 1.25; }
+        .leading-relaxed { line-height: 1.7; }
+        .flex { display: flex; }
+        .items-center { align-items: center; }
+        .justify-between { justify-content: space-between; }
+        .gap-4 { gap: 1rem; }
+        .grid { display: grid; }
+        .sm\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .table-auto { width: 100%; border-collapse: collapse; }
+        .min-w-full { min-width: 100%; }
+        .text-right { text-align: right; }
+        .text-left { text-align: left; }
+        .px-3 { padding-left: 0.75rem; padding-right: 0.75rem; }
+        .py-3 { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+        .p-4 { padding: 1rem; }
+        .px-6 { padding-left: 1.5rem; padding-right: 1.5rem; }
+        .py-6 { padding-top: 1.5rem; padding-bottom: 1.5rem; }
+        .mt-4 { margin-top: 1rem; }
+        .mt-6 { margin-top: 1.5rem; }
+        .mb-2 { margin-bottom: 0.5rem; }
+        .mb-4 { margin-bottom: 1rem; }
+        .mb-6 { margin-bottom: 1.5rem; }
+        .ml-auto { margin-left: auto; }
+        .whitespace-pre-line { white-space: pre-line; }
+        .bg-[#334155] { background: #334155; }
+        .bg-[#1e293b] { background: #1e293b; }
+        .bg-[#f1f5f9] { background: #f1f5f9; }
+        .bg-[#f8fafc] { background: #f8fafc; }
+        .border-opacity-80 { border-color: rgba(226,232,240,0.8); }
+        table th, table td { padding: 0.875rem 0.75rem; }
+        .table thead th { background: #1e293b; color: #ffffff; font-weight: 700; text-align: left; }
+        .table tbody tr { border-bottom: 1px solid #e2e8f0; }
+        .table tbody tr:nth-child(even) { background: #f8fafc; }
+        .table tbody td { color: #334155; }
+        .border-b { border-bottom: 1px solid #e2e8f0; }
+    </style>
+    {% include 'reportes/pdf_design.html' %}
+</head>
+<body class="bg-white text-slate-900">
+    <div class="w-full px-4 sm:px-6 lg:px-8 py-8">
+        <div class="max-w-7xl mx-auto bg-white rounded-2xl shadow-sm overflow-hidden border border-slate-200">
+            <div class="w-full px-6 py-6">
+                <div class="flex items-center justify-between gap-4">
+                    <div class="flex items-center gap-4">
+                        <img src="{{ logo_url }}" alt="FERREELECTRI PLUS" class="brand-logo">
+                        <div>
+                            <p class="text-slate-500 uppercase tracking-wide text-sm mb-2">FerreElectri Plus</p>
+                            <h1 class="text-2xl font-semibold tracking-tight">Factura de Venta</h1>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-sm text-slate-500 mb-2">Fecha de emisión</p>
+                        <p class="text-base font-semibold text-slate-900">{{ factura.fecha|date:"d/m/Y H:i" }}</p>
+                        <span class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-700 mt-3">{{ factura.get_estado_display }}</span>
+                    </div>
+                </div>
+
+                <div class="grid sm:grid-cols-2 gap-4 mt-6">
+                    <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 shadow-sm">
+                        <p class="text-sm uppercase tracking-wide text-slate-500 mb-3">Cliente</p>
+                        <div class="space-y-3 text-slate-700">
+                            <div class="flex justify-between"><span>Nombre</span><span class="font-semibold text-slate-900">{{ factura.cliente.nombre }} {{ factura.cliente.apellido }}</span></div>
+                            <div class="flex justify-between"><span>Cédula / RIF</span><span class="font-semibold text-slate-900">{{ factura.cliente.cedula }}</span></div>
+                            <div class="flex justify-between"><span>Correo</span><span class="font-semibold text-slate-900">{{ factura.cliente.email }}</span></div>
+                            <div class="flex justify-between"><span>Dirección</span><span class="text-right w-full whitespace-pre-line text-slate-900">{{ factura.cliente.direccion|default:"Sin dirección registrada" }}</span></div>
+                        </div>
+                    </div>
+                    <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 shadow-sm">
+                        <p class="text-sm uppercase tracking-wide text-slate-500 mb-3">Detalle</p>
+                        <div class="space-y-3 text-slate-700">
+                            <div class="flex justify-between"><span>Teléfono</span><span class="font-semibold text-slate-900">{{ factura.cliente.telefono|default:"-" }}</span></div>
+                            <div class="flex justify-between"><span>Vendedor</span><span class="font-semibold text-slate-900">{{ usuario.username|default:"-" }}</span></div>
+                            <div class="flex justify-between"><span>Forma de pago</span><span class="font-semibold text-slate-900">{{ factura.forma_pago|default:"-" }}</span></div>
+                            <div>
+                                <span class="text-slate-600">Observaciones</span>
+                                <p class="mt-2 text-slate-700">{{ factura.observaciones|default:"Sin observaciones." }}</p>
+                            </div>
+                            <div class="flex justify-between"><span>Factura</span><span class="font-semibold text-slate-900">#{{ factura.numero }}</span></div>
+                            <div class="flex justify-between"><span>Moneda</span><span class="font-semibold text-slate-900">{{ factura.moneda }}</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-8 overflow-hidden">
+                    <table class="table-auto min-w-full">
+                        <thead>
+                            <tr>
+                                <th class="px-3 py-3 text-slate-100 bg-slate-900 uppercase text-sm font-semibold">Código</th>
+                                <th class="px-3 py-3 text-slate-100 bg-slate-900 uppercase text-sm font-semibold">Descripción</th>
+                                <th class="px-3 py-3 text-slate-100 bg-slate-900 uppercase text-sm font-semibold text-right">Cant.</th>
+                                <th class="px-3 py-3 text-slate-100 bg-slate-900 uppercase text-sm font-semibold text-right">Precio</th>
+                                <th class="px-3 py-3 text-slate-100 bg-slate-900 uppercase text-sm font-semibold text-right">Descuento</th>
+                                <th class="px-3 py-3 text-slate-100 bg-slate-900 uppercase text-sm font-semibold text-right">IVA</th>
+                                <th class="px-3 py-3 text-slate-100 bg-slate-900 uppercase text-sm font-semibold text-right">Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for d in detalles %}
+                            <tr>
+                                <td class="border-b border-slate-200 px-3 py-4 text-slate-700">{{ d.Codigo|default:"-" }}</td>
+                                <td class="border-b border-slate-200 px-3 py-4 text-slate-700">{{ d.Nombre|default:"-" }}</td>
+                                <td class="border-b border-slate-200 px-3 py-4 text-right text-slate-700">{{ d.cantidad|floatformat:2 }}</td>
+                                <td class="border-b border-slate-200 px-3 py-4 text-right text-slate-700">{{ factura.moneda }} {{ d.precio|floatformat:2 }}</td>
+                                <td class="border-b border-slate-200 px-3 py-4 text-right text-slate-700">{{ factura.moneda }} {{ d.importe_descuento|floatformat:2 }}</td>
+                                <td class="border-b border-slate-200 px-3 py-4 text-right text-slate-700">{{ factura.moneda }} {{ d.monto_iva|floatformat:2 }}</td>
+                                <td class="border-b border-slate-200 px-3 py-4 text-right text-slate-700">{{ factura.moneda }} {{ d.subtotal|floatformat:2 }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="7" class="border-b border-slate-200 px-3 py-4 text-slate-700">No hay productos registrados en esta factura.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="mt-6 grid justify-end">
+                    <div class="w-full sm:w-2/3 lg:w-1/2 space-y-2">
+                        <div class="flex justify-between text-slate-600"><span>Descuentos</span><span>{{ factura.moneda }} {{ descuento_total|floatformat:2 }}</span></div>
+                        <div class="flex justify-between text-slate-600"><span>Base imponible</span><span>{{ factura.moneda }} {{ base_imponible|floatformat:2 }}</span></div>
+                        <div class="flex justify-between text-slate-600"><span>IVA total</span><span>{{ factura.moneda }} {{ iva_total|floatformat:2 }}</span></div>
+                        <div class="flex justify-between text-slate-900 font-bold text-lg border-t border-slate-200 pt-4"><span>Total</span><span>{{ factura.moneda }} {{ total|floatformat:2 }}</span></div>
+                    </div>
+                </div>
+
+                <div class="mt-10 text-sm text-slate-500 text-right">
+                    <p>Gracias por confiar en FerreElectri Plus.</p>
+                    <p>Documento generado el {{ now|date:"d/m/Y" }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

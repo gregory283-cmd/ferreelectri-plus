@@ -1,0 +1,494 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Recuperar acceso</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet"/>
+    <style>
+        :root {
+            --mainGrad1: #00b2ff;
+            --mainGrad2: #0071d1;
+            --color-blanco: #fff;
+            --color-azul: #009de0;
+            --color-azul2: #1976d2;
+            --color-azul-suave: #e3f5ff;
+            --color-gris: #fafdff;
+            --color-shadow: 0 6px 24px rgba(0,178,255,0.11);
+            --color-seguro: #4fd1c5;
+            --color-benef: #eaf3fb;
+            --color-benef-icon: #00b2ff;
+            --color-benef-text: #eaf3fb;
+            --color-titulo: #fff;
+            --color-titulo-shadow: 0 3px 9px rgba(0,88,152,.18);
+            --color-texto: #e3f5ff;
+            --color-texto-sec: #b6e6ff;
+            --color-form-label: #1976d2;
+            --color-form-btn: #00b2ff;
+            --color-form-btn2: #009de0;
+            --color-form-shadow: 0 7px 32px #56befa13,0 2px 5px #0092df19;
+        }
+        html, body {
+            padding:0; margin:0;
+            background:linear-gradient(90deg, var(--mainGrad1), var(--mainGrad2));
+            width:100vw;min-height:100vh;
+            font-family: 'Segoe UI', Arial, Helvetica, sans-serif;
+        }
+        .recuperar-hero {
+            display:flex;position:relative;
+            height: 100vh;
+        }
+        .recTrozo-left {
+            width:41vw;min-width:340px;
+            background: linear-gradient(135deg, var(--mainGrad1) 0%, var(--mainGrad2) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            text-align: center;
+            position: relative;
+            height: 100vh; /* Asegura altura completa */
+        }
+        .logo {position:absolute; left:3.5vw; top:25px; width:145px;z-index:10;}
+        .content-box {
+            max-width: 480px;
+            /* margin: 10vh auto 0 auto;  <-- QUITA ESTA LÍNEA */
+            width: 100%;
+            display: flex; 
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            animation: fadeSlideIn 1s cubic-bezier(0.7,0.04,0.33,0.97);
+            height: 100%; /* Centrado vertical */
+        }
+        @keyframes fadeSlideIn {
+            from{opacity:0; transform:translateY(-40px);}
+            to{opacity:1; transform:translateY(0);}
+        }
+        .icon-shield {
+            background: rgba(255,255,255,.12);
+            border-radius:50%;display:block;
+            width:78px;height:78px;
+            margin-bottom:19px;
+            display:flex;align-items:center;justify-content:center;
+            font-size:2.85em;color:var(--mainGrad1);
+            box-shadow:0 2px 10px #74dcfd39;
+            animation:bounceIn 1.3s infinite alternate;
+        }
+        @keyframes bounceIn {
+            0%{ transform:scale(1);}
+            70%{transform:scale(1.12);}
+            100%{transform:scale(.9);}
+        }
+        .recuperar-titulo {
+            margin:12px auto 6px auto;
+            color:var(--color-titulo);
+            display: flex;
+            align-items: center;justify-content: center;
+            gap:.8em;
+            font-weight:900;letter-spacing:1px;
+            font-size:2.16em;
+            text-shadow: var(--color-titulo-shadow);
+            animation: fadeDelayed .7s .12s both;
+        }
+        @keyframes fadeDelayed{ from{opacity:0; transform: translateX(-42px);} to{opacity:1;transform: none; } }
+        
+        .texto-info {
+            margin-top:18px;margin-bottom:18px;max-width:410px;
+            margin-left:auto;margin-right:auto;
+            color:var(--color-texto); font-size:1.18em;
+            font-weight: 500;
+        }
+        #benef-benef{
+            background:rgba(60,148,231,0.14);
+            color:var(--color-texto);
+            width:230px;padding:10px 18px 10px 15px;
+            border-radius:16px;margin:12px auto 0 auto; font-size:1.09em;
+            display:inline-flex; align-items:center;gap:13px;
+            box-shadow:inset 0 1px 4px 0 #57c6fd0a, 0 3px 12px 0 #009ff736;transition:.2s;
+            font-weight: 600;
+        }
+        .cat-lista {
+            margin:23px 0 7px 0;display:flex;flex-direction:column;gap:0.74em;width:fit-content; margin-left:auto;margin-right:auto;}
+        .benef-item {
+            text-align:left;display:flex;align-items:center;gap:11px;font-size: 1.11em;
+            color:var(--color-benef-text);
+            background:rgba(255,255,255,0.07);
+            border-radius:12px;
+            padding:7px 18px 7px 12px;
+            margin-bottom:2px;
+            font-weight:500;
+            box-shadow:0 1px 4px #009de01a;
+        }
+        .benef-item i {
+            color:var(--color-benef-icon);
+            font-size:1.13em;
+        }
+        .saf { color:var(--color-seguro);}
+        @media (max-width: 1200px){
+            .recuperar-hero {flex-direction:column;height:auto;}
+            .recTrozo-left, .recTrozo-right{width:100vw;min-height:290px;}
+            .logo{left:20vw;top:18px;}
+            .cat-lista,#benef-benef{margin-left:0;margin-right:0;}
+        }
+
+        /****** PANEL FORMULARIO **************/
+        .recTrozo-right {
+            width: 59vw;
+            background: #fff;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            min-height: 100vh;
+            padding: 0;
+            animation: fadeSlideRight 1.3s 0.1s both;
+            overflow: hidden;
+        }
+
+        .recuperar-card {
+            background: rgba(255,255,255,0.97);
+            border-radius: 22px;
+            box-shadow: 0 8px 40px #00b2ff22, 0 1.5px 8px #009de033;
+            padding: 48px 44px 38px 44px;
+            max-width: 410px;
+            width: 100%;
+            margin: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            backdrop-filter: blur(12px) saturate(1.2);
+            border: 1.5px solid #e3f5ff;
+            gap: 22px; /* Espacio entre bloques principales */
+        }
+
+        .recuperar-card-icon {
+            margin-bottom: 0;
+            margin-top: 0;
+            background: linear-gradient(135deg, #00b2ff 60%, #1976d2 100%);
+            color: #fff;
+            border-radius: 50%;
+            width: 78px;
+            height: 78px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.8em;
+            box-shadow: 0 4px 18px #00b2ff33;
+            animation: bounceIn 1.3s infinite alternate;
+            border: 3px solid #e3f5ff;
+        }
+
+        .recuperar-card-title {
+            font-size: 2em;
+            font-weight: 900;
+            color: #1976d2;
+            margin-bottom: 0;
+            margin-top: 0;
+            text-align: center;
+            letter-spacing: 1px;
+            font-family: 'Segoe UI', Arial, Helvetica, sans-serif;
+            text-shadow: 0 2px 12px #00b2ff11;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            line-height: 1.1;
+        }
+        .icon-title {
+            background: linear-gradient(135deg, #00b2ff 60%, #1976d2 100%);
+            color: #fff;
+            border-radius: 50%;
+            width: 54px;
+            height: 54px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3em;
+            box-shadow: 0 2px 8px #00b2ff22;
+            border: 2px solid #fff;
+            transition: transform .2s;
+        }
+        .recuperar-card-sub {
+            color: #009de0;
+            font-size: 1.1em;
+            margin-bottom: 0;
+            margin-top: 0;
+            text-align: left;
+            max-width: 340px;
+            font-weight: 500;
+            line-height: 1.7;
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            justify-content: flex-start;
+        }
+
+        .icon-info {
+            color: #1976d2;
+            font-size: 1.25em;
+            margin-top: 4px;
+            flex-shrink: 0;
+            background: #e3f5ff;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 1px 6px #00b2ff11;
+            border: 2px solid #e3f5ff;
+        }
+
+        .resaltado {
+            color: #1976d2;
+            font-weight: bold;
+            background: #e3f5ff;
+            border-radius: 6px;
+            padding: 2px 7px;
+            margin: 0 2px;
+        }
+
+        .recuperar-form {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 18px; /* Espacio entre input y botón */
+            margin-top: 8px;
+        }
+
+        .input-group {
+            position: relative;
+            width: 100%;
+            margin-bottom: 0;
+        }
+        .input-icon {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #009de0;
+            font-size: 1.25em;
+            opacity: 0.95;
+            pointer-events: none;
+            transition: color .2s;
+        }
+        .frm-inpbox {
+            width: 100%;
+            padding: 15px 14px 15px 50px;
+            border-radius: 13px;
+            border: none;
+            background: rgba(227,245,255,0.97);
+            font-size: 1.15em;
+            transition: box-shadow .3s, background .3s;
+            outline: none;
+            box-sizing: border-box;
+            box-shadow: 0 0 0 1.5px #c6dffc;
+            color: #1976d2;
+            font-weight: 500;
+            letter-spacing: 0.2px;
+        }
+        .frm-inpbox:focus {
+            box-shadow: 0 0 0 2.5px #00b2ffcc;
+            background: #fff;
+        }
+        .frm-inpbox:focus ~ .input-icon {
+            color: #1976d2;
+        }
+
+        .recup-send {
+            width: 100%;
+            background: linear-gradient(90deg,#00b2ff,#009de0);
+            color: #fff;
+            font-weight: 800;
+            padding: 16px;
+            border: none;
+            border-radius: 14px;
+            font-size: 1.18em;
+            box-shadow: 0 2px 16px #00b2ff22;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 0;
+            transition: background .3s, transform .2s, box-shadow .3s;
+            letter-spacing: 0.5px;
+            position: relative;
+            overflow: hidden;
+        }
+        .recup-send:hover, .recup-send:focus {
+            background: linear-gradient(90deg,#009de0,#00b2ff);
+            transform: scale(1.04);
+            box-shadow: 0 8px 32px #00b2ff33;
+        }
+
+        @media (max-width: 900px) {
+            .recuperar-card {
+                padding: 24px 8vw;
+                max-width: 98vw;
+            }
+        }
+        @media (max-width: 600px) {
+            .recuperar-card { 
+                padding: 14px 2vw 10px 2vw; 
+                max-width: 98vw; 
+            }
+            .recuperar-card-title { font-size: 1.15em;}
+            .frm-inpbox { font-size: 1em; padding: 11px 12px 11px 40px;}
+        }
+    </style>
+</head>
+
+<body>
+<div class="recuperar-hero">
+    <div class="recTrozo-left">
+        <img src="{% static 'img/logo.png' %}" alt="logo" class="logo">
+        <div class="content-box">
+            <div class="icon-shield"><i class="fa-solid fa-shield-halved"></i></div>
+            <div class="recuperar-titulo"><i class="fa-solid fa-unlock-keyhole"></i>¡Recupera tu acceso!</div>
+            <div class="texto-info" id="info-principal"><i class="fa-solid fa-info-circle saf"></i>&nbsp;
+                Ingresa tu correo para obtener el código y restablecer tu acceso a <b>FerreElectri Plus</b>.
+            </div>
+            <div id="benef-benef"><i class="fa-regular fa-circle-check saf"></i> Proceso 100% seguro y confidencial</div>
+            <div class="cat-lista">
+                <div class="benef-item"><i class="fa-solid fa-shield"></i> Seguridad avanzada</div>
+                <div class="benef-item"><i class="fa-solid fa-rocket"></i>  Rápido y fácil </div> 
+                <div class="benef-item"><i class="fa-solid fa-headset"></i> Soporte personalizado </div>
+            </div>
+        </div>
+    </div>
+    <div class="recTrozo-right">
+        <div class="recuperar-card">
+            <div class="recuperar-card-icon">
+                <i class="fa-solid fa-envelope-circle-check"></i>
+            </div>
+            <div class="recuperar-card-title">
+                <span class="icon-title"><i class="fa-solid fa-unlock-keyhole"></i></span>
+                Recupera tu acceso
+            </div>
+            <div class="recuperar-card-sub">
+                <div class="icon-info"><i class="fa-solid fa-info-circle"></i></div>
+                <div>
+                    Ingresa tu <span class="resaltado">correo electrónico</span><br>
+                    y te enviaremos un <span class="resaltado">código seguro</span> para restablecer tu cuenta.
+                </div>
+            </div>
+            <form method="post" action="{% url 'solicitar_recuperacion_admin' %}" class="recuperar-form">
+                {% csrf_token %}
+                <div class="input-group">
+                    <span class="input-icon"><i class="fa-regular fa-envelope"></i></span>
+                    <input class="frm-inpbox" type="email" name="email" id="rx-email" maxlength="65" autocomplete="username" required placeholder="ejemplo@correo.com">
+                </div>
+                <button class="recup-send" type="submit">
+                    <i class="fa-solid fa-paper-plane"></i> Enviar código
+                </button>
+            </form>
+            <div id="msg-confirm" class="msg-confirmacion"></div>
+        </div>
+    </div>
+</div>
+<script>
+    // animaciones, fade, slide on steps
+
+    function anim_pc(e) {
+        e.preventDefault();
+        const bloque1 = document.getElementById('parte-correodiv');
+        const bloque2 = document.getElementById('parte-chequediv');
+        if (!bloque1 || !bloque2) {
+            return;
+        }
+        bloque1.classList.add('fadeHiding');
+        setTimeout(() => {
+            bloque1.style.display = "none";
+            bloque2.style.display = 'flex';
+            setTimeout(() => {
+                bloque2.classList.add("fadeAppearing");
+                const rxCodigo = document.getElementById('rx-codigo');
+                if (rxCodigo && document.activeElement !== rxCodigo && typeof rxCodigo.focus === 'function') {
+                    rxCodigo.focus();
+                }
+            }, 65);
+        }, 400);
+    }
+
+    function fuerzaClav() {
+        var password = document.getElementById('xclave1').value;
+        var boxed = document.getElementById('ps_bar1');
+        boxed.classList.remove('str-weak','str-medium','str-very');
+        boxed.style.width = "0%";
+        if(!password||password.length<1){return}
+        let lvl = 0;
+        if(password.length >= 8) lvl++;
+        if(/[A-Z]/.test(password)) lvl++;
+        if(/[0-9]/.test(password)) lvl++;
+        if(/[^A-Za-z0-9]/.test(password)) lvl++;
+        if(lvl<=1){boxed.classList.add("str-weak");} else if(lvl==2||lvl==3){boxed.classList.add("str-medium");}else {boxed.classList.add("str-very");}
+    }
+
+    function valida_iguas(){
+        const alerta=document.getElementById('xalert');
+        let c1=document.getElementById('xclave1').value;
+        let c2=document.getElementById('xclave2').value;
+        alerta.style.opacity=c1&&c2?1:0;
+        if(c1&&c2&&c1!==c2){
+            alerta.innerHTML="Las contraseñas no coinciden";
+            alerta.style.color="#ff5252";
+        }else{
+            alerta.innerHTML=""; alerta.style.opacity=0;
+        }
+    }
+
+    const parteChequediv = document.getElementById('parte-chequediv');
+    if (parteChequediv) {
+        parteChequediv.addEventListener('submit', function(e) {
+            e.preventDefault();
+            let c1 = document.getElementById('xclave1').value.trim();
+            let c2 = document.getElementById('xclave2').value.trim();
+            let ps_del = document.getElementById('ps_bar1');
+            if (!c1 || !c2 || c1 !== c2) {
+                pctShow(false, "Corrige las contraseñas antes de continuar.");
+                return false;
+            }
+            pctShow(true, "¡Contraseña restablecida! 💚<br>Puedes iniciar sesión.");
+            setTimeout(() => location.reload(), 2300);
+        });
+    }
+    function pctShow(success, txt) {
+        let mc = document.getElementById('msg-confirm');
+        if (mc) {
+            mc.innerHTML = txt || "";
+            mc.style.opacity = 1;
+        }
+        if (parteChequediv) {
+            parteChequediv.classList.add("fadeHiding");
+        }
+        setTimeout(() => {
+            if (mc) mc.style.opacity = 0;
+        }, 2200);
+    }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    {% if error %}
+    Swal.fire({
+        icon: 'error',
+        title: 'Error en recuperación',
+        text: '{{ error|escapejs }}',
+        confirmButtonColor: '#1976d2'
+    });
+    {% endif %}
+    {% if codigo_enviado %}
+    Swal.fire({
+        icon: 'success',
+        title: '¡Código enviado!',
+        text: 'Revisa tu correo electrónico para continuar.',
+        confirmButtonColor: '#1976d2'
+    });
+    {% endif %}
+});
+</script>
+</body>
+</html>

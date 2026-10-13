@@ -1,0 +1,1184 @@
+{% load static %}
+{% load csp %}
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0b0f19">
+  <title>{% block title %}FerreElectri PLUS{% endblock %}</title>
+
+  <meta name="description" content="{% block meta_description %}FerreElectri PLUS: ingeniería industrial premium, productos, asesoría y atención personalizada.{% endblock %}">
+  <meta name="keywords" content="ferretería, electricidad, herramientas, construcción, FerreElectri PLUS">
+  <meta name="author" content="FerreElectri PLUS">
+  <meta property="og:title" content="{% block og_title %}FerreElectri PLUS{% endblock %}">
+  <meta property="og:description" content="{% block og_description %}Tu ferretería aliada para construir proyectos robustos y confiables.{% endblock %}">
+  <meta property="og:image" content="{% static 'img/logo.png' %}">
+  <meta property="og:type" content="website">
+
+  <script>
+    (() => {
+      let theme = 'dark';
+      try { theme = localStorage.getItem('fe-theme') === 'light' ? 'light' : 'dark'; } catch (error) {}
+      document.documentElement.dataset.theme = theme;
+      document.documentElement.classList.toggle('dark', theme === 'dark');
+    })();
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = {darkMode: 'class'};</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Syne:wght@600;700;800&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="icon" href="{% static 'img/logo.png' %}" type="image/png">
+  <link rel="stylesheet" href="{% static 'css/home.css' %}?v=20261011-recovery-email-v1">
+  <style>
+    @keyframes ai-eye-blink { 0%, 44%, 48%, 100% { transform: scaleY(1); } 46% { transform: scaleY(.08); } }
+    @keyframes ai-fab-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(59,130,246,.35), 0 20px 40px rgba(15,23,42,.25); } 50% { box-shadow: 0 0 0 10px rgba(59,130,246,0), 0 20px 40px rgba(15,23,42,.25); } }
+    @keyframes ai-guide-in { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+    .ai-fab-pulse { animation: ai-fab-pulse 2.6s ease-in-out infinite; }
+    .ai-avatar-eye { transform-box: fill-box; transform-origin: center; animation: ai-eye-blink 5s ease-in-out infinite; }
+    .ai-avatar-eye-right { animation-delay: .12s; }
+    .ai-guide-bubble { animation: ai-guide-in .25s ease-out; }
+    .admin-gate[hidden] { display: none; }
+    .admin-gate { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 20px; background: rgba(10, 18, 32, .68); backdrop-filter: blur(9px); }
+    .admin-gate-panel { width: min(100%, 430px); padding: 27px; border: 1px solid #d8e1ec; border-radius: 12px; background: #fff; color: #172033; box-shadow: 0 28px 90px rgba(9, 20, 38, .36); }
+    .admin-gate-topline { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; }
+    .admin-gate-kicker { display: flex; align-items: center; gap: 9px; margin: 0; color: #344054; font-size: .72rem; font-weight: 800; text-transform: uppercase; }
+    .admin-gate-kicker i { color: #f36c16; font-size: 1rem; }
+    .admin-gate-state { padding: 5px 8px; border: 1px solid #cfe9dc; border-radius: 4px; background: #f0faf4; color: #187345; font-size: .62rem; font-weight: 800; text-transform: uppercase; }
+    .admin-gate-panel h2 { margin: 0; font: 800 1.5rem/1.2 'Syne', sans-serif; }
+    .admin-gate-copy { margin: 8px 0 20px; color: #667085; font-size: .9rem; line-height: 1.55; }
+    .admin-gate-meter { display: flex; align-items: center; justify-content: space-between; margin: 0 0 7px; color: #667085; font-size: .74rem; font-weight: 700; }
+    .admin-gate-meter strong { color: #172033; font: 700 .84rem/1 'Space Grotesk', sans-serif; }
+    .admin-gate-track { height: 4px; overflow: hidden; background: #e8edf3; }
+    .admin-gate-track span { display: block; width: 100%; height: 100%; background: #f36c16; transform-origin: left; transition: transform .25s linear; }
+    .admin-gate-input { width: 100%; margin-top: 18px; padding: 12px 13px; border: 1px solid #cbd5e1; border-radius: 7px; color: #172033; background: #fff; outline: none; }
+    .admin-gate-input:focus { border-color: #2878ed; box-shadow: 0 0 0 3px rgba(40, 120, 237, .14); }
+    .admin-gate-input:disabled { background: #f2f4f7; }
+    .admin-gate-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 15px; }
+    .admin-gate-actions button { min-height: 41px; padding: 0 15px; border: 1px solid #d5dde8; border-radius: 7px; background: #fff; color: #344054; font-weight: 700; cursor: pointer; }
+    .admin-gate-actions .admin-gate-submit { border-color: #f36c16; background: #f36c16; color: #fff; }
+    .admin-gate-actions button:disabled { cursor: not-allowed; opacity: .55; }
+    .admin-gate-error { min-height: 1.25rem; margin: 10px 0 0; color: #b42318; font-size: .82rem; line-height: 1.45; }
+    .ai-glow-target {
+      box-shadow: 0 0 20px 5px rgba(59, 130, 246, 0.8) !important;
+      transform: scale(1.03) !important;
+      border: 2px solid #3b82f6 !important;
+      transition: all 0.4s ease-in-out !important;
+      z-index: 10 !important;
+    }
+    @media (prefers-reduced-motion: reduce) { .ai-fab-pulse, .ai-avatar-eye, .ai-guide-bubble { animation: none; } }
+  </style>
+  <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.1.1/model-viewer.min.js"></script>
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="{% block body_class %}theme-dark{% endblock %}">
+  <script>
+    (() => {
+      const isLight = document.documentElement.dataset.theme === 'light';
+      document.body.classList.toggle('theme-light', isLight);
+      document.body.classList.toggle('theme-dark', !isLight);
+    })();
+  </script>
+  <div class="site-shell">
+    <div class="noise-overlay" aria-hidden="true"></div>
+    <div class="theme-curtain" id="themeCurtain" aria-hidden="true"></div>
+
+    <header class="site-header bg-slate-950 border-none shadow-none">
+      <div class="nav-bar flex items-center justify-between gap-3 bg-slate-950 px-6 py-4 border-none shadow-none">
+        <a href="{% url 'index' %}" class="brand flex items-center gap-3" aria-label="FerreElectri PLUS">
+          <span id="logo-anim-wrapper" class="brand-logo-shell">
+            <img src="{% static 'img/logo.png' %}" alt="FerreElectri PLUS" class="brand-logo h-10 md:h-12 w-auto object-contain">
+          </span>
+        </a>
+
+        <nav class="nav-links flex items-center gap-4 ml-6 text-slate-800 dark:text-slate-200" id="navLinks" aria-label="Navegación principal">
+          <a href="{% url 'index' %}#inicio" class="nav-link is-active text-slate-800 hover:text-blue-600 dark:text-slate-200 dark:hover:text-white">Inicio</a>
+          <a href="{% url 'productos' %}?vista=catalogo#productos-grid" class="nav-link text-slate-800 hover:text-blue-600 dark:text-slate-200 dark:hover:text-white">Productos</a>
+          <form id="navSearchForm" class="nav-search ml-4" action="{% url 'productos' %}" method="get" role="search">
+            <i class="fa-solid fa-magnifying-glass text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"></i>
+            <input type="search" name="q" id="navSearchInput" placeholder="Buscar por código o nombre..." autocomplete="off" class="bg-transparent text-slate-900 placeholder-slate-400 dark:text-white">
+          </form>
+        </nav>
+
+        <div class="nav-actions flex items-center gap-3">
+          <button class="icon-btn" id="themeToggle" type="button" aria-label="Cambiar tema">
+            <i class="fa-solid fa-circle-half-stroke text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"></i>
+          </button>
+
+          <button class="icon-btn" id="searchToggle" data-search-toggle type="button" aria-label="Buscar productos">
+            <i class="fa-solid fa-magnifying-glass text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"></i>
+          </button>
+
+          <a href="{% url 'carrito' %}" id="nav-cart-icon" class="relative mr-2 p-2 text-slate-600 transition-colors hover:text-blue-600 dark:text-slate-400 dark:hover:text-white" aria-label="Abrir carrito">
+            <i class="fa-solid fa-cart-shopping text-lg" aria-hidden="true"></i>
+            <span id="cart-counter-badge" class="absolute right-0 top-0 inline-flex min-w-5 translate-x-1/4 -translate-y-1/4 items-center justify-center rounded-full bg-orange-500 px-1.5 py-0.5 text-[10px] font-bold leading-none text-white shadow-sm">{{ cantidad_carrito|default:"0" }}</span>
+          </a>
+
+          {% if request.user.is_authenticated %}
+              {% if request.user.is_staff %}
+                  <a href="{% url 'dashboard' %}" class="nav-link nav-link-primary hide-sm text-slate-800 hover:text-blue-600 dark:text-slate-200 dark:hover:text-white">Ir al Panel Administrativo</a>
+              {% else %}
+                  <a href="{% url 'panel_cliente' %}" class="nav-link nav-link-primary hide-sm text-slate-800 hover:text-blue-600 dark:text-slate-200 dark:hover:text-white">Mi Perfil / Mis Pedidos</a>
+              {% endif %}
+              <form method="post" action="{% url 'logout' %}" class="inline">
+                  {% csrf_token %}
+                  <button type="submit" class="nav-link nav-link-secondary hide-sm text-slate-800 hover:text-blue-600 dark:text-slate-200 dark:hover:text-white">
+                      Cerrar Sesión
+                  </button>
+              </form>
+          {% else %}
+              <a href="{% url 'cliente_login' %}" class="nav-link nav-link-primary hide-sm text-slate-800 hover:text-blue-600 dark:text-slate-200 dark:hover:text-white">Ingresar</a>
+              <a href="{% url 'cliente_registro' %}" class="nav-link nav-link-secondary hide-sm text-slate-800 hover:text-blue-600 dark:text-slate-200 dark:hover:text-white">Registro</a>
+          {% endif %}
+
+          <button class="menu-toggle" id="menuToggle" type="button" aria-label="Abrir menú" aria-controls="mobileMenu" aria-expanded="false">
+            <span></span><span></span><span></span>
+          </button>
+        </div>
+      </div>
+
+      <div class="mobile-menu" id="mobileMenu" aria-hidden="true">
+        <div class="mobile-menu-inner">
+          <a href="{% url 'index' %}#inicio" class="mobile-link">Inicio</a>
+          <a href="{% url 'productos' %}?vista=catalogo#productos-grid" class="mobile-link">Productos</a>
+          <button type="button" class="mobile-link mobile-cart-trigger" data-cart-trigger>Carrito</button>
+          {% if request.user.is_authenticated %}
+            {% if request.user.is_staff %}
+              <a href="{% url 'dashboard' %}" class="mobile-link">Ir al Panel Administrativo</a>
+            {% else %}
+              <a href="{% url 'panel_cliente' %}" class="mobile-link">Mi Perfil / Mis Pedidos</a>
+            {% endif %}
+            <form method="post" action="{% url 'logout' %}" class="inline">
+              {% csrf_token %}
+              <button type="submit" class="mobile-link">
+                Cerrar Sesión
+              </button>
+            </form>
+          {% else %}
+            <a href="{% url 'cliente_login' %}" class="mobile-link">Iniciar sesión</a>
+            <a href="{% url 'cliente_registro' %}" class="mobile-link">Crear cuenta</a>
+          {% endif %}
+        </div>
+      </div>
+    </header>
+
+    {% if ADMIN_LOGIN_GATE_ENABLED %}
+    <div class="admin-gate" id="adminGate" hidden>
+      <section class="admin-gate-panel" role="dialog" aria-modal="true" aria-labelledby="adminGateTitle">
+        <div class="admin-gate-topline">
+          <p class="admin-gate-kicker"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i> Control de acceso</p>
+          <span class="admin-gate-state">Verificación activa</span>
+        </div>
+        <h2 id="adminGateTitle">Administración</h2>
+        <p class="admin-gate-copy">Confirma la clave administrativa. Cada oportunidad dura 30 segundos.</p>
+        <div class="admin-gate-meter"><span id="adminGateAttempt">Preparando intento</span><strong id="adminGateTimer">00:30</strong></div>
+        <div class="admin-gate-track" role="progressbar" aria-label="Tiempo disponible" aria-valuemin="0" aria-valuemax="30" aria-valuenow="30"><span id="adminGateTimerFill"></span></div>
+        <form id="adminGateForm" action="{% url 'admin_login_unlock' %}" method="post">
+          {% csrf_token %}
+          <label class="sr-only" for="adminGatePassword">Clave administrativa</label>
+          <input class="admin-gate-input" id="adminGatePassword" name="password" type="password" autocomplete="current-password" placeholder="Clave administrativa" required disabled>
+          <p class="admin-gate-error" id="adminGateError" role="alert" aria-live="polite"></p>
+          <div class="admin-gate-actions">
+            <button type="button" id="adminGateCancel">Cancelar</button>
+            <button type="submit" class="admin-gate-submit">Continuar</button>
+          </div>
+        </form>
+      </section>
+    </div>
+    <script>
+      (() => {
+        const gate = document.getElementById('adminGate');
+        const form = document.getElementById('adminGateForm');
+        const password = document.getElementById('adminGatePassword');
+        const error = document.getElementById('adminGateError');
+        const timerText = document.getElementById('adminGateTimer');
+        const timerFill = document.getElementById('adminGateTimerFill');
+        const attemptText = document.getElementById('adminGateAttempt');
+        const submit = form.querySelector('[type="submit"]');
+        let challengeToken = '';
+        let challengeExpiresAt = 0;
+        let intervalId;
+        let busy = false;
+
+        const closeGate = () => {
+          gate.hidden = true;
+          form.reset();
+          error.textContent = '';
+          window.clearInterval(intervalId);
+        };
+
+        const postGateAction = async (action) => {
+          const data = new FormData(form);
+          data.set('action', action);
+          if (challengeToken) data.set('challenge', challengeToken);
+          const response = await fetch(form.action, {
+            method: 'POST',
+            body: data,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            credentials: 'same-origin'
+          });
+          return { response, result: await response.json() };
+        };
+
+        const showLockout = (lockedUntil) => {
+          window.clearInterval(intervalId);
+          password.disabled = true;
+          submit.disabled = true;
+          challengeToken = '';
+          const renderLock = () => {
+            const remaining = Math.max(0, Math.ceil(lockedUntil - Date.now() / 1000));
+            const minutes = String(Math.floor(remaining / 60)).padStart(2, '0');
+            const seconds = String(remaining % 60).padStart(2, '0');
+            timerText.textContent = `${minutes}:${seconds}`;
+            attemptText.textContent = 'Acceso pausado';
+            timerFill.style.transform = 'scaleX(0)';
+            error.textContent = remaining ? 'Se agotaron los tres intentos. Podrás volver a probar cuando termine la pausa.' : '';
+            if (!remaining) {
+              window.clearInterval(intervalId);
+              openGate();
+            }
+          };
+          renderLock();
+          intervalId = window.setInterval(renderLock, 1000);
+        };
+
+        const startTimer = (result) => {
+          challengeToken = result.challenge;
+          challengeExpiresAt = result.expires_at;
+          const attemptNumber = (result.attempts_used || 0) + 1;
+          attemptText.textContent = `Intento ${attemptNumber} de 3`;
+          password.disabled = false;
+          submit.disabled = false;
+          const renderTimer = () => {
+            const remaining = Math.max(0, Math.ceil(challengeExpiresAt - Date.now() / 1000));
+            timerText.textContent = `00:${String(remaining).padStart(2, '0')}`;
+            timerFill.style.transform = `scaleX(${remaining / 30})`;
+            timerFill.parentElement.setAttribute('aria-valuenow', String(remaining));
+            if (!remaining) {
+              window.clearInterval(intervalId);
+              expireAttempt();
+            }
+          };
+          window.clearInterval(intervalId);
+          renderTimer();
+          intervalId = window.setInterval(renderTimer, 250);
+          password.focus();
+        };
+
+        const applyResult = (result) => {
+          if (result.challenge) {
+            password.value = '';
+            error.textContent = result.error || '';
+            startTimer(result);
+          } else if (result.locked_until) {
+            showLockout(result.locked_until);
+          } else {
+            error.textContent = result.error || 'No se pudo verificar el acceso.';
+          }
+        };
+
+        async function openGate() {
+          if (busy) return;
+          gate.hidden = false;
+          busy = true;
+          password.disabled = true;
+          submit.disabled = true;
+          error.textContent = '';
+          try {
+            const { result } = await postGateAction('start');
+            applyResult(result);
+          } catch (requestError) {
+            error.textContent = 'No fue posible iniciar la verificación. Inténtalo de nuevo.';
+          } finally {
+            busy = false;
+          }
+        }
+
+        async function expireAttempt() {
+          try {
+            const { result } = await postGateAction('expire');
+            applyResult(result);
+          } catch (requestError) {
+            error.textContent = 'Se perdió la conexión. Abre de nuevo la verificación.';
+            password.disabled = true;
+            submit.disabled = true;
+          }
+        }
+
+        document.addEventListener('keydown', (event) => {
+          if (event.ctrlKey && event.altKey && event.shiftKey && event.key.toLowerCase() === 'a') {
+            event.preventDefault();
+            openGate();
+          } else if (event.key === 'Escape' && !gate.hidden) {
+            closeGate();
+          }
+        });
+        document.getElementById('adminGateCancel').addEventListener('click', closeGate);
+        gate.addEventListener('click', (event) => { if (event.target === gate) closeGate(); });
+        form.addEventListener('submit', async (event) => {
+          event.preventDefault();
+          if (busy || !challengeToken) return;
+          error.textContent = '';
+          busy = true;
+          password.disabled = true;
+          submit.disabled = true;
+          try {
+            const { result } = await postGateAction('verify');
+            if (result.ok) {
+              window.location.assign(result.next);
+              return;
+            }
+            applyResult(result);
+          } catch (requestError) {
+            error.textContent = 'No fue posible verificar el acceso. Inténtalo de nuevo.';
+          } finally {
+            busy = false;
+          }
+        });
+      })();
+    </script>
+    {% endif %}
+
+    <div class="cart-overlay" id="cartOverlay" aria-hidden="true"></div>
+    <aside class="cart-drawer" id="cartDrawer">
+      <div class="cart-drawer-header">
+        <div>
+          <h2>Tu Carrito</h2>
+          <p>Revisa lo agregado sin salir de la página.</p>
+        </div>
+        <button type="button" class="icon-btn drawer-close" id="cartClose" aria-label="Cerrar carrito"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="cart-drawer-body">
+        <div class="cart-items" id="cartItems">
+          <div class="cart-empty">
+            <span class="cart-empty-icon"><i class="fa-solid fa-cart-plus"></i></span>
+            <p>No tienes productos en el carrito aún.</p>
+          </div>
+        </div>
+      </div>
+      <div class="cart-drawer-footer">
+        <div class="cart-summary">
+          <span>Subtotal</span>
+          <strong>$ <span id="cartSubtotal">0.00</span></strong>
+        </div>
+        <div class="cart-actions">
+          <a href="{% url 'carrito' %}" class="block w-full text-center bg-gradient-to-r from-slate-800 to-slate-900 hover:from-slate-900 hover:to-black text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">Ver Carrito Completo</a>
+        </div>
+      </div>
+    </aside>
+
+    <div id="aiAssistantFabContainer" class="ferrebot-launcher-pending z-[140] flex items-center gap-3">
+      <span id="aiAssistantTooltip" class="rounded-lg bg-gray-900 px-3 py-2 text-xs font-semibold text-white shadow-xl dark:bg-white dark:text-gray-900 sm:block">FerreBot</span>
+      <button id="aiAssistantFab" type="button" aria-label="Abrir asistente virtual" aria-controls="aiAssistantDrawer" aria-expanded="false" class="ai-fab-pulse flex h-14 w-14 items-center justify-center rounded-full bg-blue-600 text-white shadow-2xl transition hover:scale-105 hover:bg-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-300/50">
+        <svg viewBox="0 0 32 32" class="ferrebot-fab-face h-8 w-8" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 2.5v3.7m-4 0h8a9 9 0 0 1 9 9v5a8 8 0 0 1-8 8h-10a8 8 0 0 1-8-8v-5a9 9 0 0 1 9-9Z"/><path d="M5 12h3m16 0h3M2 16h3m22 0h3"/><circle class="ferrebot-fab-eye" cx="11" cy="16" r="1.25" fill="currentColor"/><circle class="ferrebot-fab-eye" cx="21" cy="16" r="1.25" fill="currentColor"/><path class="ferrebot-fab-mouth-smile" d="M11 22c2.5 2.2 7.5 2.2 10 0"/><ellipse class="ferrebot-fab-mouth-talk" cx="16" cy="22.5" rx="3.1" ry="2.1" fill="currentColor" stroke="none"/></svg>
+      </button>
+      <div id="ferrebotHeroGuide" class="ferrebot-hero-guide" aria-hidden="true" hidden>
+        <div class="ferrebot-hero-status"><span aria-hidden="true"></span> Asistente de compra</div>
+        <h2 class="ferrebot-hero-brand">Ferre<span>Bot</span></h2>
+        <p class="ferrebot-hero-greeting">Tu compañero para cada proyecto</p>
+        <p class="ferrebot-hero-message">Encuentra lo que necesitas y avancemos juntos, desde el producto hasta tu pedido.</p>
+        <button type="button" data-ai-question="Quiero que me guíes paso a paso para realizar una compra">Iniciar guía <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></button>
+      </div>
+    </div>
+    <div id="aiAssistantOverlay" class="fixed inset-0 z-[120] hidden bg-slate-950/45 backdrop-blur-[2px]" aria-hidden="true"></div>
+    <div id="ferrebotCornerGuide" class="ferrebot-inline-guide" aria-live="polite" aria-hidden="true" hidden>
+      <div class="ferrebot-inline-guide-content">
+        <strong>FerreBot · Siguiente paso</strong>
+        <p id="ferrebotGuideText"></p>
+        <button id="ferrebotGuideClose" type="button" aria-label="Cerrar guía"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+      </div>
+    </div>
+    <aside id="aiAssistantDrawer" aria-label="Asistente Virtual" aria-hidden="true" class="fixed left-0 top-0 z-[130] flex h-screen w-96 max-w-full -translate-x-full flex-col border-r border-gray-800 bg-gray-900 text-white shadow-2xl transition-transform duration-300 ease-out">
+      <header class="sticky top-0 z-10 flex h-16 shrink-0 items-center justify-between border-b border-gray-800 bg-gray-900 px-4">
+        <div class="flex min-w-0 items-center gap-3">
+          <svg viewBox="0 0 120 120" class="h-10 w-10 shrink-0 text-blue-400" aria-hidden="true" fill="none"><circle cx="60" cy="60" r="48" class="fill-blue-500/15"/><rect x="30" y="34" width="60" height="50" rx="20" class="fill-gray-900 stroke-current" stroke-width="4"/><ellipse cx="48" cy="57" rx="5" ry="7" class="ai-avatar-eye fill-current"/><ellipse cx="72" cy="57" rx="5" ry="7" class="ai-avatar-eye ai-avatar-eye-right fill-current"/><path d="M47 70c7 6 19 6 26 0" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
+          <div class="min-w-0"><p class="font-bold leading-tight">FerreBot</p><p id="chat-session-title" class="truncate text-xs text-gray-400">Nueva Consulta</p></div>
+        </div>
+        <div class="flex shrink-0 items-center gap-1"><button id="chat-history-toggle" type="button" class="rounded-lg px-2 py-2 text-xs font-semibold text-gray-300 transition hover:bg-gray-800 hover:text-white" aria-controls="chat-history-view"><i class="fa-solid fa-clock-rotate-left mr-1"></i>Historial</button><button id="aiAssistantClose" type="button" aria-label="Cerrar asistente" class="flex h-9 w-9 items-center justify-center rounded-lg text-gray-400 transition hover:bg-gray-800 hover:text-white"><i class="fa-solid fa-xmark"></i></button></div>
+      </header>
+      <div id="chat-active-view" class="flex min-h-0 flex-1 flex-col">
+        <div id="aiAssistantIntro" class="flex flex-1 flex-col items-center justify-center overflow-y-auto px-6 py-8 text-center">
+          <p class="text-xs font-bold uppercase tracking-[.2em] text-blue-400">FerreBot</p><h2 class="mt-2 text-2xl font-bold">Tu asistente de compras</h2><p class="mt-3 text-sm leading-relaxed text-gray-400">Puedo ayudarte a encontrar productos, entender tu compra y navegar por la tienda.</p>
+          <div class="mt-6 grid w-full gap-2"><button type="button" data-ai-question="Quiero ver bombillos" class="rounded-xl border border-gray-700 px-3 py-3 text-left text-sm text-gray-300 transition hover:border-blue-500 hover:bg-gray-800">Buscar productos por categoría</button><button type="button" data-ai-question="Quiero que me guíes paso a paso para realizar una compra" class="rounded-xl border border-blue-500/50 bg-blue-500/10 px-3 py-3 text-left text-sm text-blue-200 transition hover:border-blue-400 hover:bg-blue-500/20">Iniciar guía de compra</button><button type="button" data-ai-question="¿Cuáles son los métodos de pago?" class="rounded-xl border border-gray-700 px-3 py-3 text-left text-sm text-gray-300 transition hover:border-blue-500 hover:bg-gray-800">Consultar métodos de pago</button></div>
+          <button id="aiAssistantNewConversation" type="button" class="mt-6 w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-500">Nueva conversación</button>
+        </div>
+        <div id="aiAssistantChat" class="hidden min-h-0 flex-1 flex-col overflow-hidden"><div id="aiAssistantMessages" class="flex-1 space-y-4 overflow-y-auto px-4 py-5" aria-live="polite" aria-label="Conversación con FerreBot"></div></div>
+        <footer id="aiAssistantFooter" class="hidden shrink-0 border-t border-gray-800 px-3 pb-4 pt-3"><div class="mb-3 flex gap-2 overflow-x-auto pb-1"><button type="button" data-ai-question="¿Dónde veo mi carrito?" class="shrink-0 rounded-full border border-gray-700 px-3 py-2 text-xs text-gray-300 hover:border-blue-500">Ver carrito</button><button type="button" data-ai-question="Quiero ver bombillos" class="shrink-0 rounded-full border border-gray-700 px-3 py-2 text-xs text-gray-300 hover:border-blue-500">Ver bombillos</button></div><button type="button" data-ai-question="Listo, siguiente" aria-label="Avanzar al siguiente paso de la guía" class="ferrebot-next-step mb-3">Listo, siguiente <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></button><form id="aiAssistantForm" class="flex items-end gap-2">{% csrf_token %}<label for="aiAssistantInput" class="sr-only">Escribe tu pregunta</label><textarea id="aiAssistantInput" rows="1" maxlength="1000" placeholder="Escribe tu pregunta..." class="max-h-28 min-h-[44px] min-w-0 flex-1 resize-none rounded-xl border border-gray-700 bg-gray-950/70 px-3 py-3 text-sm text-white outline-none placeholder:text-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"></textarea><button type="submit" aria-label="Enviar mensaje" class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white transition hover:bg-blue-500"><i class="fa-solid fa-paper-plane"></i></button></form></footer>
+      </div>
+      <div id="chat-history-view" class="hidden min-h-0 flex-1 flex-col overflow-hidden"><div class="flex shrink-0 items-center justify-between border-b border-gray-800 px-4 py-3"><h2 class="font-bold">Conversaciones</h2><button id="chat-new-from-history" type="button" class="text-xs font-semibold text-blue-400 hover:text-blue-300">+ Nueva Conversación</button></div><div id="aiAssistantSessions" class="flex-1 space-y-2 overflow-y-auto px-4 py-4"></div></div>
+    </aside>
+
+    <main id="main-content" class="w-full flex flex-col p-0 m-0">
+      {% block content %}{% endblock %}
+    </main>
+
+    <footer class="site-footer">
+      <div class="footer-grid footer-columns">
+        <div class="footer-col">
+          <div class="footer-brand">FerreElectri PLUS</div>
+          <p class="footer-copy">Ferrelectric Plus ofrece stock real, despacho rápido y soporte experto en cada pedido.</p>
+        </div>
+        <div class="footer-col">
+          <h3>Enlaces Rápidos</h3>
+          <a href="#inicio">Inicio</a>
+          <a href="{% url 'productos' %}?vista=catalogo#productos-grid">Productos</a>
+          <a href="{% url 'productos' %}?oferta=true">Ofertas</a>
+          <a href="#ubicacion" id="locationLink">Ubicación</a>
+        </div>
+        <div class="footer-col">
+          <h3>Atención al Cliente</h3>
+          <a href="tel:+584247362445">Contacto</a>
+          <a href="mailto:ferreeelectriplus@gmail.com">ferreeelectriplus@gmail.com</a>
+          <a href="{% url 'condiciones_servicio' %}">Términos y condiciones</a>
+          <a href="{% url 'politica_privacidad' %}">Política de privacidad</a>
+          <a href="#faq">Preguntas frecuentes</a>
+        </div>
+        <div class="footer-col footer-newsletter">
+          <h3>Boletín de Suscripción</h3>
+          <p>Recibe avisos de ofertas, lanzamientos y envío exprés.</p>
+          <form action="#" method="post" class="newsletter-form">
+            <input type="email" name="email" placeholder="Tu correo electrónico" aria-label="Email" required>
+            <button type="submit" class="btn-primary">Suscribirme</button>
+          </form>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        © 2026 FerreElectri PLUS. Todos los derechos reservados.
+        <button type="button" class="footer-cookie-settings js-open-cookie-preferences">Preferencias de cookies</button>
+      </div>
+    </footer>
+  </div>
+
+  <section id="cookieNotice" class="cookie-notice" hidden role="region" aria-labelledby="cookieNoticeTitle" aria-describedby="cookieNoticeDescription" aria-live="polite">
+    <div class="cookie-notice-inner">
+      <div class="cookie-notice-copy">
+        <p class="cookie-notice-kicker"><i class="fa-solid fa-cookie-bite" aria-hidden="true"></i> Preferencias de privacidad</p>
+        <h2 id="cookieNoticeTitle">Tú decides sobre las cookies</h2>
+        <p id="cookieNoticeDescription">Usamos cookies necesarias para tu sesión y la seguridad del sitio. Actualmente no activamos cookies de analítica ni publicidad.</p>
+        <a href="{% url 'politica_privacidad' %}#cookies">Conoce cómo usamos cookies y almacenamiento local</a>
+      </div>
+      <div class="cookie-notice-actions" aria-label="Opciones de cookies">
+        <button type="button" id="cookieAcceptNecessary" class="cookie-essential-only">Solo necesarias</button>
+        <button type="button" id="cookieAcceptAll" class="cookie-accept-all">Aceptar todas</button>
+      </div>
+    </div>
+  </section>
+
+  <div id="locationModal" class="location-modal" hidden role="dialog" aria-modal="true" aria-labelledby="locationTitle">
+    <div class="location-modal-panel">
+      <button type="button" class="icon-btn location-modal-close" id="locationClose" aria-label="Cerrar ubicación">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+      <div class="location-modal-info">
+        <span class="section-eyebrow">FerreElectri PLUS</span>
+        <h2 id="locationTitle">Visítanos</h2>
+        <p>Estamos listos para ayudarte con tus materiales eléctricos y herramientas.</p>
+        <div class="location-detail"><i class="fa-solid fa-location-dot"></i><span>Barquisimeto, Lara, Venezuela</span></div>
+        <div class="location-detail"><i class="fa-solid fa-phone"></i><a href="tel:+584247362445">+58 424-7362445</a></div>
+        <div class="location-detail"><i class="fa-brands fa-whatsapp"></i><a href="https://wa.me/584247362445" target="_blank" rel="noopener">WhatsApp</a></div>
+        <div class="location-detail"><i class="fa-solid fa-envelope"></i><a href="mailto:ferreelectriplus@gmail.com">ferreelectriplus@gmail.com</a></div>
+      </div>
+      <div class="location-map">
+        <iframe title="Ubicación de FerreElectri PLUS" src="https://www.google.com/maps?q=Barquisimeto%2C%20Lara%2C%20Venezuela&output=embed" loading="lazy" allowfullscreen></iframe>
+      </div>
+    </div>
+  </div>
+
+  <div class="search-modal" id="searchModal" aria-hidden="true">
+    <div class="search-modal-panel" role="dialog" aria-modal="true" aria-label="Buscador de productos">
+      <div class="search-modal-top">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="search" id="searchInput" aria-label="Buscar en el catálogo" placeholder="Busca por producto o código..." autocomplete="off">
+        <button type="button" id="closeSearch" class="icon-btn small" aria-label="Cerrar búsqueda">Esc</button>
+      </div>
+      <div class="search-results" id="searchResults"></div>
+    </div>
+  </div>
+
+  <script src="{% static 'js/home.js' %}?v=20261011-ferrebot-bubble-v3"></script>
+
+  <style>
+    #ferrebot-global {
+      position: absolute;
+      left: 1.5rem;
+      top: 26vh;
+      pointer-events: auto;
+      transition: left 0.9s ease, top 0.9s ease, transform 0.9s ease, opacity 0.9s ease;
+      opacity: 1;
+    }
+    .ferrebot-state-hero {
+      position: absolute;
+      top: 26vh;
+      left: 1.5rem;
+      transform: scale(1.15);
+    }
+    .ferrebot-state-docked {
+      position: fixed;
+      top: auto;
+      right: 1.25rem;
+      left: auto;
+      bottom: 1.25rem;
+      transform: scale(1);
+    }
+    .ferrebot-state-hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    @media (max-width: 640px) {
+      #ferrebot-global {
+        top: 7rem;
+        right: 1rem;
+        left: auto;
+      }
+
+      #ferrebot-global.ferrebot-state-hero {
+        transform: scale(0.72);
+      }
+    }
+
+    @keyframes globalOrbit {
+      0%, 100% { transform: translate3d(0, 0, 0) scale(1); filter: drop-shadow(0 0 8px rgba(0,229,255,0.45)); }
+      50% { transform: translate3d(0, -7px, 0) scale(1.04); filter: drop-shadow(0 0 18px rgba(0,229,255,0.85)); }
+    }
+    .anim-ferrebot-orbit {
+      animation: none;
+    }
+    .anim-ferrebot-orbit > svg {
+      animation: globalOrbit 6s ease-in-out infinite;
+    }
+
+    #ferrebot-inner {
+      display: block;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      cursor: pointer;
+      transform-origin: center;
+    }
+
+    #ferrebot-inner:focus-visible {
+      border-radius: 1rem;
+      outline: 3px solid rgba(0,229,255,0.8);
+      outline-offset: 5px;
+    }
+
+    #ferrebot-inner:active {
+      transform: scale(0.92);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .anim-ferrebot-orbit,
+      .anim-ferrebot-idle,
+      .anim-ferrebot-orbit > svg,
+      .anim-ferrebot-idle > svg,
+      .ferrebot-eyes {
+        animation: none !important;
+      }
+    }
+
+    @keyframes globalIdle {
+      0%, 100% { transform: translateY(0); filter: drop-shadow(0 0 8px rgba(0,229,255,0.5)); }
+      50% { transform: translateY(-8px); filter: drop-shadow(0 0 15px rgba(0,229,255,0.8)); }
+    }
+    .anim-ferrebot-idle {
+      animation: none;
+    }
+    .anim-ferrebot-idle > svg {
+      animation: globalIdle 4s ease-in-out infinite;
+    }
+
+    @keyframes blinkEyes {
+      0%, 92%, 100% { transform: scaleY(1); }
+      95%, 98% { transform: scaleY(0.1); }
+    }
+    .ferrebot-eyes {
+      transform-origin: center;
+      transform-box: fill-box;
+      animation: blinkEyes 4.5s infinite;
+    }
+  </style>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      var botGlobal = document.getElementById('ferrebot-global');
+      var botInner = document.getElementById('ferrebot-inner');
+      var fab = document.getElementById('aiAssistantFab');
+      var hero = document.getElementById('inicio');
+
+      if (!botGlobal || !botInner) return;
+      if (!hero) { botGlobal.classList.add('ferrebot-state-hidden'); return; }
+
+      function openFerreBot() {
+        if (fab) {
+          fab.click();
+        }
+      }
+
+      function updateBotState() {
+        var heroBottom = hero.getBoundingClientRect().bottom;
+        var shouldShow = heroBottom > 140 && window.scrollY < hero.offsetHeight * 0.7;
+        botGlobal.classList.toggle('ferrebot-state-hidden', !shouldShow);
+        var shouldDock = window.scrollY > 220;
+        if (shouldDock) {
+          botGlobal.classList.remove('ferrebot-state-hero');
+          botGlobal.classList.add('ferrebot-state-docked');
+          botInner.classList.remove('anim-ferrebot-orbit');
+          botInner.classList.add('anim-ferrebot-idle');
+        } else {
+          botGlobal.classList.remove('ferrebot-state-docked');
+          botGlobal.classList.add('ferrebot-state-hero');
+          botInner.classList.remove('anim-ferrebot-idle');
+          botInner.classList.add('anim-ferrebot-orbit');
+        }
+      }
+
+      botInner.addEventListener('click', openFerreBot);
+
+      updateBotState();
+      window.addEventListener('scroll', updateBotState, { passive: true });
+    });
+  </script>
+
+  <script>
+  document.addEventListener('DOMContentLoaded', function () {
+    if (window.__ferrebotInitialized) return;
+    var activeView = document.getElementById('chat-active-view');
+    if (!activeView) return;
+    var fab = document.getElementById('aiAssistantFab');
+    var fabElement = document.getElementById('aiAssistantFabContainer');
+    var heroGuide = document.getElementById('ferrebotHeroGuide');
+    var drawer = document.getElementById('aiAssistantDrawer');
+    var overlay = document.getElementById('aiAssistantOverlay');
+    var closeButton = document.getElementById('aiAssistantClose');
+    var historyToggle = document.getElementById('chat-history-toggle');
+    var activeConversation = document.getElementById('chat-active-view');
+    var historyView = document.getElementById('chat-history-view');
+    var newConversation = document.getElementById('aiAssistantNewConversation');
+    var newFromHistory = document.getElementById('chat-new-from-history');
+    var tooltip = document.getElementById('aiAssistantTooltip');
+    var intro = document.getElementById('aiAssistantIntro');
+    var chat = document.getElementById('aiAssistantChat');
+    var footer = document.getElementById('aiAssistantFooter');
+    var form = document.getElementById('aiAssistantForm');
+    var input = document.getElementById('aiAssistantInput');
+    var sendButton = form ? form.querySelector('button[type="submit"]') : null;
+    var messages = document.getElementById('aiAssistantMessages');
+    var sessionsList = document.getElementById('aiAssistantSessions');
+    var titleNode = document.getElementById('chat-session-title');
+    var quickActions = document.querySelectorAll('[data-ai-question]');
+    var sessionId = null;
+    var isSending = false;
+    var originalSendIcon = sendButton ? sendButton.innerHTML : '';
+    if (!fab || !fabElement || !drawer || !overlay || !closeButton || !historyToggle || !activeConversation || !historyView || !newConversation || !newFromHistory || !intro || !chat || !footer || !form || !input || !sendButton || !messages || !sessionsList || !titleNode) return;
+    window.__ferrebotInitialized = true;
+    var avatar = '<svg viewBox="0 0 120 120" class="h-8 w-8 shrink-0 text-blue-400" aria-hidden="true" fill="none"><circle cx="60" cy="60" r="48" class="fill-blue-500/15"/><rect x="30" y="34" width="60" height="50" rx="20" class="fill-gray-900 stroke-current" stroke-width="4"/><ellipse cx="48" cy="57" rx="5" ry="7" class="ai-avatar-eye fill-current"/><ellipse cx="72" cy="57" rx="5" ry="7" class="ai-avatar-eye ai-avatar-eye-right fill-current"/><path d="M47 70c7 6 19 6 26 0" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>';
+
+    function getCookie(name) {
+      var cookies = document.cookie ? document.cookie.split(';') : [];
+      for (var index = 0; index < cookies.length; index += 1) {
+        var parts = cookies[index].trim().split('=');
+        if (parts[0] === name) return decodeURIComponent(parts.slice(1).join('='));
+      }
+      return '';
+    }
+
+    function updateChatTitle(title) { titleNode.textContent = title || 'Nueva Consulta'; }
+    function toggleDrawer(open) {
+      if (!open && document.activeElement) document.activeElement.blur();
+      drawer.classList.toggle('-translate-x-full', !open);
+      drawer.classList.toggle('translate-x-0', open);
+      overlay.classList.toggle('hidden', !open);
+      document.body.classList.toggle('ferrebot-open', open);
+      drawer.setAttribute('aria-hidden', String(!open));
+      fab.setAttribute('aria-expanded', String(open));
+      fabElement.classList.toggle('hidden', open);
+      fabElement.classList.toggle('opacity-0', open);
+      fabElement.classList.toggle('pointer-events-none', open);
+      if (tooltip) tooltip.classList.toggle('hidden', open);
+      if (open) {
+        heroGuide.hidden = true;
+        input.focus();
+        scrollToLatestMessage();
+        window.setTimeout(scrollToLatestMessage, 380);
+      } else if (window.updateFerreBotLauncher) {
+        window.updateFerreBotLauncher();
+      }
+    }
+    function showConversation() {
+      activeConversation.classList.remove('hidden');
+      historyView.classList.add('hidden');
+      intro.classList.add('hidden');
+      chat.classList.remove('hidden');
+      chat.classList.add('flex');
+      footer.classList.remove('hidden');
+      input.focus();
+    }
+    function scrollToLatestMessage() {
+      window.requestAnimationFrame(function () {
+        window.requestAnimationFrame(function () { messages.scrollTop = messages.scrollHeight; });
+      });
+    }
+    document.addEventListener('click', function (event) {
+      var questionButton = event.target.closest && event.target.closest('[data-ai-question]');
+      if (!questionButton || drawer.getAttribute('aria-hidden') === 'false') return;
+      toggleDrawer(true);
+      showConversation();
+    }, true);
+    function showHistory() {
+      activeConversation.classList.add('hidden'); historyView.classList.remove('hidden'); sessionsList.textContent = '';
+      fetch("{% url 'ai_history_api' %}", {credentials: 'same-origin'}).then(function (response) { if (!response.ok) throw new Error('history'); return response.json(); }).then(function (data) {
+        (data.sessions || []).forEach(function (session) {
+          var card = document.createElement('div'); card.className = 'flex w-full items-center gap-2 rounded-xl border border-gray-700 bg-gray-950/40 px-3 py-3 transition hover:border-blue-500 hover:bg-gray-800';
+          var openButton = document.createElement('button'); openButton.type = 'button'; openButton.className = 'min-w-0 flex-1 text-left';
+          var cardTitle = document.createElement('strong'); cardTitle.className = 'block text-sm text-white'; cardTitle.textContent = session.title || 'Nueva Consulta';
+          var date = document.createElement('span'); date.className = 'mt-1 block text-xs text-gray-500'; date.textContent = session.created_at ? new Date(session.created_at).toLocaleDateString('es-VE') : '';
+          openButton.appendChild(cardTitle); openButton.appendChild(date); card.appendChild(openButton);
+          var deleteButton = document.createElement('button'); deleteButton.type = 'button'; deleteButton.className = 'shrink-0 rounded-lg p-2 text-gray-500 transition hover:bg-red-500/15 hover:text-red-400'; deleteButton.setAttribute('aria-label', 'Eliminar conversación'); deleteButton.innerHTML = '<svg viewBox="0 0 24 24" class="h-4 w-4" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M10 11v6m4-6v6M9 7V5h6v2m-9 0 1 13h8l1-13"/></svg>';
+          openButton.addEventListener('click', function () { sessionId = session.id; updateChatTitle(session.title); messages.textContent = ''; (session.messages || []).forEach(function (saved) { addMessage(saved.content, saved.role === 'user'); }); showConversation(); });
+          deleteButton.addEventListener('click', function (event) { event.stopPropagation(); fetch('{% url "delete_chat_session" 0 %}'.replace('/0/delete/', '/' + session.id + '/delete/'), {method: 'DELETE', credentials: 'same-origin', headers: {'X-CSRFToken': getCookie('csrftoken')}}).then(function (response) { if (!response.ok) throw new Error('delete'); card.remove(); if (sessionId === session.id) { sessionId = null; messages.textContent = ''; updateChatTitle('Nueva Consulta'); } }).catch(function () { deleteButton.classList.add('text-red-500'); }); });
+          card.appendChild(deleteButton);
+          sessionsList.appendChild(card);
+        });
+        if (!sessionsList.children.length) { var empty = document.createElement('p'); empty.className = 'text-sm text-gray-500'; empty.textContent = 'Aún no tienes conversaciones.'; sessionsList.appendChild(empty); }
+      }).catch(function () { sessionsList.textContent = 'No se pudo cargar el historial.'; });
+    }
+    function addGuideBubble(text) {
+      var target = document.getElementById('productos-grid') || document.querySelector('[data-product-grid], .products-grid, #catalogo'); if (!target) return;
+      var guide = document.createElement('div'); guide.className = 'ai-guide-bubble absolute left-1/2 top-3 z-30 flex max-w-sm -translate-x-1/2 items-center gap-3 rounded-xl bg-blue-600 px-4 py-3 text-sm font-medium text-white shadow-2xl';
+      var copy = document.createElement('span'); copy.textContent = text || 'Estos son los productos. Selecciona la cantidad para ver tu total.';
+      var close = document.createElement('button'); close.type = 'button'; close.className = 'rounded-md p-1 hover:bg-white/15'; close.setAttribute('aria-label', 'Cerrar guía'); close.innerHTML = '<i class="fa-solid fa-xmark"></i>'; guide.appendChild(copy); guide.appendChild(close);
+      if (getComputedStyle(target).position === 'static') target.style.position = 'relative'; target.appendChild(guide); close.addEventListener('click', function () { guide.remove(); }); window.setTimeout(function () { if (guide.isConnected) guide.remove(); }, 7000);
+    }
+    function highlightProducts(targetCategory, guideText) {
+      var grid = document.getElementById('productos-grid');
+      if (!grid) return;
+      grid.scrollIntoView({behavior: 'smooth', block: 'start'});
+      var cards = Array.prototype.slice.call(grid.querySelectorAll('.product-card'));
+      var matchingCards = cards.filter(function (card) {
+        var category = (card.dataset.category || '').trim().toLowerCase();
+        return !category || category === targetCategory;
+      });
+      matchingCards.forEach(function (card) {
+        card.classList.add('ai-glow-target');
+        window.setTimeout(function () { card.classList.remove('ai-glow-target'); }, 5000);
+      });
+      addGuideBubble(guideText);
+    }
+    function preserveOpenChat() {
+      window.sessionStorage.setItem('ferrebot_open', 'true');
+      if (sessionId) window.sessionStorage.setItem('ferrebot_session_id', String(sessionId));
+      else window.sessionStorage.removeItem('ferrebot_session_id');
+    }
+    document.addEventListener('click', function (event) {
+      if (!document.body.classList.contains('ferrebot-open')) return;
+      var link = event.target.closest && event.target.closest('a[href]');
+      if (!link || link.target === '_blank') return;
+      try { if (new URL(link.href, window.location.href).origin === window.location.origin) preserveOpenChat(); } catch (error) {}
+    });
+    document.addEventListener('submit', function (event) {
+      if (document.body.classList.contains('ferrebot-open') && event.target !== form) preserveOpenChat();
+    });
+    function actionElement(action) {
+      if (!action) return null;
+      if (action.type === 'navigate_url' && String(action.target || '').startsWith('/')) { preserveOpenChat(); window.sessionStorage.setItem('ferrebot_guide', action.guide_text || ''); window.location.href = action.target; return null; }
+      if (action.type === 'filter_category') { var target = String(action.target || '').trim().toLowerCase(); if (!target) return null; var grid = document.getElementById('productos-grid'); if (!grid) { preserveOpenChat(); window.sessionStorage.setItem('ferrebot_guide', action.guide_text || ''); window.location.href = '/?categoria=' + encodeURIComponent(target); return null; } window.sessionStorage.setItem('ai_pending_category', target); var button = document.querySelector('[data-category="' + CSS.escape(target) + '"]'); if (button) button.click(); window.setTimeout(function () { highlightProducts(target, action.guide_text); window.sessionStorage.removeItem('ai_pending_category'); }, 300); return null; }
+      if (action.type === 'guide_next') return null;
+      if (action.type === 'show_guide_bubble') { addGuideBubble(action.guide_text || action.target); return null; }
+      if (action.type === 'navigate_url' && String(action.target || '').startsWith('/')) { var link = document.createElement('a'); link.href = action.target; link.className = 'mt-3 inline-flex rounded-lg bg-blue-600 px-3 py-2 text-xs font-bold text-white hover:bg-blue-500'; link.textContent = action.label || 'Abrir'; return link; }
+      return null;
+    }
+    var pendingCategory = window.sessionStorage.getItem('ai_pending_category');
+    if (pendingCategory && document.getElementById('productos-grid')) {
+      window.setTimeout(function () { highlightProducts(pendingCategory, 'Estos son los productos. Selecciona la cantidad para ver tu total.'); window.sessionStorage.removeItem('ai_pending_category'); }, 350);
+    }
+    function currentPurchaseStep(path) {
+      if (path.indexOf('/checkout/') === 0) return 3;
+      if (path.indexOf('/cliente/mis-pedidos/') === 0 || path.indexOf('/mis-pedidos/') === 0 || path.indexOf('/cliente/panel/') === 0) return 4;
+      if (path.indexOf('/carrito/') === 0) return 2;
+      return 1;
+    }
+    function lastPurchaseStep(savedMessages) {
+      for (var index = savedMessages.length - 1; index >= 0; index -= 1) {
+        if (savedMessages[index].role !== 'assistant') continue;
+        var match = /^Paso ([1-4]) de 4\b/.exec(savedMessages[index].content || '');
+        if (match) return Number(match[1]);
+      }
+      return 0;
+    }
+    var resumeChatOpen = window.sessionStorage.getItem('ferrebot_open') === 'true';
+    var resumeSessionId = window.sessionStorage.getItem('ferrebot_session_id');
+    var checkoutGuidePending = window.location.pathname === '/checkout/'
+      && window.sessionStorage.getItem('ferrebot_checkout_guide') === 'true';
+    if (checkoutGuidePending) window.sessionStorage.removeItem('ferrebot_checkout_guide');
+    window.sessionStorage.removeItem('ferrebot_open');
+    window.sessionStorage.removeItem('ferrebot_session_id');
+    fetch("{% url 'ai_history_api' %}", {credentials: 'same-origin'}).then(function (response) { return response.ok ? response.json() : null; }).then(function (data) {
+      var sessions = data && data.sessions || [];
+      var latest = sessions.filter(function (session) { return String(session.id) === String(resumeSessionId); })[0] || sessions[0];
+      if (!latest) {
+        if (checkoutGuidePending) {
+          showConversation();
+          toggleDrawer(true);
+          sendMessage('Quiero que me guíes paso a paso en el checkout y me expliques cada sección.');
+        } else if (resumeChatOpen) toggleDrawer(true);
+        return;
+      }
+      sessionId = latest.id;
+      updateChatTitle(latest.title);
+      messages.textContent = '';
+      latest.messages.forEach(function (saved) {
+        var savedAction = saved.role === 'assistant' && saved.action_payload && saved.action_payload.type === 'guide_next'
+          ? saved.action_payload
+          : null;
+        addMessage(saved.content, saved.role === 'user', savedAction);
+      });
+      showConversation();
+      if (resumeChatOpen || checkoutGuidePending) toggleDrawer(true);
+      if (checkoutGuidePending) {
+        sendMessage('Quiero que me guíes paso a paso en el checkout y me expliques cada sección.');
+      } else if (lastPurchaseStep(latest.messages) && lastPurchaseStep(latest.messages) !== currentPurchaseStep(window.location.pathname)) {
+        sendMessage('¿Cuál es el siguiente paso?');
+      }
+    }).catch(function () {
+      if (checkoutGuidePending) {
+        showConversation();
+        toggleDrawer(true);
+        sendMessage('Quiero que me guíes paso a paso en el checkout y me expliques cada sección.');
+      }
+    });
+    function addMessage(text, fromUser, action) { var row = document.createElement('div'); row.className = fromUser ? 'flex justify-end' : 'flex items-start gap-2'; var bubble = document.createElement('div'); bubble.className = fromUser ? 'max-w-[82%] whitespace-pre-line rounded-2xl rounded-tr-sm bg-blue-600 px-4 py-3 text-sm leading-relaxed text-white' : 'max-w-[82%] whitespace-pre-line rounded-2xl rounded-tl-sm bg-gray-800 px-4 py-3 text-sm leading-relaxed text-gray-200'; bubble.textContent = text; if (!fromUser) { row.insertAdjacentHTML('afterbegin', avatar); var element = actionElement(action); if (element) bubble.appendChild(element); } row.appendChild(bubble); messages.appendChild(row); messages.scrollTop = messages.scrollHeight; return row; }
+    function sendMessage(text) { var message = String(text || '').trim(); if (!message || isSending) return; isSending = true; input.disabled = true; sendButton.disabled = true; sendButton.classList.add('opacity-50', 'cursor-not-allowed'); sendButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i>'; addMessage(message, true); input.value = ''; var typing = addMessage('Escribiendo...', false); fetch("{% url 'ai_chat_api' %}", {method: 'POST', credentials: 'same-origin', headers: {'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken')}, body: JSON.stringify({message: message, session_id: sessionId, page_context: {path: window.location.pathname, view: new URLSearchParams(window.location.search).get('vista') || '', payment_method: document.getElementById('paymentMethod')?.value || ''}})}).then(function (response) { return response.json().then(function (data) { if (!response.ok) { var error = new Error(data.error || 'chat'); error.code = data.error; throw error; } return data; }); }).then(function (data) { typing.remove(); sessionId = data.session_id || sessionId; updateChatTitle(data.session_title); addMessage(data.text || 'No pude responder ahora.', false, data.action); }).catch(function (error) { typing.remove(); var messageByCode = {gemini_rate_limited: 'El asistente alcanzó su cuota temporal. Espera un momento e inténtalo de nuevo.', groq_credentials_rejected: 'La clave de Groq fue rechazada. Revisa GROQ_API_KEY en .env y reinicia el servidor.', groq_connection_failed: 'No se pudo conectar con Groq. Revisa tu conexión de Internet.', groq_rate_limited: 'Groq alcanzó el límite temporal de solicitudes. Espera un momento.', groq_api_error: 'Groq devolvió un error temporal.'}; addMessage(messageByCode[error.code] || 'No pude conectarme ahora. Inténtalo de nuevo.', false); }).finally(function () { isSending = false; input.disabled = false; sendButton.disabled = false; sendButton.classList.remove('opacity-50', 'cursor-not-allowed'); sendButton.innerHTML = originalSendIcon; input.focus(); }); }
+    document.addEventListener('click', function (event) {
+      if (window.location.pathname !== '/checkout/' || drawer.getAttribute('aria-hidden') !== 'false') return;
+      var paymentButton = event.target.closest && event.target.closest('[data-payment-method]');
+      if (!paymentButton) return;
+      var paymentLabels = {PAGO_MOVIL: 'Pago Móvil', BINANCE: 'Binance Pay', PAYPAL: 'PayPal/Tarjeta'};
+      var paymentMethod = paymentButton.getAttribute('data-payment-method');
+      window.setTimeout(function () {
+        sendMessage('Seleccioné ' + (paymentLabels[paymentMethod] || 'este método de pago') + '. ¿Qué campos debo completar ahora?');
+      }, 0);
+    });
+    fab.addEventListener('click', function () { toggleDrawer(true); }); closeButton.addEventListener('click', function () { toggleDrawer(false); }); overlay.addEventListener('click', function () { toggleDrawer(false); }); historyToggle.addEventListener('click', showHistory); newFromHistory.addEventListener('click', function () { sessionId = null; messages.textContent = ''; updateChatTitle('Nueva Consulta'); showConversation(); }); newConversation.addEventListener('click', function () { sessionId = null; messages.textContent = ''; updateChatTitle('Nueva Consulta'); showConversation(); }); form.addEventListener('submit', function (event) { event.preventDefault(); sendMessage(input.value); }); input.addEventListener('keydown', function (event) { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); form.requestSubmit(); } }); quickActions.forEach(function (button) { button.addEventListener('click', function () { showConversation(); sendMessage(button.dataset.aiQuestion); }); });
+  });
+  </script>
+
+  <script>
+  document.addEventListener('DOMContentLoaded', function () {
+    var guide = document.getElementById('ferrebotCornerGuide');
+    var guideText = document.getElementById('ferrebotGuideText');
+    var closeButton = document.getElementById('ferrebotGuideClose');
+    if (!guide || !guideText || !closeButton) return;
+    var savedGuide = window.sessionStorage.getItem('ferrebot_guide');
+    if (!savedGuide) return;
+    window.sessionStorage.removeItem('ferrebot_guide');
+    var productTip = document.getElementById('ferrebotProductTipText');
+    if (productTip) {
+      productTip.textContent = savedGuide;
+      return;
+    }
+    var target = document.querySelector('.cart-page-heading, .checkout-heading, #productos-grid, #main-content');
+    guideText.textContent = savedGuide;
+    guide.hidden = false;
+    guide.setAttribute('aria-hidden', 'false');
+    if (target) target.insertAdjacentElement(target.id === 'productos-grid' ? 'beforebegin' : 'afterend', guide);
+    closeButton.addEventListener('click', function () {
+      guide.hidden = true;
+      guide.setAttribute('aria-hidden', 'true');
+    });
+  });
+  </script>
+
+  <script>
+  document.addEventListener('DOMContentLoaded', function () {
+    if (window.__ferrebotInitialized) return;
+    if (document.getElementById('chat-active-view')) return;
+    var fab = document.getElementById('aiAssistantFab');
+    var drawer = document.getElementById('aiAssistantDrawer');
+    var overlay = document.getElementById('aiAssistantOverlay');
+    var closeButton = document.getElementById('aiAssistantClose');
+    var intro = document.getElementById('aiAssistantIntro');
+    var chat = document.getElementById('aiAssistantChat');
+    var newConversation = document.getElementById('aiAssistantNewConversation');
+    var tooltip = document.getElementById('aiAssistantTooltip');
+    var sessionTitle = document.getElementById('aiAssistantSessionTitle');
+    var historyButton = document.getElementById('aiAssistantHistory');
+    var historyPanel = document.getElementById('aiAssistantHistoryPanel');
+    var sessionsList = document.getElementById('aiAssistantSessions');
+    var historyBack = document.getElementById('aiAssistantHistoryBack');
+    var form = document.getElementById('aiAssistantForm');
+    var input = document.getElementById('aiAssistantInput');
+    var sendButton = form ? form.querySelector('button[type="submit"]') : null;
+    var messages = document.getElementById('aiAssistantMessages');
+    var quickActions = document.querySelectorAll('[data-ai-question]');
+    if (!fab || !drawer || !overlay || !closeButton || !intro || !chat || !newConversation || !form || !input || !sendButton || !messages) return;
+    var sessionId = null;
+    var isSending = false;
+    var originalSendIcon = sendButton ? sendButton.innerHTML : '';
+
+    var avatar = '<svg viewBox="0 0 120 120" class="h-8 w-8 shrink-0 text-blue-500" aria-hidden="true" fill="none"><circle cx="60" cy="60" r="48" class="fill-blue-100 dark:fill-blue-500/15"/><rect x="30" y="34" width="60" height="50" rx="20" class="fill-white stroke-current dark:fill-gray-900" stroke-width="4"/><ellipse cx="48" cy="57" rx="5" ry="7" class="ai-avatar-eye fill-current"/><ellipse cx="72" cy="57" rx="5" ry="7" class="ai-avatar-eye ai-avatar-eye-right fill-current"/><path d="M47 70c7 6 19 6 26 0" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>';
+
+    function getCookie(name) {
+      var cookies = document.cookie ? document.cookie.split(';') : [];
+      for (var index = 0; index < cookies.length; index += 1) {
+        var cookie = cookies[index].trim().split('=');
+        if (cookie[0] === name) return decodeURIComponent(cookie.slice(1).join('='));
+      }
+      return '';
+    }
+
+    function setOpen(open) {
+      if (!open && document.activeElement) document.activeElement.blur();
+      drawer.classList.toggle('-translate-x-full', !open);
+      drawer.classList.toggle('translate-x-0', open);
+      overlay.classList.toggle('hidden', !open);
+      drawer.setAttribute('aria-hidden', String(!open));
+      fab.setAttribute('aria-expanded', String(open));
+      if (open) input.focus();
+    }
+
+    function showChat() {
+      intro.classList.add('hidden');
+      chat.classList.remove('hidden');
+      chat.classList.add('flex');
+      document.getElementById('aiAssistantFooter').classList.remove('hidden');
+      if (!messages.children.length) addMessage('Hola, soy FerreBot. ¿Qué necesitas encontrar hoy?', false);
+      input.focus();
+    }
+
+    function startNewConversation() {
+      sessionId = null;
+      sessionTitle.textContent = 'Nueva Consulta';
+      messages.textContent = '';
+      showChat();
+    }
+
+    function showHistory() {
+      chat.classList.add('hidden');
+      historyPanel.classList.remove('hidden');
+      fetch("{% url 'ai_history_api' %}", {credentials: 'same-origin', headers: {'X-Requested-With': 'XMLHttpRequest'}})
+        .then(function (response) { if (!response.ok) throw new Error('history'); return response.json(); })
+        .then(function (data) {
+          sessionsList.textContent = '';
+          (data.sessions || []).forEach(function (session) {
+            var item = document.createElement('button');
+            item.type = 'button';
+            item.className = 'block w-full rounded-xl border border-gray-200 px-3 py-3 text-left text-sm transition hover:border-blue-500 dark:border-gray-700';
+            item.textContent = session.title || 'Nueva Consulta';
+            item.addEventListener('click', function () {
+              sessionId = session.id;
+              sessionTitle.textContent = session.title || 'Nueva Consulta';
+              messages.textContent = '';
+              (session.messages || []).forEach(function (savedMessage) { addMessage(savedMessage.content, savedMessage.role === 'user'); });
+              historyPanel.classList.add('hidden');
+              chat.classList.remove('hidden');
+              chat.classList.add('flex');
+            });
+            sessionsList.appendChild(item);
+          });
+          if (!sessionsList.children.length) { var empty = document.createElement('p'); empty.className = 'text-sm text-gray-500'; empty.textContent = 'Aún no tienes conversaciones guardadas.'; sessionsList.appendChild(empty); }
+        })
+        .catch(function () { sessionsList.textContent = 'No se pudo cargar el historial.'; });
+    }
+
+    function addGuideBubble(guideMessage) {
+      var grid = document.querySelector('#catalogo, [data-product-grid], .products-grid');
+      if (!grid) return;
+      var guide = document.createElement('div');
+      guide.className = 'ai-guide-bubble absolute left-1/2 top-3 z-30 flex max-w-sm -translate-x-1/2 items-center gap-3 rounded-xl bg-blue-600 px-4 py-3 text-sm font-medium text-white shadow-2xl';
+      var guideText = document.createElement('span');
+      guideText.textContent = guideMessage || 'Estos son los productos. Selecciona la cantidad para ver tu total.';
+      var guideClose = document.createElement('button');
+      guideClose.type = 'button';
+      guideClose.setAttribute('aria-label', 'Cerrar guía');
+      guideClose.className = 'rounded-md p-1 hover:bg-white/15';
+      guideClose.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+      guide.appendChild(guideText);
+      guide.appendChild(guideClose);
+      if (getComputedStyle(grid).position === 'static') grid.style.position = 'relative';
+      grid.appendChild(guide);
+      guideClose.addEventListener('click', function () { guide.remove(); });
+      window.setTimeout(function () { if (guide.isConnected) guide.remove(); }, 7000);
+    }
+
+    function createActionLink(url, label) {
+      if (typeof url !== 'string' || !url.startsWith('/')) return null;
+      var link = document.createElement('a');
+      link.href = url;
+      link.className = 'mt-3 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-blue-500';
+      var linkLabel = document.createElement('span');
+      linkLabel.textContent = label || 'Abrir';
+      link.appendChild(linkLabel);
+      var arrow = document.createElement('i');
+      arrow.className = 'fa-solid fa-arrow-right';
+      arrow.setAttribute('aria-hidden', 'true');
+      link.appendChild(arrow);
+      return link;
+    }
+
+    function executeAction(action) {
+      if (!action || !action.type) return null;
+      if (action.type === 'navigate_url' && typeof action.target === 'string' && action.target.startsWith('/')) { window.sessionStorage.setItem('ferrebot_guide', action.guide_text || ''); window.location.href = action.target; return null; }
+      if (action.type === 'show_button') return createActionLink(action.url, action.label || 'Abrir');
+      if (action.type === 'show_guide_bubble') { addGuideBubble(action.guide_text || action.target); return null; }
+      if (action.type === 'filter_category' && typeof action.target === 'string') {
+        var target = action.target.trim().toLowerCase();
+        if (!target) return null;
+        var catalog = document.querySelector('#catalogo, [data-product-grid], .products-grid');
+        if (!document.getElementById('productos-grid')) {
+          window.sessionStorage.setItem('ferrebot_guide', action.guide_text || '');
+          window.location.href = '/?categoria=' + encodeURIComponent(target);
+          return null;
+        }
+        if (catalog) {
+          var categoryButton = document.querySelector('[data-category="' + CSS.escape(target) + '"]');
+          if (categoryButton) categoryButton.click();
+          else window.location.assign('{% url "productos" %}?categoria=' + encodeURIComponent(target));
+          window.setTimeout(function () { addGuideBubble(action.guide_text); }, 250);
+        } else {
+          window.location.assign('{% url "productos" %}?categoria=' + encodeURIComponent(target));
+        }
+      }
+      if (action.type === 'navigate_url' && typeof action.target === 'string' && action.target.startsWith('/')) {
+        window.location.assign(action.target);
+      }
+      return null;
+    }
+
+    function addMessage(text, fromUser, action) {
+      var row = document.createElement('div');
+      row.className = fromUser ? 'flex justify-end' : 'flex items-start gap-3';
+      if (fromUser) {
+        row.innerHTML = '<div class="max-w-[82%] rounded-2xl rounded-tr-sm bg-blue-600 px-4 py-3 text-sm leading-relaxed text-white"></div>';
+        row.firstElementChild.textContent = text;
+      } else {
+        row.innerHTML = '<div class="flex items-start gap-2">' + avatar + '<div class="ai-message-bubble max-w-[82%] rounded-2xl rounded-tl-sm bg-gray-100 px-4 py-3 text-sm leading-relaxed text-gray-700 dark:bg-gray-800 dark:text-gray-200"></div></div>';
+        row.querySelector('.ai-message-bubble').textContent = text;
+        var actionElement = executeAction(action);
+        if (actionElement) row.querySelector('.ai-message-bubble').appendChild(actionElement);
+      }
+      messages.appendChild(row);
+      messages.scrollTop = messages.scrollHeight;
+      return row;
+    }
+
+    function sendMessage(text) {
+      var message = String(text || '').trim();
+      if (!message || isSending) return;
+      isSending = true;
+      input.disabled = true;
+      sendButton.disabled = true;
+      sendButton.classList.add('opacity-50', 'cursor-not-allowed');
+      sendButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i>';
+      addMessage(message, true);
+      input.value = '';
+      var typing = addMessage('Escribiendo...', false);
+      typing.classList.add('ai-typing');
+      fetch("{% url 'ai_chat_api' %}", {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken'), 'X-Requested-With': 'XMLHttpRequest'},
+        body: JSON.stringify({message: message, session_id: sessionId})
+      }).then(function (response) {
+        return response.json().then(function (data) {
+          if (!response.ok) { var error = new Error(data.error || 'chat'); error.code = data.error; throw error; }
+          return data;
+        });
+      }).then(function (data) {
+        typing.remove();
+        sessionId = data.session_id || sessionId;
+        if (sessionTitle && data.title) sessionTitle.textContent = data.title;
+        addMessage(data.text || 'No pude generar una respuesta. Inténtalo de nuevo.', false, data.action);
+      }).catch(function (error) {
+        typing.remove();
+        addMessage(error.code === 'gemini_rate_limited' ? 'El asistente alcanzó su cuota temporal. Espera un momento e inténtalo de nuevo.' : 'No pude conectarme ahora. Inténtalo nuevamente en unos segundos.', false);
+      }).finally(function () {
+        isSending = false;
+        input.disabled = false;
+        sendButton.disabled = false;
+        sendButton.classList.remove('opacity-50', 'cursor-not-allowed');
+        sendButton.innerHTML = originalSendIcon;
+        input.focus();
+      });
+    }
+
+    fab.addEventListener('click', function () { setOpen(true); });
+    closeButton.addEventListener('click', function () { setOpen(false); });
+    newConversation.addEventListener('click', startNewConversation);
+    historyButton.addEventListener('click', showHistory);
+    historyBack.addEventListener('click', function () { historyPanel.classList.add('hidden'); chat.classList.remove('hidden'); chat.classList.add('flex'); });
+    overlay.addEventListener('click', function () { setOpen(false); });
+    document.addEventListener('keydown', function (event) { if (event.key === 'Escape') setOpen(false); });
+    form.addEventListener('submit', function (event) { event.preventDefault(); sendMessage(input.value); });
+    quickActions.forEach(function (button) { button.addEventListener('click', function () { sendMessage(button.dataset.aiQuestion); }); });
+    if (tooltip) window.setTimeout(function () { tooltip.classList.remove('hidden'); }, 800);
+  });
+  </script>
+
+  <script>
+  document.addEventListener('DOMContentLoaded', function () {
+    var logoutLink = document.getElementById('googleLogoutLink');
+    if (!logoutLink) return;
+    logoutLink.addEventListener('click', function (event) {
+      event.preventDefault();
+      try {
+        if (window.google && google.accounts && google.accounts.id) {
+          google.accounts.id.disableAutoSelect();
+        }
+      } catch (err) {
+        // Google One Tap puede que aún no haya cargado la API; no rompemos el flujo.
+      }
+      window.location.assign(logoutLink.getAttribute('href'));
+    });
+  });
+  </script>
+
+  <script>
+  (function () {
+    var notice = document.getElementById('cookieNotice');
+    if (!notice) return;
+
+    var storageKey = 'ferreelectri_cookie_consent';
+    var storedConsent = null;
+    try {
+      storedConsent = JSON.parse(window.localStorage.getItem(storageKey) || 'null');
+    } catch (error) {}
+    notice.hidden = Boolean(storedConsent && storedConsent.version === 1);
+
+    function saveConsent(choice) {
+      var consent = {
+        version: 1,
+        choice: choice,
+        necessary: true,
+        optional: choice === 'all',
+        savedAt: new Date().toISOString()
+      };
+      try {
+        window.localStorage.setItem(storageKey, JSON.stringify(consent));
+      } catch (error) {}
+      notice.hidden = true;
+      window.dispatchEvent(new CustomEvent('ferreelectri:cookie-consent', { detail: consent }));
+    }
+
+    document.getElementById('cookieAcceptNecessary').addEventListener('click', function () {
+      saveConsent('necessary');
+    });
+    document.getElementById('cookieAcceptAll').addEventListener('click', function () {
+      saveConsent('all');
+    });
+    document.querySelectorAll('.js-open-cookie-preferences').forEach(function (button) {
+      button.addEventListener('click', function () {
+        notice.hidden = false;
+        document.getElementById('cookieAcceptNecessary').focus();
+      });
+    });
+  })();
+  </script>
+
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>

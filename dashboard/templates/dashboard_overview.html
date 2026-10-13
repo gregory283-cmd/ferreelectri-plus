@@ -1,0 +1,248 @@
+{% extends 'base/pan_con_queso.html' %}
+{% load static l10n %}
+
+{% block arroz_con_pollo %}
+<link rel="stylesheet" href="{% static 'css/admin-dashboard.css' %}?v=20261010-compact">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+
+<main class="executive-dashboard" data-currency="{{ currency|escape }}">
+    <header class="executive-header">
+        <div class="executive-heading">
+            <span class="executive-eyebrow"><span class="material-symbols-outlined" aria-hidden="true">monitoring</span> CENTRO DE MANDO</span>
+            <h1>Resumen ejecutivo</h1>
+            <p>Ventas, rentabilidad, inventario y actividad operativa en un solo lugar.</p>
+        </div>
+        <div class="executive-header-actions">
+            <span class="period-chip"><span class="status-dot"></span> Últimos 30 días</span>
+            <a class="quiet-action" href="{% url 'admin_historial_pedidos' %}"><span class="material-symbols-outlined" aria-hidden="true">receipt_long</span> Pedidos</a>
+            {% if perms.dashboard.view_operational_orders %}<a class="quiet-action" href="{% url 'admin_envios' %}"><span class="material-symbols-outlined" aria-hidden="true">local_shipping</span> Envíos</a>{% endif %}
+            <a class="quiet-action" href="{% url 'cierre_caja' %}"><span class="material-symbols-outlined" aria-hidden="true">point_of_sale</span> Cierre de caja</a>
+            <div class="header-currency-controls" aria-label="Moneda y tasa BCV">
+                <form class="currency-picker" method="get" action="{% url 'dashboard' %}">
+                    <label for="dashboard-currency">Moneda</label>
+                    <select id="dashboard-currency" name="moneda" aria-label="Moneda de visualización">
+                        <option value="Bs." {% if currency == 'Bs.' %}selected{% endif %} {% if not currency_conversion_available and source_currency != 'Bs.' %}disabled{% endif %}>Bs.</option>
+                        <option value="USD" {% if currency == 'USD' %}selected{% endif %} {% if not currency_conversion_available and source_currency != 'USD' %}disabled{% endif %}>USD</option>
+                    </select>
+                    <button class="currency-apply" type="submit" aria-label="Aplicar moneda" title="Aplicar moneda"><span class="material-symbols-outlined" aria-hidden="true">sync_alt</span></button>
+                </form>
+                <form class="bcv-rate-form" method="post" action="{% url 'actualizar_tasa_bcv' %}">
+                    {% csrf_token %}
+                    <label for="bcv-rate">BCV</label>
+                    <span class="bcv-unit">Bs./USD</span>
+                    <input id="bcv-rate" type="number" name="bcv_rate" min="0.0001" max="9999999999.9999" step="0.0001" value="{{ bcv_rate|unlocalize }}" required aria-label="Tasa BCV en bolívares por dólar" title="Tasa BCV en bolívares por dólar">
+                    <input type="hidden" name="moneda" value="{{ currency }}">
+                    <button type="submit" aria-label="Guardar tasa BCV" title="Guardar tasa BCV"><span class="material-symbols-outlined" aria-hidden="true">save</span></button>
+                </form>
+            </div>
+            <span class="currency-rate-note" title="{% if bcv_updated_at %}Actualizada {{ bcv_updated_at|date:'d/m/Y H:i' }}{% else %}Tasa BCV pendiente{% endif %}{% if currency_converted %} · Equivalencia referencial, no modifica facturas emitidas{% endif %}">{% if bcv_updated_at %}BCV {{ bcv_rate|floatformat:4 }}{% else %}Configurar BCV{% endif %}</span>
+        </div>
+    </header>
+
+    <section class="executive-kpis" aria-label="Indicadores de los últimos 30 días">
+        <article class="executive-kpi kpi-sales">
+            <div class="kpi-topline"><span>Ventas facturadas</span><span class="kpi-icon material-symbols-outlined" aria-hidden="true">payments</span></div>
+            <strong class="animated-value" data-count="{{ sales_30d|unlocalize }}" data-prefix="{{ currency }} " data-decimals="2">{{ currency }} {{ sales_30d|floatformat:2 }}</strong>
+            <div class="kpi-note">
+                {% if sales_change_pct != None %}
+                    {% if sales_change_pct >= 0 %}<span class="trend-up">{% else %}<span class="trend-down">{% endif %}{{ sales_change_pct|floatformat:1 }}%</span>
+                    frente a los 30 días anteriores
+                {% else %}
+                    <span class="trend-neutral">Sin base comparable</span> aún no hay ventas previas
+                {% endif %}
+            </div>
+        </article>
+        <article class="executive-kpi kpi-profit">
+            <div class="kpi-topline"><span>Utilidad bruta estimada</span><span class="kpi-icon material-symbols-outlined" aria-hidden="true">account_balance</span></div>
+            <strong class="animated-value" data-count="{{ gross_profit_30d|unlocalize }}" data-prefix="{{ currency }} " data-decimals="2">{{ currency }} {{ gross_profit_30d|floatformat:2 }}</strong>
+            <div class="kpi-note">
+                {% if gross_margin_pct != None %}Margen {{ gross_margin_pct|floatformat:1 }}%{% else %}Disponible cuando existan ventas{% endif %}
+                <span class="kpi-coverage">Costos cubiertos: {{ cost_coverage_pct }}%</span>
+            </div>
+        </article>
+        <article class="executive-kpi kpi-orders">
+            <div class="kpi-topline"><span>Facturas emitidas</span><span class="kpi-icon material-symbols-outlined" aria-hidden="true">description</span></div>
+            <strong class="animated-value" data-count="{{ current_invoice_count }}" data-decimals="0">{{ current_invoice_count }}</strong>
+            <div class="kpi-note">{{ units_sold_30d }} unidades vendidas en el periodo</div>
+        </article>
+        <article class="executive-kpi kpi-ticket">
+            <div class="kpi-topline"><span>Ticket promedio</span><span class="kpi-icon material-symbols-outlined" aria-hidden="true">shopping_bag</span></div>
+            <strong class="animated-value" data-count="{{ average_ticket|unlocalize }}" data-prefix="{{ currency }} " data-decimals="2">{{ currency }} {{ average_ticket|floatformat:2 }}</strong>
+            <div class="kpi-note">Por factura facturada en los últimos 30 días</div>
+        </article>
+    </section>
+
+    <div class="registry-strip" aria-label="Registros administrativos">
+        <span><i class="material-symbols-outlined" aria-hidden="true">group</i> Clientes <strong class="animated-value" data-count="{{ total_clientes }}" data-decimals="0">{{ total_clientes }}</strong></span>
+        <span><i class="material-symbols-outlined" aria-hidden="true">local_shipping</i> Proveedores <strong class="animated-value" data-count="{{ total_proveedores }}" data-decimals="0">{{ total_proveedores }}</strong></span>
+        <span><i class="material-symbols-outlined" aria-hidden="true">inventory_2</i> Productos <strong class="animated-value" data-count="{{ total_productos }}" data-decimals="0">{{ total_productos }}</strong></span>
+        <span><i class="material-symbols-outlined" aria-hidden="true">all_inbox</i> Unidades en stock <strong class="animated-value" data-count="{{ inventory_units }}" data-decimals="0">{{ inventory_units }}</strong></span>
+    </div>
+
+    <section class="executive-grid executive-grid-primary">
+        <article class="dashboard-panel sales-panel">
+            <div class="panel-heading-row">
+                <div>
+                    <span class="panel-kicker">RENDIMIENTO COMERCIAL</span>
+                    <h2>Tendencia de ventas</h2>
+                    <p>Ingresos diarios facturados en {{ currency }}.</p>
+                </div>
+                <span class="panel-icon material-symbols-outlined" aria-hidden="true">show_chart</span>
+            </div>
+            <div class="sales-chart-wrap">
+                <canvas id="sales-trend-chart" aria-label="Ventas diarias de los últimos treinta días"></canvas>
+                {% if not sales_30d %}<div class="chart-empty-state"><span class="material-symbols-outlined" aria-hidden="true">insights</span><strong>Tu primera venta aparecerá aquí</strong><span>La serie se completa automáticamente al emitir facturas.</span></div>{% endif %}
+            </div>
+            <div class="period-compare">
+                <span><i class="compare-current"></i> Periodo actual <strong>{{ currency }} {{ sales_30d|floatformat:2 }}</strong></span>
+                <span><i class="compare-previous"></i> Periodo anterior <strong>{{ currency }} {{ sales_previous_30d|floatformat:2 }}</strong></span>
+            </div>
+        </article>
+
+        <article class="dashboard-panel top-products-panel">
+            <div class="panel-heading-row">
+                <div>
+                    <span class="panel-kicker">DEMANDA</span>
+                    <h2>Productos más vendidos</h2>
+                    <p>Ordenados por unidades en los últimos 30 días.</p>
+                </div>
+                <a class="panel-icon-link" href="{% url 'inventario' %}" aria-label="Abrir inventario" title="Abrir inventario"><span class="material-symbols-outlined" aria-hidden="true">arrow_outward</span></a>
+            </div>
+            {% if top_products %}
+                <ol class="top-product-list">
+                    {% for product in top_products %}
+                    <li class="top-product-item">
+                        <span class="product-rank">{{ forloop.counter|stringformat:"02d" }}</span>
+                        <div class="product-rank-content">
+                            <div class="product-rank-label"><strong>{{ product.producto__Descripcion }}</strong><span>{{ product.unidades }} uds.</span></div>
+                            <div class="product-bar-track"><span style="width: {{ product.porcentaje }}%"></span></div>
+                            <small>{{ currency }} {{ product.ingresos|floatformat:2 }}</small>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ol>
+            {% else %}
+                <div class="panel-empty-state"><span class="material-symbols-outlined" aria-hidden="true">inventory_2</span><strong>Sin ventas en este periodo</strong><span>Los artículos destacados aparecerán cuando se facturen productos.</span></div>
+            {% endif %}
+        </article>
+    </section>
+
+    <section class="executive-grid executive-grid-secondary">
+        <article class="dashboard-panel catalog-panel">
+            <div class="panel-heading-row">
+                <div>
+                    <span class="panel-kicker">INVENTARIO Y PRECIOS</span>
+                    <h2>Salud del catálogo</h2>
+                    <p>Revisión del precio publicado frente al costo registrado.</p>
+                </div>
+                <a class="panel-icon-link" href="{% url 'inventario' %}" aria-label="Revisar inventario" title="Revisar inventario"><span class="material-symbols-outlined" aria-hidden="true">arrow_outward</span></a>
+            </div>
+            <div class="catalog-metrics">
+                <div class="catalog-metric {% if products_below_cost %}metric-warning{% else %}metric-good{% endif %}">
+                    <span class="material-symbols-outlined" aria-hidden="true">{% if products_below_cost %}warning{% else %}verified{% endif %}</span>
+                    <div><strong class="animated-value" data-count="{{ products_below_cost }}" data-decimals="0">{{ products_below_cost }}</strong><span>Productos al costo o por debajo</span></div>
+                </div>
+                <div class="catalog-metric {% if products_out_of_stock %}metric-warning{% else %}metric-good{% endif %}">
+                    <span class="material-symbols-outlined" aria-hidden="true">inventory</span>
+                    <div><strong class="animated-value" data-count="{{ products_out_of_stock }}" data-decimals="0">{{ products_out_of_stock }}</strong><span>Productos sin existencias</span></div>
+                </div>
+            </div>
+            <div class="catalog-footnote">
+                <span>Margen promedio del catálogo</span>
+                <strong>{% if catalog_margin_pct != None %}{{ catalog_margin_pct|floatformat:1 }}%{% else %}Sin costos comparables{% endif %}</strong>
+            </div>
+            {% if products_below_cost_list %}
+                <div class="price-alert-list">
+                    {% for product in products_below_cost_list %}
+                    <div><span>{{ product.Descripcion }}</span><strong>{{ currency }} {{ product.Precio|floatformat:2 }} <i>vs.</i> {{ currency }} {{ product.Costo|floatformat:2 }}</strong></div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="catalog-footnote-note">Ningún artículo con costo registrado se vende al costo o por debajo.</p>
+            {% endif %}
+            <div class="inventory-value-line"><span>Valor del inventario a costo</span><strong>{{ currency }} {{ inventory_cost_value|floatformat:2 }}</strong></div>
+            {% if products_cost_unknown %}<p class="data-quality-note">{{ products_cost_unknown }} productos con existencias requieren revisar su costo.</p>{% endif %}
+        </article>
+
+        <article class="dashboard-panel audit-panel">
+            <div class="panel-heading-row">
+                <div>
+                    <span class="panel-kicker">CONTROL Y TRAZABILIDAD</span>
+                    <h2>Actividad del sistema</h2>
+                    <p>{{ audit_total_7d }} eventos registrados en los últimos 7 días.</p>
+                </div>
+                <a class="panel-icon-link" href="{% url 'auditoria_completa' %}" aria-label="Abrir auditoría completa" title="Abrir auditoría completa"><span class="material-symbols-outlined" aria-hidden="true">arrow_outward</span></a>
+            </div>
+            <div class="audit-chart-wrap"><canvas id="audit-activity-chart" aria-label="Eventos de auditoría por día"></canvas>{% if not audit_total_7d %}<div class="audit-empty-overlay">Sin eventos recientes</div>{% endif %}</div>
+            <div class="audit-actions-list">
+                {% for action in audit_actions %}<span><b>{{ action.action|default:"Sin acción" }}</b><strong>{{ action.total }}</strong></span>{% empty %}<span class="audit-empty">No hay eventos recientes.</span>{% endfor %}
+            </div>
+        </article>
+    </section>
+
+    <section class="executive-grid executive-grid-bottom">
+        <article class="dashboard-panel recent-panel">
+            <div class="panel-heading-row">
+                <div>
+                    <span class="panel-kicker">SEGUIMIENTO</span>
+                    <h2>Registro reciente</h2>
+                    <p>Últimos cambios y accesos administrativos.</p>
+                </div>
+                <a class="quiet-action" href="{% url 'descargar_auditoria_csv' %}"><span class="material-symbols-outlined" aria-hidden="true">download</span> Exportar CSV</a>
+            </div>
+            <div class="audit-table-wrap">
+                <table class="executive-table">
+                    <thead><tr><th>Usuario</th><th>Acción</th><th>Área</th><th>Detalle</th><th>Fecha</th></tr></thead>
+                    <tbody>
+                        {% for log in audit_logs %}
+                        <tr><td>{{ log.username }}</td><td><span class="action-pill">{{ log.action }}</span></td><td>{{ log.model_name }}</td><td class="audit-detail" title="{{ log.details }}">{{ log.details }}</td><td>{{ log.timestamp|date:"d/m H:i" }}</td></tr>
+                        {% empty %}<tr><td colspan="5" class="table-empty">Aún no hay actividad administrativa registrada.</td></tr>{% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </article>
+
+        <article class="dashboard-panel backup-panel">
+            <div class="panel-heading-row">
+                <div>
+                    <span class="panel-kicker">PROTECCIÓN DE DATOS</span>
+                    <h2>Copias de seguridad</h2>
+                    <p>PostgreSQL custom + manifiesto + archivos privados.</p>
+                </div>
+                <span class="backup-shield material-symbols-outlined" aria-hidden="true">backup</span>
+            </div>
+            <div class="backup-status-grid">
+                <div><span>Automatización</span><strong class="{% if backup_schedule_installed %}status-ok{% else %}status-warning{% endif %}">{% if backup_schedule_installed %}Diaria · 02:00{% else %}No instalada{% endif %}</strong></div>
+                <div><span>Último respaldo</span><strong>{% if backup_history %}{{ backup_history.0.created_at|date:"d/m/Y H:i" }}{% else %}Sin copias{% endif %}</strong></div>
+                <div><span>Destino secundario</span><strong class="{% if backup_mirror_configured %}status-ok{% else %}status-warning{% endif %}">{% if backup_mirror_configured %}Configurado{% else %}Pendiente de autorización{% endif %}</strong></div>
+                <div><span>Retención local</span><strong>{{ backup_retention }} copias</strong></div>
+            </div>
+            {% if not backup_tools_ready %}<p class="backup-alert">Faltan las herramientas `pg_dump`/`pg_restore`; no se puede crear un respaldo verificable.</p>{% endif %}
+            <div class="backup-actions">
+                <form method="post" action="{% url 'manual_backup' %}">{% csrf_token %}<button type="submit" class="backup-primary" {% if not backup_tools_ready %}disabled{% endif %}><span class="material-symbols-outlined" aria-hidden="true">save</span> Crear respaldo ahora</button></form>
+                {% if backup_history %}<a class="backup-secondary" href="{% url 'download_latest_backup' %}"><span class="material-symbols-outlined" aria-hidden="true">download</span> Descargar último</a>{% endif %}
+            </div>
+            {% if backup_latest_verified %}<p class="backup-integrity"><span class="material-symbols-outlined" aria-hidden="true">verified_user</span> Integridad verificada · SHA-256 {{ backup_latest_hash|slice:":12" }}…</p>{% endif %}
+            {% if backup_history %}
+            <details class="backup-history"><summary>Historial reciente · {{ backup_archive_count }}</summary><ul>{% for backup in backup_history %}<li><span>{{ backup.created_at|date:"d/m/Y H:i" }}</span><strong>{{ backup.size_mb }} MB</strong></li>{% endfor %}</ul></details>
+            {% endif %}
+            <p class="backup-note">Cada operación confirmada queda guardada en PostgreSQL. La copia diaria es una protección recuperable; no sustituye una copia fuera del equipo.</p>
+        </article>
+    </section>
+</main>
+
+{{ sales_chart|json_script:"sales-chart-data" }}
+{{ audit_chart|json_script:"audit-chart-data" }}
+<script src="{% static 'js/admin-dashboard.js' %}?v=20261010-compact"></script>
+{% endblock %}
+
+{% block help_content %}
+<div>
+    <h4>Panel ejecutivo</h4>
+    <p>Las ventas y comparaciones usan facturas emitidas; el margen bruto utiliza costos históricos de las líneas que tienen ese dato. Los indicadores del catálogo comparan el precio actual con el costo registrado.</p>
+    <ul>
+        <li>Las gráficas muestran estados vacíos hasta que se registren ventas o actividad.</li>
+        <li>Los respaldos se validan antes de guardarse. La copia externa requiere configurar y autorizar un destino.</li>
+    </ul>
+</div>
+{% endblock %}

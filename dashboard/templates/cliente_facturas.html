@@ -1,0 +1,94 @@
+{% extends "dashboard_base.html" %}
+{% load static %}
+
+{% block title %}Mis facturas | FerreElectri PLUS{% endblock %}
+{% block page_title %}Facturas{% endblock %}
+
+{% block content %}
+<section class="client-page" aria-labelledby="client-invoices-title">
+  <header class="client-page-heading">
+    <div>
+      <p class="client-eyebrow">Documentos de compra</p>
+      <h2 id="client-invoices-title">Mis facturas</h2>
+      <p>Consulta y descarga los documentos emitidos para tus pedidos confirmados.</p>
+    </div>
+    <a class="client-action" href="{% url 'panel_cliente' %}"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Volver al resumen</a>
+  </header>
+
+  <div class="client-finance-metrics">
+    <article class="client-metric" data-tone="violet"><span class="client-metric-top"><span class="client-metric-label">Facturas emitidas</span><span class="client-metric-icon"><i class="fa-solid fa-file-invoice" aria-hidden="true"></i></span></span><strong class="client-metric-value">{{ facturas_emitidas }}</strong><span class="client-metric-note">Documentos confirmados</span></article>
+    <article class="client-metric" data-tone="green"><span class="client-metric-top"><span class="client-metric-label">Importe facturado</span><span class="client-metric-icon"><i class="fa-solid fa-receipt" aria-hidden="true"></i></span></span><strong class="client-metric-value">$ {{ importe_facturado|floatformat:2 }}</strong><span class="client-metric-note">Solo facturas emitidas</span></article>
+    <article class="client-metric" data-tone="blue"><span class="client-metric-top"><span class="client-metric-label">Resultados</span><span class="client-metric-icon"><i class="fa-solid fa-list-check" aria-hidden="true"></i></span></span><strong class="client-metric-value">{{ facturas.paginator.count }}</strong><span class="client-metric-note">Coincidencias del filtro</span></article>
+  </div>
+
+  <div class="client-finance-chart-grid">
+    <section class="client-module" aria-labelledby="invoice-month-chart-title">
+      <div class="client-module-heading"><div><h3 id="invoice-month-chart-title">Facturación mensual</h3><p>Importe emitido durante los últimos seis meses.</p></div><i class="fa-solid fa-chart-column" aria-hidden="true"></i></div>
+      {% if facturas_emitidas %}
+      <div class="client-chart-frame" data-chart-frame>
+        <div class="client-mini-bars client-chart-fallback" role="img" aria-label="Facturación emitida por mes">
+          {% for item in invoice_month_chart %}<div class="client-mini-bar-row"><span>{{ item.label }}</span><span class="client-mini-bar-track"><i style="width: {{ item.percentage }}%"></i></span><strong>$ {{ item.value|floatformat:0 }}</strong></div>{% endfor %}
+        </div>
+        <div class="client-chart-canvas"><canvas data-client-chart data-chart-type="bar" data-source="client-invoice-month-series" data-label="Facturado" data-currency="true" role="img" aria-label="Facturación mensual de los últimos seis meses"></canvas></div>
+      </div>
+      {% else %}<div class="client-empty-state"><i class="fa-solid fa-chart-column" aria-hidden="true"></i><strong>Sin facturación en el periodo</strong><p>Las facturas emitidas aparecerán en esta gráfica.</p></div>{% endif %}
+    </section>
+
+    <section class="client-module" aria-labelledby="invoice-status-chart-title">
+      <div class="client-module-heading"><div><h3 id="invoice-status-chart-title">Estado de documentos</h3><p>Distribución de las facturas de tu cuenta.</p></div><i class="fa-solid fa-chart-pie" aria-hidden="true"></i></div>
+      {% if total_facturas %}
+      <div class="client-chart-frame client-status-chart-frame" data-chart-frame>
+        <ul class="client-chart-legend client-chart-fallback">{% for item in invoice_status_chart %}<li><span><i data-tone="{{ forloop.counter }}"></i>{{ item.label }}</span><strong>{{ item.value }}</strong></li>{% endfor %}</ul>
+        <div class="client-chart-canvas"><canvas data-client-chart data-chart-type="doughnut" data-source="client-invoice-status-series" role="img" aria-label="Facturas por estado"></canvas></div>
+      </div>
+      {% else %}<div class="client-empty-state"><i class="fa-regular fa-file-lines" aria-hidden="true"></i><strong>Sin documentos</strong><p>El gráfico estará disponible cuando se emita una factura.</p></div>{% endif %}
+    </section>
+  </div>
+
+  <form class="client-filter-bar" method="get" role="search" aria-label="Buscar facturas">
+    <label class="client-filter-search"><span class="sr-only">Buscar por número de factura o pedido</span><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i><input type="search" name="q" value="{{ query }}" placeholder="N.º de factura o pedido"></label>
+    <label class="client-filter-select"><span class="sr-only">Estado</span><select name="estado"><option value="">Todos los estados</option><option value="facturada" {% if estado == 'facturada' %}selected{% endif %}>Facturada</option><option value="anulada" {% if estado == 'anulada' %}selected{% endif %}>Anulada</option></select></label>
+    <button class="client-action primary" type="submit"><i class="fa-solid fa-filter" aria-hidden="true"></i> Aplicar filtros</button>
+    {% if query or estado %}<a class="client-action" href="{% url 'cliente_facturas' %}">Limpiar</a>{% endif %}
+  </form>
+
+  <section class="client-table-shell" aria-label="Listado de facturas">
+    <div class="client-table-heading"><div><h3>Documentos</h3><p>Los archivos solo están disponibles para la cuenta propietaria.</p></div></div>
+    {% if facturas %}
+    <div class="client-table-scroll">
+      <table class="client-data-table">
+        <thead><tr><th>Factura</th><th>Pedido</th><th>Fecha</th><th>Estado</th><th class="is-numeric">Total</th><th class="is-actions">Documento</th></tr></thead>
+        <tbody>
+          {% for factura in facturas %}
+          <tr>
+            <td><strong>#{{ factura.numero }}</strong></td>
+            <td>{% if factura.pedido_id %}<a href="{% url 'detalle_pedido_cliente' factura.pedido_id %}">#{{ factura.pedido_id }}</a>{% else %}<span class="client-table-muted">Venta</span>{% endif %}</td>
+            <td>{{ factura.fecha|date:"d/m/Y" }}</td>
+            <td><span class="client-state" data-state="{{ factura.estado }}">{{ factura.get_estado_display }}</span></td>
+            <td class="is-numeric">$ {{ factura.total|floatformat:2 }}</td>
+            <td class="is-actions">{% if factura.estado == 'facturada' %}<a class="client-icon-link" href="{% url 'descargar_factura_pdf_cliente' factura.numero %}" title="Descargar PDF" aria-label="Descargar factura #{{ factura.numero }}"><i class="fa-solid fa-file-arrow-down" aria-hidden="true"></i></a>{% else %}<span class="client-table-muted">No disponible</span>{% endif %}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="client-page-empty"><i class="fa-regular fa-file-lines" aria-hidden="true"></i><h3>No hay facturas para mostrar</h3><p>{% if query or estado %}Prueba a cambiar o limpiar los filtros.{% else %}Cuando se confirme el pago de un pedido, su factura aparecerá aquí.{% endif %}</p>{% if query or estado %}<a class="client-action" href="{% url 'cliente_facturas' %}">Limpiar filtros</a>{% endif %}</div>
+    {% endif %}
+  </section>
+
+  {% if facturas.has_other_pages %}
+  <nav class="client-pagination" aria-label="Paginación de facturas">
+    <span>Página {{ facturas.number }} de {{ facturas.paginator.num_pages }}</span>
+    <div>{% if facturas.has_previous %}<a class="client-action" href="?page={{ facturas.previous_page_number }}&amp;q={{ query|urlencode }}&amp;estado={{ estado|urlencode }}"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Anterior</a>{% endif %}{% if facturas.has_next %}<a class="client-action" href="?page={{ facturas.next_page_number }}&amp;q={{ query|urlencode }}&amp;estado={{ estado|urlencode }}">Siguiente <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>{% endif %}</div>
+  </nav>
+  {% endif %}
+</section>
+{% endblock %}
+
+{% block page_scripts %}
+{{ invoice_month_chart|json_script:"client-invoice-month-series" }}
+{{ invoice_status_chart|json_script:"client-invoice-status-series" }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{% static 'js/client-charts.js' %}?v=20261008-charts-v1"></script>
+{% endblock %}

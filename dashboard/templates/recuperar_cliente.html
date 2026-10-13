@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Recuperar acceso | FerreElectri PLUS{% endblock %}
+{% block body_class %}theme-dark auth-page{% endblock %}
+
+{% block content %}
+<main class="auth-viewport recovery-viewport">
+  <div class="auth-layout auth-layout-recovery">
+    <section class="auth-panel auth-form-panel recovery-form-panel" aria-labelledby="recovery-title">
+      <div class="auth-heading">
+        <span class="eyebrow">Recuperación de acceso</span>
+        <h1 id="recovery-title">Recupera tu contraseña</h1>
+        <p>Indica el correo asociado a tu cuenta. Si existe una cuenta, enviaremos allí un código temporal.</p>
+      </div>
+
+      {% if error %}<div class="auth-alert auth-alert-error" role="alert">{{ error }}</div>{% endif %}
+      {% if messages %}
+        {% for message in messages %}
+          {% if 'admin-action' not in message.tags %}
+            <div class="auth-alert{% if 'error' in message.tags %} auth-alert-error{% elif 'success' in message.tags %} auth-alert-success{% endif %}" role="status">{{ message }}</div>
+          {% endif %}
+        {% endfor %}
+      {% endif %}
+
+      <div class="recovery-security-note"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i><span>El código vence en 10 minutos. Nunca compartas este código con nadie.</span></div>
+
+      <form method="post" action="{% url 'solicitar_recuperacion_cliente' %}" class="auth-form" autocomplete="on">
+        {% csrf_token %}
+        <div class="auth-grid">
+          <div class="auth-field full">
+            <label for="client-recovery-email">Correo electrónico</label>
+            <div class="auth-input-wrap">
+              <i class="fa-regular fa-envelope" aria-hidden="true"></i>
+              <input id="client-recovery-email" name="email" type="email" maxlength="254" autocomplete="email" required placeholder="tu@correo.com">
+            </div>
+          </div>
+        </div>
+        <div class="auth-actions auth-actions-wide">
+          <button type="submit" class="auth-btn auth-btn-primary"><i class="fa-solid fa-paper-plane" aria-hidden="true"></i> Enviar código al correo</button>
+        </div>
+      </form>
+
+      <div class="recovery-back-links">
+        <a href="{% url 'login_cliente' %}" class="auth-back-link"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Volver a iniciar sesión</a>
+        <a href="{% url 'index' %}" class="auth-back-link">Página principal</a>
+      </div>
+    </section>
+
+    <aside class="auth-side recovery-side">
+      <a class="auth-side-brand" href="{% url 'index' %}" aria-label="FerreElectri PLUS, inicio">
+        <img src="{% static 'img/logo.png' %}" alt="FerreElectri PLUS">
+        <span>ACCESO DE CLIENTES</span>
+      </a>
+      <div class="auth-side-copy">
+        <p class="auth-side-kicker">TU CUENTA, SIEMPRE CONTIGO</p>
+        <h2>Vuelve a entrar.<br>Tu compra te espera.</h2>
+        <p>Te enviaremos un código temporal al correo de tu cuenta para que elijas una nueva contraseña.</p>
+      </div>
+      <div class="auth-side-footer"><span>COLONCITO, TÁCHIRA</span><span>FERREELECTRI PLUS</span></div>
+    </aside>
+  </div>
+</main>
+{% endblock %}

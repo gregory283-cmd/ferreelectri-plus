@@ -1,0 +1,389 @@
+{% extends "base/pan_con_queso.html" %}
+{% load static %}
+
+{% block help_content %}
+CxC: Lista de cuentas por cobrar. Revisa saldos, descarga PDF y administra pagos o anulaciones desde la misma vista.
+{% endblock %}
+
+{% block arroz_con_pollo %}
+<div class="glass-panel cxc-page" style="margin-bottom:0;">
+  <style>
+    .row-actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: flex-start;
+      flex-wrap: nowrap;
+      white-space: nowrap;
+      overflow-x: auto;
+    }
+    .row-action-btn {
+      flex-shrink: 0;
+    }
+    .row-action-btn {
+      padding: 10px 18px !important;
+      font-size: 0.98rem !important;
+      min-width: fit-content !important;
+      background: #ffffff !important;
+      color: #0b1e38 !important;
+      border: 1px solid rgba(0,178,255,0.28) !important;
+      box-shadow: 0 12px 30px rgba(0,178,255,0.10) !important;
+      transition: background 180ms ease, border-color 180ms ease, color 180ms ease, transform 180ms ease;
+    }
+    .row-action-btn:hover,
+    .row-action-btn:focus {
+      background: rgba(0,178,255,0.12) !important;
+      color: #06243a !important;
+      border-color: rgba(0,178,255,0.45) !important;
+      transform: translateY(-1px);
+      box-shadow: 0 8px 24px rgba(0,113,180,0.18) !important;
+    }
+    .row-action-btn i { margin-right: 8px; }
+    .row-action-btn:active { transform: translateY(0); box-shadow: none !important; }
+
+    .table-glass {
+      margin-bottom: 0;
+      padding: 0;
+      background: #ffffff;
+      border-radius: 24px;
+      box-shadow: 0 20px 45px rgba(15,40,65,0.08);
+      overflow: hidden;
+      border: 1px solid rgba(13,110,253,0.14);
+    }
+    .table-glass table {
+      width: 100%;
+      margin: 0;
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+    .table-glass th,
+    .table-glass td {
+      transition: background 0.2s ease, color 0.2s ease;
+      padding: 16px 18px;
+      border-bottom: 1px solid rgba(0,0,0,0.06);
+    }
+    .table-glass thead th {
+      background: rgba(0,178,255,0.12);
+      color: #0a2941;
+      font-weight: 700;
+    }
+    .table-glass tbody tr:hover {
+      background: rgba(0,178,255,0.08);
+    }
+    html[data-theme="dark"] .row-action-btn,
+    html[data-theme="dark"] .table-glass {
+      background: rgba(8, 18, 34, 0.92) !important;
+      border-color: rgba(255,255,255,0.08) !important;
+      color: var(--text-primary) !important;
+    }
+    html[data-theme="dark"] .table-glass th {
+      background: rgba(2,117,179,0.75) !important;
+      color: #ffffff !important;
+    }
+    html[data-theme="dark"] .table-glass td {
+      border-color: rgba(255,255,255,0.12) !important;
+      color: #e8f4ff !important;
+    }
+    html[data-theme="dark"] .badge {
+      background: rgba(67,233,123,.16) !important;
+      color: #c9ffda !important;
+      border-color: rgba(67,233,123,.3) !important;
+    }
+  </style>
+  <div class="cxc-heading">
+    <div class="cxc-title-block">
+      <span class="cxc-title-icon material-symbols-outlined" aria-hidden="true">receipt_long</span>
+      <div><p class="module-eyebrow">CARTERA · COBRANZA</p><h1>Cuentas por cobrar</h1><p>Seguimiento de facturas activas con saldo pendiente.</p></div>
+    </div>
+    <div class="cxc-header-actions">
+      <form class="cxc-search" method="get" action="{% url 'listar_cxc' %}" role="search">
+        <label class="sr-only" for="buscar-cxc">Buscar por factura o cliente</label>
+        <input id="buscar-cxc" type="search" name="q" value="{{ search_query }}" placeholder="Factura o cliente">
+        <button type="submit" aria-label="Buscar cuenta"><span class="material-symbols-outlined" aria-hidden="true">search</span></button>
+        {% if search_query %}<a href="{% url 'listar_cxc' %}">Limpiar</a>{% endif %}
+      </form>
+      <a class="cxc-button secondary" href="{% url 'listar_cxc_anuladas' %}"><span class="material-symbols-outlined" aria-hidden="true">block</span> Canceladas</a>
+      <button type="button" id="btn-cobranza-filtros-cxc" class="cxc-button primary"><span class="material-symbols-outlined" aria-hidden="true">download</span> Reporte de cobranza</button>
+    </div>
+  </div>
+
+  <div class="cxc-metrics" aria-label="Resumen de cuentas por cobrar">
+    <div class="cxc-metric"><span>Facturas con saldo</span><strong>{{ total_cxc_accounts }}</strong></div>
+    <div class="cxc-metric"><span>Saldo total por cobrar</span><strong>${{ total_cxc_pending|floatformat:2 }}</strong></div>
+  </div>
+
+  <!-- Modal filtros Cobranza por cobrar (CxC) -->
+  <div id="modal-cobranza-cxc" class="cxc-modal" role="dialog" aria-modal="true" aria-labelledby="cxc-report-title" aria-hidden="true">
+    <div class="cxc-modal-card">
+      <header class="cxc-modal-header">
+        <div><p class="module-eyebrow">REPORTE · CUENTAS POR COBRAR</p><h2 id="cxc-report-title">Cobranza por cobrar</h2><p>Define los filtros para preparar el reporte en PDF.</p></div>
+        <button type="button" id="btn-cobranza-cerrar-cxc" class="cxc-modal-close" aria-label="Cerrar reporte"><span class="material-symbols-outlined" aria-hidden="true">close</span></button>
+      </header>
+      <div class="cxc-modal-body">
+        <div class="cxc-filter-grid">
+          <label>Cliente o cédula<input id="cobranza-cliente-cxc" type="text" placeholder="Nombre o cédula"></label>
+          <label>Antigüedad mayor a (días)<input id="cobranza-dias-cxc" type="number" min="0" step="1" placeholder="Ej. 7"></label>
+          <label>Fecha desde<input id="cobranza-from-cxc" type="date"></label>
+          <label>Fecha hasta<input id="cobranza-to-cxc" type="date"></label>
+        </div>
+        <div class="cxc-status-filters">
+          <label><input id="cobranza-anuladas-cxc" type="checkbox" checked> Anuladas</label>
+          <label><input id="cobranza-facturadas-cxc" type="checkbox" checked> Facturadas</label>
+        </div>
+        <p class="cxc-form-note">Selecciona al menos un estado para incluirlo en el PDF.</p>
+        <p id="cxc-filter-error" class="cxc-filter-error" role="alert" hidden></p>
+        <footer class="cxc-modal-actions">
+          <button type="button" id="cobranza-reset-cxc" class="cxc-button secondary">Restablecer</button>
+          <button type="button" id="cobranza-descargar-cxc" class="cxc-button primary"><span class="material-symbols-outlined" aria-hidden="true">picture_as_pdf</span> Descargar PDF</button>
+        </footer>
+      </div>
+    </div>
+  </div>
+
+  <div class="table-glass">
+    <div class="cxc-table-caption"><strong>Facturas activas</strong><span>{{ matching_cxc_accounts }} coincidencias</span></div>
+    <table>
+      <thead>
+        <tr>
+          <th>Factura</th>
+          <th>Cliente</th>
+          <th>Fecha</th>
+          <th class="right">Total</th>
+          <th class="right">Pagado</th>
+          <th class="right">Pendiente</th>
+          <th>Estado</th>
+          <th style="width: 320px;">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+        <tr>
+          <td>#{{ r.numero }}</td>
+          <td>{{ r.cliente }}</td>
+          <td class="right" style="text-align:left;">{{ r.fecha|date:"d/m/Y" }}</td>
+          <td class="right mini">{{ r.total }}</td>
+          <td class="right mini">{{ r.pagado }}</td>
+          <td class="right mini" style="color:#1976d2;">{{ r.pendiente }}</td>
+          <td>
+            {% if r.estado == 'activa' %}
+              <span class="badge" style="background: rgba(67,233,123,.14); color:#1b7a34; border:1px solid rgba(67,233,123,.28); padding:6px 12px; border-radius:999px; font-weight:900;">
+                activa
+              </span>
+            {% else %}
+              <span class="badge" style="background: rgba(211,47,47,.12); color:#b71c1c; border:1px solid rgba(211,47,47,.22); padding:6px 12px; border-radius:999px; font-weight:900;">
+                anulada
+              </span>
+            {% endif %}
+          </td>
+          <td>
+            <div class="row-actions">
+              <a class="btn-modern row-action-btn" href="{% url 'pagos_factura' r.numero %}"
+                 title="Ver pagos" aria-label="Ver pagos">
+                <i class="fa-solid fa-receipt"></i> Ver pagos
+              </a>
+
+              {% if r.estado == 'activa' and r.pendiente|floatformat:"2" != "0.00" %}
+                <a class="btn-modern row-action-btn" href="{% url 'registrar_pago_form' r.numero %}"
+                   title="Registrar pago" aria-label="Registrar pago">
+                  <i class="fa-solid fa-plus"></i> Registrar pago
+                </a>
+              {% else %}
+                <span style="display:inline-flex; align-items:center; gap:8px; padding:10px 16px; border-radius:14px; border:1px solid rgba(0,178,255,.25); background:rgba(255,255,255,.7); opacity:.7; font-weight:900;">
+                  <i class="fa-solid fa-ban"></i> Sin saldo / anulada
+                </span>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="8" class="muted" style="padding:18px 14px;">No hay cuentas CxC aún.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    {% if rows.has_other_pages %}
+    <div class="pagination" style="margin: 18px 18px 8px; justify-content: center;">
+      <div>
+        {% if rows.has_previous %}
+          <a href="?q={{ search_query|urlencode }}&page=1">&laquo; Primera</a>
+          <a href="?q={{ search_query|urlencode }}&page={{ rows.previous_page_number }}">Anterior</a>
+        {% endif %}
+      </div>
+      <span class="page-label">Página {{ rows.number }} de {{ rows.paginator.num_pages }}</span>
+      <div>
+        {% if rows.has_next %}
+          <a href="?q={{ search_query|urlencode }}&page={{ rows.next_page_number }}">Siguiente</a>
+          <a href="?q={{ search_query|urlencode }}&page={{ rows.paginator.num_pages }}">Última &raquo;</a>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+  (function () {
+    const modal = document.getElementById('modal-cobranza-cxc');
+    const btnAbrir = document.getElementById('btn-cobranza-filtros-cxc');
+    const btnCerrar = document.getElementById('btn-cobranza-cerrar-cxc');
+    const btnDescargar = document.getElementById('cobranza-descargar-cxc');
+    const btnReset = document.getElementById('cobranza-reset-cxc');
+    const btnBuscar = document.getElementById('btn-cobranza-filtros-cxc');
+    const errorBox = document.getElementById('cxc-filter-error');
+
+    function cerrarModal() {
+      if (!modal) return;
+      modal.classList.remove('is-open');
+      modal.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('cxc-dialog-open');
+      btnBuscar?.focus();
+    }
+
+    if (modal && modal.parentElement !== document.body) {
+      document.body.appendChild(modal);
+    }
+
+    function getVal(id) { return document.getElementById(id)?.value || ''; }
+    function qsBool(id) { return document.getElementById(id)?.checked ? '1' : '0'; }
+
+    if (btnAbrir && modal) {
+      btnAbrir.addEventListener('click', function () {
+        modal.classList.add('is-open');
+        modal.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('cxc-dialog-open');
+        document.getElementById('cobranza-cliente-cxc').focus();
+      });
+    }
+
+    if (btnCerrar && modal) {
+      btnCerrar.addEventListener('click', cerrarModal);
+    }
+
+    if (modal) {
+      modal.addEventListener('click', function (e) {
+        if (e.target === modal) cerrarModal();
+      });
+    }
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape' && modal?.classList.contains('is-open')) cerrarModal();
+    });
+
+    if (btnReset) {
+      btnReset.addEventListener('click', function () {
+        document.getElementById('cobranza-cliente-cxc').value = '';
+        document.getElementById('cobranza-dias-cxc').value = '';
+        document.getElementById('cobranza-from-cxc').value = '';
+        document.getElementById('cobranza-to-cxc').value = '';
+        document.getElementById('cobranza-anuladas-cxc').checked = true;
+        document.getElementById('cobranza-facturadas-cxc').checked = true;
+        if (errorBox) { errorBox.hidden = true; errorBox.textContent = ''; }
+      });
+    }
+
+    if (btnDescargar) {
+      btnDescargar.addEventListener('click', function () {
+        const fromInput = document.getElementById('cobranza-from-cxc');
+        const toInput = document.getElementById('cobranza-to-cxc');
+        fromInput.setCustomValidity('');
+        toInput.setCustomValidity('');
+        let error = '';
+        if (getVal('cobranza-from-cxc') && getVal('cobranza-to-cxc') && getVal('cobranza-from-cxc') > getVal('cobranza-to-cxc')) {
+          toInput.setCustomValidity('La fecha hasta debe ser igual o posterior a la fecha desde.');
+          toInput.reportValidity();
+          error = 'Revisa el rango de fechas.';
+        } else if (!document.getElementById('cobranza-anuladas-cxc').checked && !document.getElementById('cobranza-facturadas-cxc').checked) {
+          error = 'Selecciona al menos un estado para incluir en el reporte.';
+        } else if (!document.getElementById('cobranza-dias-cxc').checkValidity()) {
+          document.getElementById('cobranza-dias-cxc').reportValidity();
+          error = 'El número de días debe ser un entero igual o mayor a cero.';
+        }
+        if (error) {
+          if (errorBox) { errorBox.textContent = error; errorBox.hidden = false; }
+          return;
+        }
+        if (errorBox) { errorBox.hidden = true; errorBox.textContent = ''; }
+        const baseUrl = "{% url 'reporte_cobranza_por_cobrar_pdf' %}";
+        const params = new URLSearchParams();
+
+        const cliente = getVal('cobranza-cliente-cxc').trim();
+        const fromDate = getVal('cobranza-from-cxc');
+        const toDate = getVal('cobranza-to-cxc');
+        const dias = getVal('cobranza-dias-cxc');
+
+        if (cliente) params.set('cliente', cliente);
+        if (fromDate) params.set('from', fromDate);
+        if (toDate) params.set('to', toDate);
+        if (dias) params.set('dias', dias);
+
+        params.set('anuladas', qsBool('cobranza-anuladas-cxc'));
+        params.set('facturadas', qsBool('cobranza-facturadas-cxc'));
+
+        const url = baseUrl + "?" + params.toString();
+        window.open(url, '_blank');
+      });
+    }
+  })();
+</script>
+<style>
+.cxc-page { --cxc-surface:var(--admin-surface,#fff); --cxc-raised:var(--admin-surface-soft,#f5f8fa); --cxc-line:var(--admin-line,#d9e3e8); --cxc-line-strong:var(--admin-line-strong,#c8d6de); --cxc-text:var(--admin-text,#193247); --cxc-muted:var(--admin-muted,#647b8b); margin:0!important; padding:24px!important; border:1px solid var(--cxc-line)!important; border-radius:11px!important; background:var(--cxc-surface)!important; color:var(--cxc-text)!important; box-shadow:var(--admin-shadow,0 14px 36px rgba(18,43,61,.07))!important; }
+.cxc-heading { display:flex; align-items:flex-end; justify-content:space-between; gap:18px; margin-bottom:17px; }
+.cxc-title-block { display:flex; align-items:center; gap:12px; }
+.cxc-title-icon { display:grid; width:45px; height:45px; flex:0 0 45px; place-items:center; border:1px solid #c8dce1; border-radius:8px; background:#eef6f7; color:#176b78; font-size:22px; }
+.cxc-title-block .module-eyebrow { margin:0 0 4px; color:#24777a; font-size:10px; font-weight:800; letter-spacing:.12em; }
+.cxc-title-block h1 { margin:0; color:var(--cxc-text); font:750 23px/1.2 'DM Sans','Segoe UI',sans-serif; letter-spacing:0; }
+.cxc-title-block p:last-child { margin:4px 0 0; color:var(--cxc-muted); font-size:12px; }
+.cxc-header-actions { display:flex; align-items:center; justify-content:flex-end; flex-wrap:wrap; gap:7px; }
+.cxc-search { display:flex; align-items:center; gap:0; }
+.cxc-search input { width:min(230px,26vw); min-width:150px; height:39px; border:1px solid var(--cxc-line-strong); border-right:0; border-radius:5px 0 0 5px; background:var(--cxc-raised); color:var(--cxc-text); padding:0 10px; font:inherit; font-size:11px; }
+.cxc-search button { display:grid; width:39px; height:39px; place-items:center; border:1px solid #176b78; border-radius:0 5px 5px 0; background:#176b78; color:#fff; cursor:pointer; }
+.cxc-search a { margin-left:7px; color:var(--cxc-muted); font-size:10px; font-weight:700; text-decoration:none; }
+.cxc-button { display:inline-flex; min-height:39px; align-items:center; justify-content:center; gap:6px; border:1px solid var(--cxc-line-strong); border-radius:5px; background:var(--cxc-surface); color:var(--cxc-text); padding:0 10px; font:700 10px 'DM Sans','Segoe UI',sans-serif; text-decoration:none; cursor:pointer; }
+.cxc-button .material-symbols-outlined { font-size:16px; }
+.cxc-button.primary { border-color:#176b78; background:#176b78; color:#fff; }
+.cxc-button.primary:hover, .cxc-search button:hover { background:#115762; }
+.cxc-button.secondary:hover { background:var(--cxc-raised); }
+.cxc-metrics { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-bottom:14px; }
+.cxc-metric { display:grid; gap:5px; border:1px solid var(--cxc-line); border-radius:7px; background:var(--cxc-surface); padding:13px 15px; }
+.cxc-metric span { color:var(--cxc-muted); font-size:10px; font-weight:700; }
+.cxc-metric strong { color:var(--cxc-text); font:700 21px/1.2 'DM Sans','Segoe UI',sans-serif; font-variant-numeric:tabular-nums; }
+.cxc-page .table-glass { overflow:hidden; border:1px solid var(--cxc-line)!important; border-radius:8px!important; background:var(--cxc-surface)!important; box-shadow:none!important; }
+.cxc-table-caption { display:flex; justify-content:space-between; gap:10px; padding:12px 14px; border-bottom:1px solid var(--cxc-line); color:var(--cxc-text); font-size:11px; }
+.cxc-table-caption span { color:var(--cxc-muted); }
+.cxc-page .table-glass table { min-width:940px; }
+.cxc-page .table-glass th { background:var(--admin-table-head,#eaf1f5)!important; color:var(--cxc-text)!important; border-color:var(--cxc-line-strong)!important; padding:11px 12px; font-size:10px; letter-spacing:.06em; text-transform:uppercase; }
+.cxc-page .table-glass td { background:var(--cxc-surface)!important; color:var(--cxc-text)!important; border-color:var(--cxc-line)!important; padding:11px 12px; font-size:11px; }
+.cxc-page .table-glass tbody tr:hover td { background:var(--cxc-raised)!important; }
+.cxc-page .row-action-btn { min-height:32px!important; border:1px solid var(--cxc-line-strong)!important; border-radius:5px!important; background:var(--cxc-surface)!important; color:#176b78!important; padding:0 9px!important; font-size:10px!important; box-shadow:none!important; }
+.cxc-page .row-action-btn:hover { border-color:#9dc3c9!important; background:#eef6f7!important; color:#115762!important; }
+.cxc-page .badge { border-radius:4px!important; padding:4px 7px!important; font-size:10px!important; }
+.cxc-page .pagination a { display:inline-flex; min-height:33px; align-items:center; margin:0 2px; border:1px solid var(--cxc-line-strong); border-radius:5px; background:var(--cxc-surface); color:var(--cxc-text); padding:0 9px; font-size:10px; text-decoration:none; }
+.cxc-modal { --cxc-surface:var(--admin-surface,#fff); --cxc-raised:var(--admin-surface-soft,#f5f8fa); --cxc-line:var(--admin-line,#d9e3e8); --cxc-line-strong:var(--admin-line-strong,#c8d6de); --cxc-text:var(--admin-text,#193247); --cxc-muted:var(--admin-muted,#647b8b); position:fixed; inset:0; z-index:20000; display:none; width:100vw; height:100vh; min-height:100dvh; align-items:center; justify-content:center; overflow:auto; box-sizing:border-box; padding:18px; background:rgba(6,18,29,.72); }
+.cxc-modal.is-open { display:flex; }
+.cxc-modal-card { position:relative; width:min(640px,calc(100vw - 36px)); max-height:min(88vh,720px); max-height:min(88dvh,720px); margin:auto; overflow:auto; border:1px solid var(--cxc-line); border-top:3px solid #e8793f; border-radius:9px; background:var(--cxc-surface); color:var(--cxc-text); box-shadow:0 24px 70px rgba(5,18,29,.28); }
+.cxc-modal-header { display:flex; justify-content:space-between; align-items:flex-start; gap:14px; border-bottom:1px solid var(--cxc-line); background:var(--cxc-surface)!important; padding:17px 20px; }
+.cxc-modal-header .module-eyebrow { margin:0 0 5px; color:#24777a!important; font-size:9px; font-weight:800; letter-spacing:.1em; }
+.cxc-modal-header h2 { margin:0; color:var(--cxc-text)!important; font:700 18px 'DM Sans','Segoe UI',sans-serif; }
+.cxc-modal-header p:last-child { margin:5px 0 0; color:var(--cxc-muted)!important; font-size:11px; font-weight:400!important; }
+.cxc-modal-close { display:grid; width:34px; height:34px; flex:0 0 34px; place-items:center; border:1px solid var(--cxc-line); border-radius:5px; background:var(--cxc-raised); color:var(--cxc-text); cursor:pointer; }
+.cxc-modal-body { padding:18px 20px; }
+.cxc-filter-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:13px; }
+.cxc-filter-grid label { display:grid; gap:6px; color:var(--cxc-text); font-size:11px; font-weight:700; }
+.cxc-filter-grid input { width:100%; min-height:39px; border:1px solid var(--cxc-line-strong); border-radius:5px; background:var(--cxc-raised); color:var(--cxc-text); padding:0 10px; font:inherit; font-size:12px; }
+.cxc-filter-grid input:focus { outline:2px solid rgba(23,107,120,.2); border-color:#176b78; }
+.cxc-status-filters { display:flex; flex-wrap:wrap; gap:15px; margin-top:15px; }
+.cxc-status-filters label { display:flex; align-items:center; gap:7px; color:var(--cxc-text); font-size:11px; font-weight:600; }
+.cxc-status-filters input { accent-color:#176b78; }
+.cxc-form-note { margin:12px 0 0; color:var(--cxc-muted); font-size:10px; }
+.cxc-filter-error { margin:9px 0 0; color:#a4443b; font-size:11px; font-weight:700; }
+.cxc-modal-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:18px; border-top:1px solid var(--cxc-line); padding-top:14px; }
+html[data-theme="dark"] .cxc-page { --cxc-surface:#101d2b; --cxc-raised:#142435; --cxc-line:#2a3b4d; --cxc-line-strong:#3a5064; --cxc-text:#e8f0f6; --cxc-muted:#a6b7c5; }
+html[data-theme="dark"] .cxc-modal { --cxc-surface:#101d2b; --cxc-raised:#142435; --cxc-line:#2a3b4d; --cxc-line-strong:#3a5064; --cxc-text:#e8f0f6; --cxc-muted:#a6b7c5; }
+body.cxc-dialog-open { overflow:hidden; }
+html[data-theme="dark"] .cxc-title-icon { border-color:#31505d; background:#18323d; color:#8fc7c6; }
+html[data-theme="dark"] .cxc-page .row-action-btn:hover { background:#1a3440!important; color:#a3d5d3!important; }
+@media(max-width:980px) { .cxc-heading { align-items:flex-start; flex-direction:column; } .cxc-header-actions { width:100%; justify-content:flex-start; } .cxc-search { flex:1; } .cxc-search input { width:100%; flex:1; } }
+@media(max-width:620px) { .cxc-page { padding:15px!important; } .cxc-title-block h1 { font-size:20px; } .cxc-header-actions { display:grid; grid-template-columns:1fr 1fr; } .cxc-search { grid-column:1/-1; } .cxc-button { width:100%; } .cxc-metrics { grid-template-columns:1fr 1fr; } .cxc-metric strong { font-size:17px; } .cxc-filter-grid { grid-template-columns:1fr; } .cxc-modal-card { width:calc(100vw - 20px); } }
+</style>
+{% endblock %}

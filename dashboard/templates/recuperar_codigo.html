@@ -1,0 +1,440 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Restablecer contraseña</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            min-height: 100vh;
+            background: linear-gradient(120deg, #00b2ff 0%, #1976d2 100%);
+            font-family: 'Roboto', Arial, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .animated-bg {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+        .bubble {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0.13;
+            filter: blur(2px);
+            animation: floatBubble 12s infinite alternate;
+        }
+        .bubble1 { width: 180px; height: 180px; left: 8vw; top: 12vh; background: #fff; animation-delay: 0s;}
+        .bubble2 { width: 120px; height: 120px; right: 10vw; top: 18vh; background: #fff; animation-delay: 2s;}
+        .bubble3 { width: 90px; height: 90px; left: 18vw; bottom: 10vh; background: #fff; animation-delay: 4s;}
+        .bubble4 { width: 140px; height: 140px; right: 18vw; bottom: 12vh; background: #fff; animation-delay: 6s;}
+        @keyframes floatBubble {
+            0% { transform: translateY(0) scale(1);}
+            100% { transform: translateY(-40px) scale(1.08);}
+        }
+        .split-container {
+            display: flex;
+            border-radius: 32px;
+            overflow: hidden;
+            min-width: 700px;
+            z-index: 1;
+            background: none;
+            box-shadow: 0 8px 40px 0 rgba(0, 178, 255, 0.10), 0 1.5px 8px 0 rgba(0, 178, 255, 0.08);
+            animation: fadeInMain 1.2s cubic-bezier(.7,.04,.33,.97);
+        }
+        @keyframes fadeInMain {
+            from { opacity: 0; transform: scale(.96);}
+            to   { opacity: 1; transform: scale(1);}
+        }
+        .info-panel {
+            flex: 1.1;
+            background: rgba(0,178,255,0.18);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 340px;
+            min-height: 520px;
+            padding: 0 2vw;
+            backdrop-filter: blur(8px);
+            border-right: 1.5px solid rgba(255,255,255,0.18);
+        }
+        .info-content {
+            width: 100%;
+            max-width: 420px;
+            background: rgba(255,255,255,0.18);
+            border-radius: 24px;
+            padding: 44px 36px 36px 36px;
+            box-shadow: 0 2px 32px #00b2ff18, 0 0 0 1.5px rgba(255,255,255,0.13) inset;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            gap: 18px;
+            animation: fadeInUp 1.2s cubic-bezier(.7,.04,.33,.97);
+            backdrop-filter: blur(2.5px);
+        }
+        .info-logo {
+            width: 140px;
+            margin-bottom: 10px;
+            filter: drop-shadow(0 2px 12px #00b2ff44) brightness(1.1);
+            animation: floatLogo 2.5s infinite alternate;
+        }
+        @keyframes floatLogo {
+            from { transform: translateY(0);}
+            to   { transform: translateY(-10px);}
+        }
+        .info-title {
+            font-size: 2.1em;
+            font-weight: 700;
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            text-shadow: 0 2px 12px #009de055;
+            animation: shineText 2.5s infinite alternate;
+        }
+        @keyframes shineText {
+            0% { text-shadow: 0 2px 12px #009de055, 0 0 0 #fff0;}
+            100% { text-shadow: 0 2px 12px #009de055, 0 0 16px #fff8;}
+        }
+        .info-title .material-icons {
+            font-size: 1.2em;
+            vertical-align: middle;
+        }
+        .info-desc {
+            font-size: 1.13em;
+            margin-bottom: 0;
+            line-height: 1.5;
+            color: #e3f5ff;
+            text-shadow: 0 1px 8px #009de055;
+        }
+        .info-list {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 0 0;
+            width: 100%;
+        }
+        .info-list li {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 10px;
+            font-size: 1.08em;
+            animation: fadeIn .8s;
+            text-shadow: 0 1px 8px #009de055;
+            gap: 8px;
+            transition: filter .3s;
+        }
+        .info-list li:hover {
+            filter: brightness(1.2) drop-shadow(0 0 8px #fff8);
+        }
+        .info-list .material-icons {
+            color: #fff;
+            background: #00b2ff;
+            border-radius: 50%;
+            font-size: 1.1em;
+            margin-right: 6px;
+            padding: 4px;
+            box-shadow: 0 2px 8px #00b2ff44;
+            transition: background .3s, box-shadow .3s;
+        }
+        .info-list li:hover .material-icons {
+            background: #fff;
+            color: #009de0;
+            box-shadow: 0 0 12px #fff8;
+        }
+        .info-footer {
+            font-size: .98em;
+            color: #b3e6ff;
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            text-shadow: 0 1px 8px #009de055;
+        }
+        .form-panel {
+            flex: 1;
+            background: rgba(255,255,255,0.10);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 340px;
+            min-height: 520px;
+            backdrop-filter: blur(6px);
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(40px);}
+            to   { opacity: 1; transform: translateY(0);}
+        }
+        @keyframes fadeIn {
+            from { opacity: 0;}
+            to   { opacity: 1;}
+        }
+        .recup-card {
+            background: rgba(255,255,255,0.82);
+            border-radius: 24px;
+            box-shadow: 0 4px 32px #00b2ff18, 0 0 0 1.5px #e3f5ff44 inset;
+            padding: 38px 32px 32px 32px;
+            max-width: 410px;
+            width: 100%;
+            animation: fadeIn 1.2s cubic-bezier(.7,.04,.33,.97);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(2.5px);
+        }
+        .recup-title {
+            color: #1976d2;
+            font-weight: bold;
+            font-size: 1.2em;
+            text-align: center;
+            margin-bottom: 18px;
+            letter-spacing: 0.5px;
+            animation: fadeIn .8s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+        }
+        .recup-title .material-icons {
+            color: #00b2ff;
+            font-size: 1.2em;
+        }
+        .recup-label {
+            color: #1976d2;
+            font-weight: 600;
+            margin-top: 10px;
+            display: block;
+            margin-bottom: 4px;
+            animation: fadeIn .7s;
+            text-align: left;
+            width: 100%;
+        }
+        .recup-input {
+            width: 100%;
+            margin-bottom: 14px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            border: none;
+            background: rgba(227,245,255,0.7);
+            font-size: 1em;
+            transition: box-shadow .3s, background .3s;
+            animation: fadeIn .8s;
+            outline: none;
+            box-shadow: 0 0 0 1.5px #c6dffc;
+        }
+        .recup-input:focus {
+            box-shadow: 0 0 0 2.5px #00b2ffcc;
+            background: #e3f5ff;
+        }
+        .recup-btn {
+            width: 100%;
+            background: linear-gradient(90deg,#00b2ff,#009de0);
+            color: #fff;
+            font-weight: 700;
+            padding: 13px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1em;
+            box-shadow: 0 2px 16px #00b2ff22;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+            transition: background .3s, transform .2s, box-shadow .3s;
+            animation: fadeIn 1s;
+            letter-spacing: 0.5px;
+        }
+        .recup-btn:hover, .recup-btn:focus {
+            background: linear-gradient(90deg,#009de0,#00b2ff);
+            transform: scale(1.04);
+            box-shadow: 0 6px 32px #00b2ff33;
+        }
+        .strength-bar {
+            height: 8px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            background: #e3f5ff;
+            overflow: hidden;
+            transition: background .3s;
+            width: 100%;
+        }
+        .strength-bar-inner {
+            height: 100%;
+            width: 0%;
+            background: #ff5252;
+            border-radius: 6px;
+            transition: width .4s, background .4s;
+        }
+        .strength-text {
+            font-size: .95em;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #1976d2;
+            min-height: 18px;
+            transition: color .3s;
+        }
+        .recup-error {
+            color: #ff5252;
+            margin-top: 14px;
+            text-align: center;
+            font-weight: 500;
+            animation: fadeIn .7s;
+        }
+        .recup-user {
+            color: #009de0;
+            font-weight: 600;
+            font-size: 1.05em;
+        }
+        @media (max-width: 1100px) {
+            .split-container { flex-direction: column; box-shadow: none; border-radius: 0;}
+            .info-panel, .form-panel { flex: unset; width: 100vw; min-height: unset; padding: 0; }
+            .info-panel { align-items: center; padding: 40px 0 0 0; }
+            .info-content { margin: 0; }
+            .form-panel { justify-content: center; padding: 0 0 40px 0; }
+        }
+        @media (max-width: 700px) {
+            .info-content, .recup-card { padding: 22px 8vw 18px 8vw; }
+            .info-logo { width: 110px;}
+        }
+    </style>
+</head>
+
+<body>
+<div class="animated-bg">
+    <div class="bubble bubble1"></div>
+    <div class="bubble bubble2"></div>
+    <div class="bubble bubble3"></div>
+    <div class="bubble bubble4"></div>
+</div>
+<div class="split-container">
+    <div class="info-panel">
+        <div class="info-content">
+            <img src="{% static 'img/logo.png' %}" alt="FerreElectri PLUS" class="info-logo">
+            <div class="info-title">
+                <span class="material-icons">lock_reset</span>
+                Recupera tu acceso
+            </div>
+            <div class="info-desc">
+                Restablece tu contraseña de forma segura y rápida.<br>
+                Ingresa el código que recibiste y crea una nueva clave.
+            </div>
+            <ul class="info-list">
+                <li><span class="material-icons">verified_user</span> Seguridad avanzada y cifrado</li>
+                <li><span class="material-icons">bolt</span> Proceso rápido y fácil</li>
+                <li><span class="material-icons">support_agent</span> Soporte personalizado</li>
+                <li><span class="material-icons">mail</span> Código enviado a tu correo</li>
+            </ul>
+            <div class="info-footer">
+                <span class="material-icons">info</span>
+                Si tienes dudas, contáctanos: <b>Ferreelectriplus@gmail.com</b>
+            </div>
+        </div>
+    </div>
+    <div class="form-panel">
+        <form method="post" class="recup-card" autocomplete="off">
+            {% csrf_token %}
+            <div class="recup-title">
+                <span class="material-icons">person</span>
+                Cambiando la contraseña de:
+                <span class="recup-user">{{ usuario_nombre|default:"Usuario desconocido" }}</span>
+            </div>
+            <label class="recup-label"><span class="material-icons">confirmation_number</span> Código de verificación</label>
+            <input type="text" name="codigo" class="recup-input" maxlength="12" required placeholder="Código recibido">
+
+            <label class="recup-label"><span class="material-icons">vpn_key</span> Nueva contraseña</label>
+            <input type="password" name="new_password1" id="new_password1" class="recup-input" required placeholder="Nueva contraseña" oninput="checkStrength()">
+            <div class="strength-bar"><div id="strengthBar" class="strength-bar-inner"></div></div>
+            <div id="strengthText" class="strength-text"></div>
+
+            <label class="recup-label"><span class="material-icons">vpn_key</span> Repite la contraseña</label>
+            <input type="password" name="new_password2" id="new_password2" class="recup-input" required placeholder="Repite la contraseña">
+
+            <button type="submit" class="recup-btn">
+                <span class="material-icons">check_circle</span> Restablecer
+            </button>
+            {% if error %}<div class="recup-error">{{ error }}</div>{% endif %}
+        </form>
+    </div>
+</div>
+<script>
+function checkStrength() {
+    const val = document.getElementById('new_password1').value;
+    const bar = document.getElementById('strengthBar');
+    const text = document.getElementById('strengthText');
+    let strength = 0;
+    if (val.length >= 8) strength++;
+    if (val.match(/[A-Z]/)) strength++;
+    if (val.match(/[a-z]/)) strength++;
+    if (val.match(/[0-9]/)) strength++;
+    if (val.match(/[^A-Za-z0-9]/)) strength++;
+
+    let width = ["0%", "20%", "50%", "75%", "100%"][strength];
+    let color = ["#ff5252", "#ff9800", "#ffc107", "#4caf50", "#009de0"][strength];
+    let msg = ["Muy débil", "Débil", "Aceptable", "Fuerte", "Muy fuerte"][strength];
+
+    bar.style.width = width;
+    bar.style.background = color;
+    text.textContent = val.length === 0 ? "" : msg;
+    text.style.color = color;
+}
+</script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    {% if codigo_enviado %}
+    Swal.fire({
+        icon: 'success',
+        title: '¡Código enviado!',
+        text: 'Revisa tu correo electrónico para continuar.',
+        confirmButtonColor: '#1976d2'
+    });
+    {% endif %}
+    {% if clave_cambiada %}
+    Swal.fire({
+        icon: 'success',
+        title: '¡Contraseña actualizada!',
+        text: 'Tu contraseña fue cambiada exitosamente.',
+        confirmButtonColor: '#1976d2'
+    }).then(() => {
+        window.location.href = "{% url 'login' %}";
+    });
+    {% endif %}
+    {% if clave_repetida %}
+    Swal.fire({
+        icon: 'warning',
+        title: 'Contraseña no válida',
+        text: 'La nueva contraseña no puede ser igual a la anterior ni a una ya utilizada.',
+        confirmButtonColor: '#1976d2'
+    });
+    {% endif %}
+    {% if error %}
+    Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: '{{ error }}',
+        confirmButtonColor: '#1976d2'
+    });
+    {% endif %}
+});
+</script>
+</body>
+</html>

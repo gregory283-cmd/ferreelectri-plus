@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Términos y condiciones | FerreElectri PLUS{% endblock %}
+{% block body_class %}theme-dark legal-document-page{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/legal.css' %}">
+<main class="legal-page">
+  <nav class="legal-nav" aria-label="Documentos legales">
+    <a href="#uso">Uso del sitio</a>
+    <a href="#pedidos">Pedidos</a>
+    <a href="#pagos">Pagos</a>
+    <a href="#entrega">Entrega</a>
+    <a href="{% url 'politica_privacidad' %}">Privacidad</a>
+  </nav>
+  <article class="legal-copy">
+    <span class="legal-eyebrow">Información legal</span>
+    <h1>Términos y condiciones de servicio</h1>
+    <p class="legal-updated">Vigentes desde el 4 de octubre de 2026</p>
+    <p class="legal-intro">Estos términos describen el uso del sitio de FerreElectri PLUS y el flujo de compra, pago y revisión de pedidos. Al navegar o realizar un pedido, aceptas estas condiciones.</p>
+
+    <section id="uso">
+      <h2>1. Uso del sitio y cuenta</h2>
+      <p>El sitio permite consultar productos, precios y existencias, gestionar una cuenta y enviar pedidos. La persona usuaria debe proporcionar datos correctos y mantener la confidencialidad de sus credenciales. Las operaciones realizadas desde una cuenta se atribuyen a esa cuenta, salvo que se informe de un acceso no autorizado.</p>
+      <p>Los contenidos del catálogo son informativos y pueden actualizarse. Las características confirmadas de cada artículo son las que aparecen en su ficha; ante dudas técnicas, consulta al equipo antes de instalar o utilizar un producto.</p>
+    </section>
+
+    <section id="pedidos">
+      <h2>2. Pedidos, precios y disponibilidad</h2>
+      <p>Enviar el formulario crea un pedido pendiente, no una confirmación de pago. La disponibilidad se vuelve a comprobar al procesar la orden; una solicitud puede requerir ajustes si el stock disponible cambió.</p>
+      <p>El total mostrado en el checkout corresponde a los productos y cantidades de la orden. Si un dato del pedido es incorrecto, comunícate con atención al cliente e indica el número de pedido.</p>
+    </section>
+
+    <section id="pagos">
+      <h2>3. Pagos y comprobantes</h2>
+      <p>Para Pago Móvil y otros pagos manuales, el cliente debe registrar los datos solicitados y adjuntar una imagen legible del comprobante. El archivo y sus datos quedan pendientes de revisión administrativa.</p>
+      <p>La carga de una imagen o el número de referencia no demuestra por sí solos que el dinero fue recibido. El pedido solo se aprueba después de la verificación correspondiente; entonces se descuenta el stock y se genera la factura. Un comprobante ilegible, incompleto o inconsistente puede ser rechazado.</p>
+      <p>Los pagos procesados por proveedores electrónicos se confirman mediante la respuesta autenticada del proveedor cuando esa integración está habilitada. Cada proveedor puede aplicar sus propios términos.</p>
+    </section>
+
+    <section id="entrega">
+      <h2>4. Datos de entrega, cancelaciones y soporte</h2>
+      <p>El cliente debe revisar teléfono y dirección antes de enviar el pedido. Si se rechaza o cancela una orden, el sistema libera la reserva de stock o restituye las unidades que ya se hubieran descontado.</p>
+      <p>Para consultas sobre un pedido, pagos o productos, escribe a <a class="legal-contact" href="mailto:ferreelectriplus@gmail.com">ferreelectriplus@gmail.com</a> o llama al <a class="legal-contact" href="tel:+584247362445">+58 424-7362445</a>.</p>
+    </section>
+
+    <section id="cambios">
+      <h2>5. Cambios en estas condiciones</h2>
+      <p>Estas condiciones pueden actualizarse para reflejar cambios del servicio o requisitos aplicables. La versión publicada en esta página indicará la fecha de vigencia.</p>
+    </section>
+  </article>
+</main>
+{% endblock %}

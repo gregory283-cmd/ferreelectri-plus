@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Registro corporativo | FerreElectri PLUS{% endblock %}
+{% block body_class %}theme-dark auth-page{% endblock %}
+
+{% block content %}
+<main class="auth-viewport">
+  <div class="auth-layout auth-layout-register">
+    <aside class="auth-side">
+      <a class="auth-side-brand" href="{% url 'index' %}" aria-label="FerreElectri PLUS, inicio">
+        <img src="{% static 'img/logo.png' %}" alt="FerreElectri PLUS">
+        <span>CUENTA CORPORATIVA</span>
+      </a>
+      <div class="auth-side-copy">
+        <p class="auth-side-kicker">ELECTRICIDAD · HERRAMIENTAS · FERRETERÍA</p>
+        <h2>Todo listo<br>para construir.</h2>
+        <p>Registra tus datos para coordinar compras, pagos y entregas.</p>
+      </div>
+      <div class="auth-side-footer"><span>COLONCITO, TÁCHIRA</span><span>FERREELECTRI PLUS</span></div>
+    </aside>
+    <section class="auth-panel auth-form-panel" aria-labelledby="register-title">
+    <div class="auth-heading">
+      <span class="eyebrow">Nuevo cliente</span>
+      <h1 id="register-title">Crea tu cuenta</h1>
+      <p>Completa tus datos de contacto y entrega.</p>
+    </div>
+
+    {% if messages %}<div class="auth-alert" role="status">{% for message in messages %}{% if 'admin-action' not in message.tags %}<p>{{ message }}</p>{% endif %}{% endfor %}</div>{% endif %}
+    {% if form.non_field_errors %}<div class="auth-alert auth-alert-error" role="alert">{{ form.non_field_errors }}</div>{% endif %}
+
+    <form method="post" action="{% url 'cliente_registro' %}" class="auth-form" id="registroForm" novalidate>
+      {% csrf_token %}
+      <div class="auth-grid auth-register-grid">
+        <div class="auth-field">
+          <label for="id_nombre">Nombre completo</label>
+          <div class="auth-input-wrap">
+            <span class="auth-field-icon">
+              <i class="fa-solid fa-user" aria-hidden="true"></i>
+            </span>
+            {{ form.nombre }}
+          </div>
+          {{ form.nombre.errors }}
+        </div>
+
+        <div class="auth-field">
+          <label for="id_email">Correo electrónico</label>
+          <div class="auth-input-wrap">
+            <span class="auth-field-icon">
+              <i class="fa-solid fa-envelope" aria-hidden="true"></i>
+            </span>
+            {{ form.email }}
+          </div>
+          {{ form.email.errors }}
+        </div>
+
+        <div class="auth-field">
+          <label for="id_cedula">Cédula o RIF</label>
+          <div class="auth-input-wrap">
+            <span class="auth-field-icon">
+              <i class="fa-solid fa-id-card" aria-hidden="true"></i>
+            </span>
+            {{ form.cedula }}
+          </div>
+          {{ form.cedula.errors }}
+        </div>
+
+        <div class="auth-field">
+          <label for="id_telefono">Teléfono</label>
+          <div class="auth-input-wrap">
+            <span class="auth-field-icon">
+              <i class="fa-solid fa-phone" aria-hidden="true"></i>
+            </span>
+            {{ form.telefono }}
+          </div>
+          {{ form.telefono.errors }}
+        </div>
+
+        <div class="auth-field">
+          <label for="id_direccion">Dirección de entrega</label>
+          <div class="auth-input-wrap">
+            <span class="auth-field-icon">
+              <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
+            </span>
+            {{ form.direccion }}
+          </div>
+          {{ form.direccion.errors }}
+        </div>
+
+        <div class="auth-field">
+          <label for="id_password1">Contraseña</label>
+          <div class="auth-input-wrap">
+            <span class="auth-field-icon">
+              <i class="fa-solid fa-lock" aria-hidden="true"></i>
+            </span>
+            {{ form.password1 }}
+          </div>
+          {{ form.password1.errors }}
+          <small class="auth-field-help">Mínimo 8 caracteres y no debe ser común.</small>
+        </div>
+
+        <div class="auth-field">
+          <label for="id_password2">Confirmar contraseña</label>
+          <div class="auth-input-wrap">
+            <span class="auth-field-icon">
+              <i class="fa-solid fa-lock" aria-hidden="true"></i>
+            </span>
+            {{ form.password2 }}
+          </div>
+          {{ form.password2.errors }}
+        </div>
+      </div>
+
+      <input type="hidden" name="next" value="{{ next }}">
+      <div class="auth-actions auth-actions-wide">
+        <button type="submit" class="auth-btn auth-btn-primary">Crear cuenta</button>
+        <a href="{% url 'cliente_login' %}?next={{ next|urlencode }}" class="auth-btn secondary">Ya tengo cuenta</a>
+      </div>
+      <p class="auth-privacy"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i> Tus datos se usan para gestionar pedidos, pagos y entregas.</p>
+    </form>
+  </section>
+  </div>
+</main>
+{% endblock %}

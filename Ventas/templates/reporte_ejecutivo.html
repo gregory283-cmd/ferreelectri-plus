@@ -1,0 +1,73 @@
+{% extends 'base/pan_con_queso.html' %}
+{% load static %}
+
+{% block arroz_con_pollo %}
+<link rel="stylesheet" href="{% static 'css/reporte-ejecutivo.css' %}?v=20261010-unified">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+
+<main class="executive-report" data-currency="{{ moneda_reporte }}">
+    <header class="report-masthead">
+        <div class="report-brand">
+            <img src="{% static 'img/logo.png' %}" alt="FERREELECTRI PLUS">
+            <div><span>FERREELECTRI PLUS</span><small>Administración · Análisis financiero</small></div>
+        </div>
+        <div class="report-identity"><span>REPORTE EJECUTIVO</span><strong>{{ report_number }}</strong><small>Emitido {{ generado|date:'d/m/Y · H:i' }}</small></div>
+    </header>
+
+    <section class="report-title-row">
+        <div><p class="report-kicker">VENTAS · IVA · RENTABILIDAD</p><h1>Informe financiero</h1><p class="report-lede">Una vista consolidada y verificable de la facturación del período.</p></div>
+        <a class="report-export" href="{% url 'reporte_utilidad_pdf' %}?inicio={{ fecha_inicio|date:'Y-m-d' }}&amp;fin={{ fecha_fin|date:'Y-m-d' }}"><span class="material-symbols-outlined" aria-hidden="true">picture_as_pdf</span> Descargar PDF</a>
+    </section>
+
+    <form class="report-filters" method="get" role="search">
+        <label for="report-start">Desde<input id="report-start" type="date" name="inicio" value="{{ fecha_inicio|date:'Y-m-d' }}" max="{{ fecha_fin|date:'Y-m-d' }}" required></label>
+        <span class="filter-arrow material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+        <label for="report-end">Hasta<input id="report-end" type="date" name="fin" value="{{ fecha_fin|date:'Y-m-d' }}" max="{{ generado|date:'Y-m-d' }}" required></label>
+        <button type="submit"><span class="material-symbols-outlined" aria-hidden="true">filter_alt</span> Actualizar informe</button>
+        <span class="report-currency-note">{% if tasa_bcv %}Bolívares · BCV {{ tasa_bcv|floatformat:4 }} Bs./USD{% else %}USD · Tasa BCV no registrada{% endif %}</span>
+    </form>
+
+    {% if costos_estimados or productos_sin_costo %}
+    <aside class="report-data-note" role="status"><span class="material-symbols-outlined" aria-hidden="true">info</span><span>
+        {% if costos_estimados %}{{ costos_estimados }} factura{{ costos_estimados|pluralize:"s" }} contiene costos estimados con el costo actual del inventario.{% endif %}
+        {% if productos_sin_costo %} {{ productos_sin_costo }} línea{{ productos_sin_costo|pluralize:"s" }} no tiene costo comparable y no entra en la utilidad.{% endif %}
+        Cobertura de costos del período: {{ cobertura_costos }}%.
+    </span></aside>
+    {% endif %}
+
+    <section class="report-kpis" aria-label="Indicadores financieros del período">
+        <article class="report-kpi kpi-billed"><span>Facturación total <small>con IVA</small></span><strong>{{ moneda_reporte }} {{ resumen.ventas|floatformat:2 }}</strong><i class="material-symbols-outlined" aria-hidden="true">receipt_long</i><small>{{ resumen.transacciones }} facturas · {{ resumen.unidades }} unidades</small></article>
+        <article class="report-kpi kpi-net"><span>Ventas netas <small>sin IVA</small></span><strong>{{ moneda_reporte }} {{ resumen.ventas_netas|floatformat:2 }}</strong><i class="material-symbols-outlined" aria-hidden="true">trending_up</i><small>Antes de descuentos {{ moneda_reporte }} {{ resumen.ventas_brutas|floatformat:2 }} · Descuentos {{ moneda_reporte }} {{ resumen.descuentos|floatformat:2 }}</small></article>
+        <article class="report-kpi kpi-tax"><span>IVA facturado</span><strong>{{ moneda_reporte }} {{ resumen.iva|floatformat:2 }}</strong><i class="material-symbols-outlined" aria-hidden="true">account_balance</i><small>Impuesto separado de la utilidad</small></article>
+        <article class="report-kpi kpi-cost"><span>Costo de ventas</span><strong>{{ moneda_reporte }} {{ resumen.costo_ventas|floatformat:2 }}</strong><i class="material-symbols-outlined" aria-hidden="true">inventory</i><small>Cobertura de costos {{ cobertura_costos }}%</small></article>
+        <article class="report-kpi kpi-profit"><span>Utilidad bruta</span><strong>{{ moneda_reporte }} {{ resumen.utilidad|floatformat:2 }}</strong><i class="material-symbols-outlined" aria-hidden="true">account_balance_wallet</i><small>Antes de gastos operativos</small></article>
+        <article class="report-kpi kpi-margin"><span>Margen bruto</span><strong>{{ resumen.margen_porcentaje|floatformat:2 }}%</strong><i class="material-symbols-outlined" aria-hidden="true">percent</i><small>Utilidad ÷ venta neta</small></article>
+    </section>
+
+    <section class="report-channel-section" aria-labelledby="report-channels-title">
+        <div class="report-section-heading"><div><span>ORIGEN DE INGRESOS</span><h2 id="report-channels-title">Canales de venta</h2></div><p>Importes netos de IVA, expresados en {{ moneda_reporte }}.</p></div>
+        <div class="report-channel-grid">
+            <article class="report-channel channel-ecommerce"><div class="channel-heading"><i></i><h3>E-commerce</h3><span>{{ canales.ecommerce.facturas }} facturas</span></div><div class="channel-main"><span>Venta neta</span><strong>{{ moneda_reporte }} {{ canales.ecommerce.ventas_netas|floatformat:2 }}</strong></div><div class="channel-metrics"><div><span>IVA</span><strong>{{ moneda_reporte }} {{ canales.ecommerce.iva|floatformat:2 }}</strong></div><div><span>Costos</span><strong>{{ moneda_reporte }} {{ canales.ecommerce.costo|floatformat:2 }}</strong></div><div><span>Utilidad</span><strong>{{ moneda_reporte }} {{ canales.ecommerce.utilidad|floatformat:2 }}</strong></div><div><span>Margen</span><strong>{{ canales.ecommerce.margen_porcentaje|floatformat:2 }}%</strong></div></div></article>
+            <article class="report-channel channel-manual"><div class="channel-heading"><i></i><h3>Facturación manual</h3><span>{{ canales.manual.facturas }} facturas</span></div><div class="channel-main"><span>Venta neta</span><strong>{{ moneda_reporte }} {{ canales.manual.ventas_netas|floatformat:2 }}</strong></div><div class="channel-metrics"><div><span>IVA</span><strong>{{ moneda_reporte }} {{ canales.manual.iva|floatformat:2 }}</strong></div><div><span>Costos</span><strong>{{ moneda_reporte }} {{ canales.manual.costo|floatformat:2 }}</strong></div><div><span>Utilidad</span><strong>{{ moneda_reporte }} {{ canales.manual.utilidad|floatformat:2 }}</strong></div><div><span>Margen</span><strong>{{ canales.manual.margen_porcentaje|floatformat:2 }}%</strong></div></div></article>
+        </div>
+    </section>
+
+    <section class="report-chart-grid" aria-label="Gráficas del período">
+        <article class="report-panel"><div class="report-section-heading"><div><span>EVOLUCIÓN</span><h2>Facturación por fecha</h2></div><small>{{ moneda_reporte }}</small></div><div class="report-chart-wrap"><canvas id="report-sales-chart" aria-label="Facturación diaria o mensual por canal"></canvas></div></article>
+        <article class="report-panel"><div class="report-section-heading"><div><span>PRODUCTOS</span><h2>Mayores ventas netas</h2></div><small>Top {{ productos_top|length }}</small></div><div class="report-chart-wrap"><canvas id="report-products-chart" aria-label="Productos ordenados por ventas netas"></canvas></div></article>
+    </section>
+
+    <section class="report-detail-grid">
+        <article class="report-panel"><div class="report-section-heading"><div><span>TRIBUTACIÓN</span><h2>IVA por alícuota</h2></div><small>Base imponible y débito fiscal</small></div><div class="report-table-wrap"><table class="report-table"><thead><tr><th>Alícuota</th><th>Base neta</th><th>IVA</th></tr></thead><tbody>{% for grupo in iva_resumen %}<tr><td>{{ grupo.alicuota|floatformat:2 }}%</td><td>{{ moneda_reporte }} {{ grupo.base|floatformat:2 }}</td><td>{{ moneda_reporte }} {{ grupo.iva|floatformat:2 }}</td></tr>{% empty %}<tr><td colspan="3" class="report-empty">Sin base imponible en este período.</td></tr>{% endfor %}</tbody><tfoot><tr><th>Total</th><th>{{ moneda_reporte }} {{ resumen.ventas_netas|floatformat:2 }}</th><th>{{ moneda_reporte }} {{ resumen.iva|floatformat:2 }}</th></tr></tfoot></table></div></article>
+        <article class="report-panel"><div class="report-section-heading"><div><span>RENTABILIDAD</span><h2>Productos destacados</h2></div><small>Ordenados por unidades</small></div><div class="report-table-wrap"><table class="report-table"><thead><tr><th>Producto</th><th>Unidades</th><th>Venta neta</th><th>Utilidad</th></tr></thead><tbody>{% for producto in productos_top %}<tr><td>{{ producto.nombre }}</td><td>{{ producto.unidades }}</td><td>{{ moneda_reporte }} {{ producto.ventas_netas|floatformat:2 }}</td><td>{% if producto.lineas_con_costo %}{{ moneda_reporte }} {{ producto.utilidad|floatformat:2 }}{% else %}Sin costo{% endif %}</td></tr>{% empty %}<tr><td colspan="4" class="report-empty">Sin productos facturados en este período.</td></tr>{% endfor %}</tbody></table></div></article>
+    </section>
+
+    <section class="report-panel report-invoices"><div class="report-section-heading"><div><span>TRAZABILIDAD</span><h2>Facturas del período</h2></div><small>{{ resumen.transacciones }} registros · {{ fecha }}</small></div><div class="report-table-wrap"><table class="report-table"><thead><tr><th>Factura</th><th>Fecha</th><th>Cliente</th><th>Canal</th><th>Venta neta</th><th>IVA</th><th>Total</th><th>Utilidad bruta</th></tr></thead><tbody>{% for venta in ventas %}<tr><td>#{{ venta.numero }}{% if venta.costo_estimado %}<span class="estimate-tag">Costo est.</span>{% endif %}</td><td>{{ venta.fecha|date:'d/m/Y H:i' }}</td><td>{{ venta.cliente }}</td><td><span class="channel-tag {% if venta.pedido_id %}is-ecommerce{% else %}is-manual{% endif %}">{{ venta.canal }}</span></td><td>{{ moneda_reporte }} {{ venta.venta_neta|floatformat:2 }}</td><td>{{ moneda_reporte }} {{ venta.iva|floatformat:2 }}</td><td class="invoice-total">{{ moneda_reporte }} {{ venta.total|floatformat:2 }}</td><td>{% if venta.lineas_sin_costo %}Parcial · {{ moneda_reporte }} {{ venta.utilidad|floatformat:2 }}{% else %}{{ moneda_reporte }} {{ venta.utilidad|floatformat:2 }}{% endif %}</td></tr>{% empty %}<tr><td colspan="8" class="report-empty">No hay facturas facturadas en el período seleccionado.</td></tr>{% endfor %}</tbody></table></div></section>
+
+    <footer class="report-footnote"><span>Período {{ fecha }}</span><span>Emitido {{ generado|date:'d/m/Y · H:i' }} · {{ report_number }}</span><span>La utilidad es bruta, excluye gastos operativos. El IVA se muestra por separado.</span></footer>
+</main>
+
+{{ ventas_chart|json_script:"executive-sales-data" }}
+{{ productos_top|json_script:"executive-products-data" }}
+<script src="{% static 'js/reporte-ejecutivo.js' %}?v=20261010-unified"></script>
+{% endblock %}

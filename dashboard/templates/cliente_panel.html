@@ -1,0 +1,166 @@
+{% extends "dashboard_base.html" %}
+{% load static %}
+{% load static %}
+
+{% block title %}Panel de Cliente | FerreElectri PLUS{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<section class="client-dashboard" id="overview" aria-label="Resumen de tu cuenta">
+  {% if pago_pendiente %}
+  <div class="client-notice client-notice-warning" role="status">
+    <div><strong>Pedido #{{ pago_pendiente }} recibido</strong><p>El pago sigue pendiente de revisión. La factura aparecerá aquí cuando se confirme.</p></div>
+    <a href="{% url 'detalle_pedido_cliente' pago_pendiente %}" class="client-action">Ver pedido <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+  </div>
+  {% endif %}
+  {% if messages %}
+    {% for message in messages %}<div class="client-notice" role="status">{{ message }}</div>{% endfor %}
+  {% endif %}
+
+  <header class="client-welcome client-reveal">
+    <div class="client-welcome-copy">
+      <p class="client-eyebrow">Tu espacio de compras</p>
+      <h2>Hola, {{ request.user.first_name|default:cliente.nombre|truncatewords:2 }}</h2>
+      <p>Revisa tus pedidos, pagos y documentos en un solo lugar. Tus datos y movimientos solo corresponden a esta cuenta.</p>
+      <div class="client-actions">
+        <a href="{% url 'productos' %}?vista=catalogo#productos-grid" class="client-action primary"><i class="fa-solid fa-bolt" aria-hidden="true"></i> Explorar productos</a>
+        <a href="{% url 'cliente_pedidos' %}" class="client-action"><i class="fa-solid fa-box" aria-hidden="true"></i> Seguimiento de pedidos</a>
+      </div>
+    </div>
+    <div class="client-welcome-side">
+      <div class="client-profile-summary"><span>Perfil completado</span><strong>{{ profile_completion }}%</strong></div>
+      <div class="client-progress-track" role="progressbar" aria-label="Perfil completado" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ profile_completion }}"><span style="width: {{ profile_completion }}%"></span></div>
+      <a class="client-profile-link" href="{% url 'cliente_perfil' %}">Revisar perfil y seguridad <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i></a>
+    </div>
+  </header>
+
+  <div class="client-metrics" aria-label="Indicadores de cuenta">
+    <a href="#orders" class="client-metric client-reveal" data-tone="amber">
+      <span class="client-metric-top"><span class="client-metric-label">Pedidos en curso</span><span class="client-metric-icon"><i class="fa-solid fa-box-open" aria-hidden="true"></i></span></span>
+      <strong class="client-metric-value">{{ pedidos_activos }}</strong><span class="client-metric-note">Pendientes o en preparación</span>
+    </a>
+    <a href="#spending" class="client-metric client-reveal" data-tone="green">
+      <span class="client-metric-top"><span class="client-metric-label">Compras confirmadas</span><span class="client-metric-icon"><i class="fa-solid fa-arrow-trend-up" aria-hidden="true"></i></span></span>
+      <strong class="client-metric-value">$ {{ total_gastado|floatformat:2 }}</strong><span class="client-metric-note">Pedidos pagados o enviados</span>
+    </a>
+    <a href="#payments" class="client-metric client-reveal" data-tone="blue">
+      <span class="client-metric-top"><span class="client-metric-label">Pagos por revisar</span><span class="client-metric-icon"><i class="fa-regular fa-clock" aria-hidden="true"></i></span></span>
+      <strong class="client-metric-value">{{ pending_payment_count }}</strong><span class="client-metric-note">Comprobantes sin confirmar</span>
+    </a>
+    <a href="#invoices" class="client-metric client-reveal" data-tone="violet">
+      <span class="client-metric-top"><span class="client-metric-label">Facturas emitidas</span><span class="client-metric-icon"><i class="fa-solid fa-file-invoice" aria-hidden="true"></i></span></span>
+      <strong class="client-metric-value">{{ facturas_emitidas }}</strong><span class="client-metric-note">Documentos disponibles</span>
+    </a>
+  </div>
+
+  <div class="client-main-grid">
+    <section class="client-module client-reveal" id="spending" aria-labelledby="spending-title">
+      <div class="client-module-heading"><div><h3 id="spending-title">Compras confirmadas</h3><p>Importe mensual de pedidos pagados o enviados · últimos 6 meses</p></div><i class="fa-solid fa-chart-column" aria-hidden="true"></i></div>
+      {% if has_monthly_spend %}
+      <div class="client-chart-frame" data-chart-frame>
+        <div class="client-chart client-chart-fallback" role="img" aria-label="Gráfico de compras confirmadas por mes">
+        {% for month in monthly_spend %}
+        <div class="client-chart-month" title="{{ month.label }}: $ {{ month.total|floatformat:2 }}">
+          <span class="client-chart-amount">{% if month.total %}$ {{ month.total|floatformat:0 }}{% endif %}</span>
+          <span class="client-chart-track"><span class="client-chart-bar" style="--bar-height: {{ month.height }}%"></span></span>
+          <span class="client-chart-label">{{ month.label }}</span>
+        </div>
+        {% endfor %}
+        </div>
+        <div class="client-chart-canvas"><canvas data-client-chart data-chart-type="line" data-source="client-spend-series" data-label="Compras confirmadas" data-currency="true" role="img" aria-label="Compras confirmadas por mes durante los últimos seis meses"></canvas></div>
+      </div>
+      {% else %}
+      <div class="client-empty-state"><i class="fa-solid fa-chart-column" aria-hidden="true"></i><strong>Aún no hay compras confirmadas</strong><p>Cuando se pague o envíe un pedido, aquí verás su evolución mensual.</p></div>
+      {% endif %}
+    </section>
+
+    <section class="client-module client-reveal" aria-labelledby="orders-status-title">
+      <div class="client-module-heading"><div><h3 id="orders-status-title">Estado de pedidos</h3><p>{{ total_orders }} pedido{{ total_orders|pluralize:"s" }} en tu historial</p></div><i class="fa-solid fa-chart-pie" aria-hidden="true"></i></div>
+      {% if total_orders %}
+      <div class="client-chart-frame client-status-chart-frame" data-chart-frame>
+      <ul class="client-status-list client-chart-fallback">
+        {% for status in order_statuses %}
+        <li class="client-status-item" data-state="{{ status.key }}">
+          <div><span>{{ status.label }}</span><strong>{{ status.count }}</strong></div>
+          <div class="client-status-track" role="progressbar" aria-label="{{ status.label }}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ status.percentage }}"><span style="width: {{ status.percentage }}%"></span></div>
+        </li>
+        {% endfor %}
+      </ul>
+      <div class="client-chart-canvas"><canvas data-client-chart data-chart-type="doughnut" data-source="client-order-status-series" role="img" aria-label="Distribución de pedidos por estado"></canvas></div>
+      </div>
+      {% else %}
+      <div class="client-empty-state"><i class="fa-solid fa-chart-pie" aria-hidden="true"></i><strong>Aún no hay pedidos</strong><p>El gráfico aparecerá cuando registres una orden.</p></div>
+      {% endif %}
+    </section>
+  </div>
+
+  <section class="client-module client-reveal" id="orders" aria-labelledby="recent-orders-title">
+    <div class="client-module-heading"><div><h3 id="recent-orders-title">Actividad de pedidos</h3><p>Consulta el estado y abre el detalle de cada orden.</p></div><a href="{% url 'cliente_pedidos' %}" class="client-module-link">Ver historial completo <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a></div>
+    {% if pedidos %}
+    <div class="client-orders">
+      {% for pedido in pedidos|slice:":6" %}
+      <article class="client-order-row">
+        <span class="client-order-id">Pedido #{{ pedido.id }}</span>
+        <time class="client-order-date" datetime="{{ pedido.fecha_creacion|date:'c' }}">{{ pedido.fecha_creacion|date:"d M Y" }}</time>
+        <span class="client-order-total">$ {{ pedido.total|floatformat:2 }}</span>
+        <span class="client-state" data-state="{{ pedido.estado }}">{{ pedido.get_estado_display|capfirst }}</span>
+        <span class="client-row-actions">
+          <a class="client-icon-link" href="{% url 'detalle_pedido_cliente' pedido.id %}" aria-label="Ver pedido #{{ pedido.id }}" title="Ver pedido"><i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i></a>
+          {% if pedido.factura and pedido.factura.estado == 'facturada' %}<a class="client-icon-link" href="{% url 'descargar_factura_pdf_cliente' pedido.factura.numero %}" aria-label="Descargar factura del pedido #{{ pedido.id }}" title="Descargar factura"><i class="fa-solid fa-file-arrow-down" aria-hidden="true"></i></a>{% endif %}
+        </span>
+      </article>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="client-empty-state"><i class="fa-solid fa-box-open" aria-hidden="true"></i><strong>Aún no tienes pedidos</strong><p>Cuando completes tu primera compra, aparecerá aquí con su estado y seguimiento.</p><a class="client-profile-link" href="{% url 'productos' %}?vista=catalogo#productos-grid">Explorar catálogo <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a></div>
+    {% endif %}
+  </section>
+
+  <div class="client-module-grid">
+    <section class="client-module client-reveal" id="invoices" aria-labelledby="invoices-title">
+      <div class="client-module-heading"><div><h3 id="invoices-title">Facturas</h3><p>Documentos emitidos después de confirmar el pago.</p></div><a href="{% url 'cliente_facturas' %}" class="client-module-link">Ver todas <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a></div>
+      {% if recent_invoices %}
+      <ul class="client-record-list">
+        {% for factura in recent_invoices %}
+        <li class="client-record-row"><span class="client-record-main"><strong>Factura #{{ factura.numero }}</strong><span>{{ factura.fecha|date:"d M Y" }} · {{ factura.get_estado_display }}</span></span><span class="client-record-value">$ {{ factura.total|floatformat:2 }}</span><a class="client-icon-link" href="{% url 'descargar_factura_pdf_cliente' factura.numero %}" aria-label="Descargar factura #{{ factura.numero }}"><i class="fa-solid fa-download" aria-hidden="true"></i></a></li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <div class="client-empty-state"><i class="fa-regular fa-file-lines" aria-hidden="true"></i><strong>No hay facturas emitidas</strong><p>Las facturas estarán disponibles aquí al confirmarse una compra.</p></div>
+      {% endif %}
+    </section>
+
+    <section class="client-module client-reveal" id="payments" aria-labelledby="payments-title">
+      <div class="client-module-heading"><div><h3 id="payments-title">Pagos recientes</h3><p>Estado de comprobantes y operaciones.</p></div><a href="{% url 'cliente_pagos' %}" class="client-module-link">Ver todos <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a></div>
+      {% if recent_payments %}
+      <ul class="client-record-list">
+        {% for pago in recent_payments %}
+        <li class="client-record-row"><span class="client-record-main"><strong>{{ pago.get_metodo_display }} · Pedido #{{ pago.pedido_id }}</strong><span>{{ pago.creado|date:"d M Y" }} · {{ pago.get_estado_display }}</span></span><span class="client-record-value">$ {{ pago.monto|floatformat:2 }}</span><a class="client-icon-link" href="{% url 'detalle_pedido_cliente' pago.pedido_id %}" aria-label="Ver pago del pedido #{{ pago.pedido_id }}"><i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i></a></li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <div class="client-empty-state"><i class="fa-regular fa-credit-card" aria-hidden="true"></i><strong>Sin movimientos de pago</strong><p>Al realizar un pedido, su método y estado aparecerán aquí.</p></div>
+      {% endif %}
+    </section>
+  </div>
+
+  <section class="client-module client-profile-module client-reveal" id="profile" aria-labelledby="profile-title">
+    <div>
+      <div class="client-module-heading"><div><h3 id="profile-title">Perfil y seguridad</h3><p>Datos usados para identificarte y coordinar entregas.</p></div></div>
+      <ul class="client-checklist">
+        {% for field in profile_checklist %}<li class="{% if field.completed %}is-complete{% endif %}"><i class="fa-solid {% if field.completed %}fa-circle-check{% else %}fa-circle-exclamation{% endif %}" aria-hidden="true"></i>{{ field.label }}</li>{% endfor %}
+      </ul>
+    </div>
+    <div class="client-profile-cta"><strong>{{ profile_completion }}% de tu perfil</strong><p>Una ficha completa facilita la facturación y evita demoras al coordinar tus pedidos.</p><a class="client-action primary" href="{% url 'cliente_perfil' %}">Administrar perfil <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a></div>
+  </section>
+
+  <footer class="client-footnote"><span>FerreElectri PLUS · Área privada del cliente</span><a href="mailto:ferreelectriplus@gmail.com">Contactar atención al cliente <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i></a></footer>
+</section>
+{% endblock %}
+
+{% block page_scripts %}
+{{ monthly_spend|json_script:"client-spend-series" }}
+{{ order_statuses|json_script:"client-order-status-series" }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{% static 'js/client-charts.js' %}?v=20261008-charts-v1"></script>
+{% endblock %}

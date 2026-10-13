@@ -1,0 +1,435 @@
+<!-- filepath: c:\Users\Dell\Desktop\FERREELECTRI_PLUS\Ventas\templates\cierre_caja.html -->
+{% extends "base/pan_con_queso.html" %}
+{% load static %}
+{% block arroz_con_pollo %}
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<main class="cierre-caja-main">
+    <header class="cash-header">
+        <div><span class="cash-eyebrow"><span class="material-symbols-outlined" aria-hidden="true">point_of_sale</span> CONTROL FINANCIERO</span><h1>Cierre de caja</h1><p>Ingresos y utilidad bruta por ventas de tienda y facturación directa.</p></div>
+        <div class="cash-header-actions">
+            <a class="cash-action-primary" href="{% url 'reporte_utilidad' %}?inicio={{ inicio_anio|date:'Y-m-d' }}&amp;fin={{ hoy|date:'Y-m-d' }}"><span class="material-symbols-outlined" aria-hidden="true">monitoring</span> Abrir informe ejecutivo</a>
+        </div>
+    </header>
+    <p class="cash-rate-note">{% if bcv_rate %}Tasa BCV de referencia: Bs. {{ bcv_rate|floatformat:4 }}{% if bcv_updated_at %} · Actualizada {{ bcv_updated_at|date:'d/m/Y H:i' }}{% endif %}{% else %}Las monedas se muestran por separado hasta registrar una tasa BCV.{% endif %} La utilidad es bruta, antes de gastos operativos.</p>
+
+    <section class="cash-period-grid" aria-label="Resumen financiero por período">
+        {% for period in cash_periods %}
+        <article class="cash-period-card" style="--card-order: {{ forloop.counter0 }}">
+            <div class="cash-period-heading"><div><span class="cash-period-index">0{{ forloop.counter }}</span><h2>{{ period.label }}</h2></div><span class="cash-invoice-count">{{ period.invoice_count }} factura{{ period.invoice_count|pluralize }}</span></div>
+            <strong class="cash-period-total">{{ period.total_display }}</strong>
+            <span class="cash-total-caption">Facturación total · {{ cash_currency }}</span>
+            <div class="cash-channel-breakdown">
+                <div class="cash-channel-row"><span class="cash-channel-name"><i class="channel-dot ecommerce-dot"></i>E-commerce <small>{{ period.ecommerce.invoice_count }}</small></span><span class="cash-channel-values"><b>{{ period.ecommerce.revenue_display }}</b><small>Utilidad bruta {{ period.ecommerce.gross_profit_display }}{% if period.ecommerce.cost_lines %} · Costos {{ period.ecommerce.cost_coverage_pct }}%{% endif %}</small></span></div>
+                <div class="cash-channel-row"><span class="cash-channel-name"><i class="channel-dot manual-dot"></i>Facturación manual <small>{{ period.manual.invoice_count }}</small></span><span class="cash-channel-values"><b>{{ period.manual.revenue_display }}</b><small>Utilidad bruta {{ period.manual.gross_profit_display }}{% if period.manual.cost_lines %} · Costos {{ period.manual.cost_coverage_pct }}%{% endif %}</small></span></div>
+            </div>
+        </article>
+        {% endfor %}
+    </section>
+
+    <section class="cash-chart-section" aria-label="Comparación de ingresos por canal">
+        <div class="cash-section-heading"><div><span>COMPARATIVO</span><h2>Ingresos por canal</h2></div><small>{% if cash_chart_available %}{{ cash_currency }}{% if bcv_rate and cash_currency == 'Bs.' %} · Equivalencia BCV{% endif %}{% else %}Registra tasa BCV para comparar monedas diferentes{% endif %}</small></div>
+        {% if cash_chart_available %}<div class="cash-chart-wrap"><canvas id="cash-channel-chart" aria-label="Ingresos de e-commerce y facturación manual por período"></canvas></div>{% else %}<div class="cash-chart-empty"><span class="material-symbols-outlined" aria-hidden="true">currency_exchange</span><span>Las ventas mezclan monedas y aún no hay una tasa BCV guardada.</span></div>{% endif %}
+    </section>
+
+    <section class="cash-ledger-section">
+        <div class="cash-section-heading"><div><span>ACTIVIDAD DIARIA</span><h2>Facturas de hoy</h2></div><span class="cash-date-chip">{{ hoy|date:'l, d/m/Y' }}</span></div>
+        <div class="cash-ledger-wrap"><table class="cash-ledger"><thead><tr><th>Factura</th><th>Hora</th><th>Cliente</th><th>Canal</th><th>Total</th></tr></thead><tbody>
+            {% for v in ventas_dia %}<tr><td>#{{ v.numero }}</td><td>{{ v.fecha|date:'H:i' }}</td><td>{{ v.cliente }}</td><td>{% if v.pedido_id %}<span class="cash-source-pill source-ecommerce">E-commerce</span>{% else %}<span class="cash-source-pill source-manual">Manual</span>{% endif %}</td><td class="cash-ledger-total">{{ v.cash_total_display }}</td></tr>
+            {% empty %}<tr><td colspan="5" class="cash-ledger-empty">No hay facturas emitidas hoy.</td></tr>{% endfor %}
+        </tbody></table></div>
+    </section>
+</main>
+
+<style>
+.cierre-caja-main {
+    animation: fadeInUp 0.8s;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding-left: 24px;
+    padding-right: 0;
+    margin-left: -24px;
+    width: calc(100% + 24px);
+}
+.cierre-caja-main > * {
+    width: 100%;
+    max-width: none;
+}
+.cierre-caja-resumen {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 22px;
+    margin-bottom: 32px;
+    justify-content: flex-start;
+}
+.caja-report-buttons {
+    display: flex;
+    justify-content: flex-start;
+    width: 100%;
+    max-width: 100%;
+    margin: 0 0 24px;
+    padding-left: 0;
+}
+.cierre-card {
+    background: linear-gradient(135deg, #fafdff 70%, #e6f7ff 100%);
+    border-radius: 18px;
+    box-shadow: 0 4px 24px 0 rgba(0,178,255,0.10);
+    padding: 24px 36px 18px 36px;
+    min-width: 210px;
+    flex: 1 1 210px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.18s, box-shadow 0.18s;
+    cursor: pointer;
+    opacity: 0;
+    transform: translateY(40px) scale(0.98);
+    animation: cardIn 0.7s forwards;
+    animation-delay: var(--delay, 0s);
+}
+.cierre-card:hover {
+    transform: translateY(-4px) scale(1.03);
+    box-shadow: 0 8px 32px 0 rgba(0,178,255,0.18);
+    background: linear-gradient(135deg, #e6f7ff 60%, #fafdff 100%);
+}
+.cierre-card h4 {
+    color: #1976d2;
+    font-size: 1.13em;
+    margin-bottom: 8px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+.cierre-total {
+    font-size: 2.2em;
+    font-weight: 800;
+    color: #00b2ff;
+    margin-bottom: 4px;
+    letter-spacing: 1px;
+    animation: pop 0.7s;
+}
+.cierre-icon {
+    font-size: 2.3em;
+    margin-bottom: 6px;
+    display: block;
+    color: #00b2ff;
+    filter: drop-shadow(0 2px 8px #e6f7ff);
+    animation: iconSpin 1.2s;
+}
+.cierre-icon-dia { color: #00b2ff; }
+.cierre-icon-semana { color: #1976d2; }
+.cierre-icon-mes { color: #ffd600; }
+.cierre-icon-anio { color: #27ae60; }
+@media (max-width: 900px) {
+    .cierre-caja-resumen { flex-direction: column; gap: 16px; }
+    .cierre-card { min-width: unset; }
+}
+.tabla-cierre {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 2px 12px 0 rgba(0,178,255,0.08);
+    animation: fadeIn 1.2s;
+}
+.tabla-cierre th, .tabla-cierre td {
+    padding: 14px 10px;
+    text-align: center;
+    border-bottom: 1px solid #e6f7ff;
+    font-size: 1.08em;
+    transition: background 0.2s;
+}
+.tabla-cierre th {
+    background: linear-gradient(90deg, #00b2ff 80%, #1976d2 100%);
+    color: #fff;
+    font-size: 1.1em;
+    letter-spacing: 1px;
+    border: none;
+}
+.tabla-cierre tr:nth-child(even) {
+    background: #f7fafc;
+}
+.tabla-cierre tr:hover {
+    background: #e6f7ff;
+    transition: background 0.2s;
+}
+@media (max-width: 700px) {
+    .tabla-cierre th, .tabla-cierre td { font-size: 0.97em; padding: 8px 4px; }
+}
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(40px);}
+    to { opacity: 1; transform: none;}
+}
+@keyframes fadeInLeft {
+    from { opacity: 0; transform: translateX(-40px);}
+    to { opacity: 1; transform: none;}
+}
+@keyframes fadeInRight {
+    from { opacity: 0; transform: translateX(40px);}
+    to { opacity: 1; transform: none;}
+}
+@keyframes fadeIn {
+    from { opacity: 0;}
+    to { opacity: 1;}
+}
+@keyframes cardIn {
+    to { opacity: 1; transform: none;}
+}
+@keyframes pop {
+    0% { transform: scale(0.7);}
+    70% { transform: scale(1.15);}
+    100% { transform: scale(1);}
+}
+@keyframes iconSpin {
+    0% { transform: rotate(-30deg) scale(0.7);}
+    70% { transform: rotate(10deg) scale(1.15);}
+    100% { transform: rotate(0deg) scale(1);}
+}
+.btn-caja-reporte {
+    background: linear-gradient(90deg, #00b2ff 0%, #2196F3 100%);
+    color: #fff;
+    border: none;
+    padding: 16px 32px;
+    border-radius: 10px;
+    font-weight: bold;
+    font-size: 1.1em;
+    cursor: pointer;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 2px 8px 0 rgba(0,178,255,0.08);
+    transition: background 0.2s;
+}
+.btn-caja-reporte:hover {
+    background: #1976d2;
+}
+
+/* MODAL MEJORADO */
+#modal-filtros-reporte {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    left: 0; top: 0; width: 100vw; height: 100vh;
+    background: rgba(0,0,0,0.22);
+    align-items: center;
+    justify-content: center;
+    animation: modalFadeIn 0.3s;
+}
+@keyframes modalFadeIn {
+    from { background: rgba(0,0,0,0); }
+    to { background: rgba(0,0,0,0.22);}
+}
+.modal-reporte-contenido {
+    background: #fff;
+    border-radius: 18px;
+    padding: 36px 32px 28px 32px;
+    min-width: 340px;
+    max-width: 98vw;
+    box-shadow: 0 10px 40px 0 rgba(0,178,255,0.22), 0 2px 16px 0 rgba(0,0,0,0.08);
+    position: relative;
+    animation: modalPopIn 0.35s;
+    font-family: 'Segoe UI', 'Roboto', Arial, sans-serif;
+}
+@keyframes modalPopIn {
+    from { opacity: 0; transform: translateY(60px) scale(0.95);}
+    to { opacity: 1; transform: none;}
+}
+.modal-reporte-contenido h3 {
+    margin-top: 0;
+    color: #1976d2;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.35em;
+    font-weight: 700;
+    margin-bottom: 22px;
+    letter-spacing: 0.5px;
+}
+#form-filtros-reporte {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+.modal-form-group label {
+    font-weight: 600;
+    color: #1976d2;
+    margin-bottom: 4px;
+    display: block;
+    font-size: 1em;
+}
+.modal-form-group input[type="date"],
+.modal-form-group input[type="text"] {
+    padding: 8px 12px;
+    border-radius: 7px;
+    border: 1.5px solid #00b2ff;
+    font-size: 1.08em;
+    width: 100%;
+    transition: border 0.2s;
+    outline: none;
+    margin-top: 2px;
+}
+.modal-form-group input:focus {
+    border: 1.5px solid #1976d2;
+    background: #fafdff;
+}
+#sugerencias-clientes {
+    list-style: none;
+    margin: 0; padding: 0;
+    background: #fff;
+    border: 1px solid #e6f7ff;
+    border-radius: 7px;
+    max-height: 120px;
+    overflow-y: auto;
+    position: absolute;
+    z-index: 10000;
+    display: none;
+    left: 0; right: 0;
+    top: 100%;
+    box-shadow: 0 2px 8px 0 rgba(0,178,255,0.08);
+}
+#sugerencias-clientes li {
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: background 0.15s;
+    font-size: 1em;
+}
+#sugerencias-clientes li:hover {
+    background: #e6f7ff;
+    color: #1976d2;
+}
+.modal-btns {
+    display: flex;
+    gap: 14px;
+    margin-top: 16px;
+}
+.btn-caja-reporte {
+    background: linear-gradient(90deg, #00b2ff 0%, #2196F3 100%);
+    color: #fff;
+    border: none;
+    padding: 14px 28px;
+    border-radius: 9px;
+    font-weight: bold;
+    font-size: 1.08em;
+    cursor: pointer;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 2px 8px 0 rgba(0,178,255,0.08);
+    transition: background 0.2s, color 0.2s;
+}
+.btn-caja-reporte:hover {
+    background: #1976d2;
+    color: #fff;
+}
+.btn-caja-cancelar {
+    background: #fafdff;
+    color: #1976d2;
+    border: 1.5px solid #1976d2;
+}
+.btn-caja-cancelar:hover {
+    background: #e6f7ff;
+    color: #1976d2;
+}
+html[data-theme="dark"] .cierre-card {
+    background: linear-gradient(135deg, rgba(16, 34, 64, 0.88) 0%, rgba(10, 22, 38, 0.95) 100%);
+    box-shadow: 0 16px 45px rgba(0,0,0,0.42);
+    border: 1px solid rgba(255,255,255,0.08);
+}
+html[data-theme="dark"] .cierre-card:hover {
+    background: linear-gradient(135deg, rgba(18, 40, 81, 0.96) 0%, rgba(10, 18, 32, 0.98) 100%);
+    box-shadow: 0 18px 48px rgba(0,0,0,0.55);
+}
+html[data-theme="dark"] .cierre-card h4,
+html[data-theme="dark"] .cierre-total,
+html[data-theme="dark"] .cierre-card small {
+    color: #e7efff !important;
+}
+html[data-theme="dark"] .cierre-icon {
+    filter: drop-shadow(0 2px 10px rgba(0,178,255,0.24));
+}
+html[data-theme="dark"] .tabla-cierre {
+    background: rgba(5, 15, 30, 0.9);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+    border: 1px solid rgba(255,255,255,0.08);
+}
+html[data-theme="dark"] .tabla-cierre th,
+html[data-theme="dark"] .tabla-cierre td {
+    border-bottom-color: rgba(255,255,255,0.08);
+    color: #e7eefb;
+}
+html[data-theme="dark"] .tabla-cierre th {
+    background: linear-gradient(90deg, rgba(0,178,255,0.95) 0%, rgba(15, 95, 169, 0.95) 100%);
+    color: #fff;
+}
+html[data-theme="dark"] .tabla-cierre tr:nth-child(even) {
+    background: rgba(255,255,255,0.03);
+}
+html[data-theme="dark"] .tabla-cierre tr:hover {
+    background: rgba(0,178,255,0.12);
+}
+html[data-theme="dark"] #modal-filtros-reporte {
+    background: rgba(3, 8, 18, 0.92);
+}
+html[data-theme="dark"] .modal-reporte-contenido {
+    background: rgba(9, 17, 35, 0.98);
+    border: 1px solid rgba(255,255,255,0.1);
+    box-shadow: 0 24px 70px rgba(0,0,0,0.55);
+    color: #e7eefb;
+}
+html[data-theme="dark"] .modal-reporte-contenido h3 {
+    color: #8ac5ff;
+}
+html[data-theme="dark"] .modal-form-group label {
+    color: #b8d6ff;
+}
+html[data-theme="dark"] .modal-form-group input[type="date"],
+html[data-theme="dark"] .modal-form-group input[type="text"] {
+    background: rgba(255,255,255,0.05);
+    color: #eef5ff;
+    border-color: rgba(255,255,255,0.16);
+}
+html[data-theme="dark"] .modal-form-group input:focus {
+    background: rgba(255,255,255,0.08);
+    border-color: rgba(64, 156, 255, 0.8);
+}
+html[data-theme="dark"] #sugerencias-clientes {
+    background: rgba(10, 20, 40, 0.98);
+    border-color: rgba(255,255,255,0.12);
+    box-shadow: 0 10px 24px rgba(0,0,0,0.45);
+}
+html[data-theme="dark"] #sugerencias-clientes li {
+    color: #e7eefb;
+}
+html[data-theme="dark"] #sugerencias-clientes li:hover {
+    background: rgba(0,178,255,0.16);
+    color: #ffffff;
+}
+html[data-theme="dark"] .btn-caja-reporte {
+    box-shadow: 0 8px 24px rgba(0,102,204,0.24);
+}
+html[data-theme="dark"] .btn-caja-cancelar {
+    background: rgba(255,255,255,0.08);
+    color: #c0d8ff;
+    border-color: rgba(255,255,255,0.18);
+}
+html[data-theme="dark"] .btn-caja-cancelar:hover {
+    background: rgba(255,255,255,0.12);
+}
+@media (max-width: 600px) {
+    .modal-reporte-contenido { min-width: 95vw; padding: 18px 6vw 18px 6vw;}
+}
+</style>
+<link rel="stylesheet" href="{% static 'css/cierre-caja.css' %}?v=20261010-unified">
+{{ cash_chart_data|json_script:"cash-chart-data" }}
+<script src="{% static 'js/cierre-caja.js' %}?v=20261010"></script>
+{% endblock %}
+
+{% block help_content %}
+<h4>Ayuda rápida</h4>
+<p>Los períodos muestran ingresos y utilidad bruta estimada para e-commerce y facturación manual. La utilidad usa el costo registrado en cada línea y no incluye gastos operativos.</p>
+<p>Si hay facturas en monedas distintas, se usa la tasa BCV manual vigente para expresarlas en una unidad común. Sin tasa, los importes se muestran separados y no se comparan en el gráfico.</p>
+<p>Usa «Abrir informe ejecutivo» para consultar el período, revisar los indicadores y descargar el PDF unificado.</p>
+{% endblock %}

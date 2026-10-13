@@ -1,0 +1,121 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reporte de Productos</title>
+    <!-- Google Fonts removed for xhtml2pdf/reportlab compatibility (use system fonts for PDF generation) -->
+    <style>
+        /* Simplified colors (avoid CSS variables for xhtml2pdf compatibility) */
+            html,body{height:100%;margin:0;padding:0;background:#f6fbfd;font-family:Arial,Helvetica,sans-serif;color:#0b2630}
+        .page{max-width:1080px;margin:28px auto;padding:20px}
+        .report-top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px}
+        .brand{display:flex;align-items:center;gap:14px}
+        .brand-logo{width:84px;height:84px;border-radius:12px;background:#0b7b78;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:22px}
+        .brand-info h2{margin:0;color:#085f63;font-size:1.5rem}
+        .brand-info small{color:#6b7785;display:block;margin-top:4px}
+        .report-meta{background:#ffffff;padding:12px 16px;border-radius:10px;text-align:right}
+        .report-meta div{font-size:0.95rem;color:var(--muted)}
+
+        .card{background:#ffffff;border-radius:12px;padding:18px}
+        .title{text-align:center;margin:12px 0 18px 0;color:#085f63;font-size:1.6rem;font-weight:700}
+
+        .summary{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:18px}
+        .summary .stat{flex:1 1 200px;background:#fbfeff;padding:12px;border-radius:10px;border:1px solid #e8f6f6}
+        .stat .k{font-weight:700;color:#085f63;font-size:1.2rem}
+        .stat .v{color:#6b7785;font-size:0.9rem}
+
+        .table-wrap{overflow:hidden;border-radius:10px}
+        /* Expandir la tabla hacia los bordes compensando el padding de .page (20px) y .card (18px) */
+        .table-wrap{margin:0 -38px; padding:0 12px}
+        table.report-table{width:100%;border-collapse:collapse;background:var(--card)}
+        table.report-table thead th{background:#085f63;color:#fff;padding:12px;text-align:center;font-weight:700}
+        table.report-table tbody td{padding:12px;border-bottom:1px solid #f1f7f7;color:#0b2630;vertical-align:middle;text-align:center}
+        table.report-table tbody tr:nth-child(even){background:#fbfdfd}
+        /* Ajustes de ancho para dar más espacio a la descripción */
+        .col-code{font-family:monospace;color:#0b6b6a;width:80px}
+        .col-desc{font-weight:600;color:#07323a;text-align:left;padding-left:8px;width:520px}
+        .col-qty{width:70px}
+        .col-price{width:120px}
+        .col-date{width:110px;color:var(--muted)}
+
+        .footer{margin-top:18px;text-align:center;color:#6b7785;font-size:0.95rem}
+
+        /* Print rules */
+        @page { margin: 14mm }
+        @media print {
+            body{background:#fff}
+            .page{margin:6mm auto;padding:0}
+            .brand-logo{box-shadow:none}
+            .card{border:0}
+            /* En impresión mantener la tabla ancha también */
+            .table-wrap{margin:0 -18px}
+            table.report-table thead th{background:#085f63 !important;color:#fff}
+            .no-print{display:none}
+            .footer{position:fixed;bottom:10px;left:0;right:0}
+        }
+    </style>
+    {% include 'reportes/pdf_design.html' %}
+</head>
+<body>
+    <div class="page">
+        <div class="report-top">
+            <div class="brand">
+                <div class="brand-logo">FE</div>
+                <div class="brand-info">
+                    <h2>FERREELECTRI PLUS</h2>
+                    <small>Reporte de Inventario — Productos</small>
+                </div>
+            </div>
+            <div class="report-meta">
+                <div>Fecha de creación: {{ file_creation_date|date:"d/m/Y H:i" }}</div>
+                <div>Número de reporte: {{ report_number }}</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="title">Reporte de Productos</div>
+
+            <div class="summary no-print">
+                <div class="stat"><div class="k">{{ productos|length }}</div><div class="v">Productos listados</div></div>
+                <div class="stat"><div class="k">{{ total_stock }}</div><div class="v">Stock total</div></div>
+                <div class="stat"><div class="k">{{ valor_inventario|default:"0.00" }}</div><div class="v">Valor inventario</div></div>
+            </div>
+
+            <div class="table-wrap">
+                <table class="report-table" role="table">
+                    <thead>
+                        <tr>
+                            <th class="col-code">Código</th>
+                            <th class="col-desc">DESCRIPCIÓN</th>
+                            <th class="col-qty">Cantidad</th>
+                            <th class="col-price">Costo</th>
+                            <th class="col-date">Fecha de creación</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in productos %}
+                        <tr>
+                            <td class="col-code">{{ p.Codigo }}</td>
+                            <td class="col-desc">{{ p.Descripcion }}</td>
+                            <td class="col-qty">{{ p.Cantidad }}</td>
+                            <td class="col-price">${{ p.Costo|floatformat:2 }}</td>
+                            <td class="col-date">{{ p.Fecha_creacion|date:"d/m/Y" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="footer">© {{ now|date:"Y" }} FerreeElectri PLUS. Todos los derechos reservados.</div>
+        </div>
+    </div>
+        <!-- Contenedor oculto para ayuda: no afecta a la generación de PDFs (scripts son ignorados por generadores) -->
+        <div id="help-content-template" style="display:none;">
+            <h4>Ayuda: Reporte de Productos</h4>
+            <p>Este reporte muestra un extracto de inventario. Usa la opción de imprimir para generar PDF.</p>
+        </div>
+        <script src="{% static 'js/help_button.js' %}"></script>
+    </body>
+    </html>

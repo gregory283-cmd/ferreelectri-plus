@@ -1,0 +1,162 @@
+{% extends 'base/pan_con_queso.html' %}
+{% load static %}
+{% block arroz_con_pollo %}
+<style>
+  .admin-order-detail { --order-surface: var(--surface); --order-soft: var(--surface-soft); --order-line: var(--panel-border); --order-text: var(--text-primary); --order-muted: var(--text-secondary); display: grid; gap: 18px; color: var(--order-text); }
+  .admin-order-header, .admin-order-section { border: 1px solid var(--order-line); border-radius: 16px; background: var(--order-surface); box-shadow: var(--panel-shadow); }
+  .admin-order-header { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 18px; padding: 24px; }
+  .admin-order-title { margin: 8px 0 5px; color: var(--order-text); font-size: 1.8rem; font-weight: 800; }
+  .admin-order-muted { margin: 0; color: var(--order-muted); font-size: .9rem; }
+  .admin-order-back { color: var(--primary); font-size: .86rem; font-weight: 700; text-decoration: none; }
+  .admin-order-total { min-width: 150px; padding: 12px 16px; border: 1px solid var(--order-line); border-radius: 12px; background: var(--order-soft); text-align: right; }
+  .admin-order-total span { display: block; color: var(--order-muted); font-size: .7rem; font-weight: 800; text-transform: uppercase; }
+  .admin-order-total strong { color: var(--order-text); font-size: 1.45rem; }
+  .admin-order-status { display: inline-flex; margin-left: 8px; padding: 5px 10px; border: 1px solid transparent; border-radius: 999px; font-size: .76rem; font-weight: 800; vertical-align: middle; }
+  .admin-order-status.pending { border-color: rgba(245,158,11,.25); background: rgba(245,158,11,.14); color: #d97706; }
+  .admin-order-status.paid { border-color: rgba(16,185,129,.25); background: rgba(16,185,129,.14); color: #059669; }
+  .admin-order-status.rejected { border-color: rgba(239,68,68,.25); background: rgba(239,68,68,.14); color: #dc2626; }
+  :root[data-theme="dark"] .admin-order-status.pending { color: #fbbf24; }
+  :root[data-theme="dark"] .admin-order-status.paid { color: #34d399; }
+  :root[data-theme="dark"] .admin-order-status.rejected { color: #f87171; }
+  .admin-order-meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .admin-order-meta-item { padding: 15px 17px; border: 1px solid var(--order-line); border-radius: 12px; background: var(--order-soft); }
+  .admin-order-meta-item span { display: block; color: var(--order-muted); font-size: .72rem; font-weight: 800; text-transform: uppercase; }
+  .admin-order-meta-item strong { display: block; margin-top: 4px; color: var(--order-text); font-size: .94rem; overflow-wrap: anywhere; }
+  .admin-order-section { overflow: hidden; }
+  .admin-order-section > header { padding: 18px 20px; border-bottom: 1px solid var(--order-line); background: var(--order-soft); }
+  .admin-order-section h2 { margin: 0; color: var(--order-text); font-size: 1.08rem; font-weight: 800; }
+  .admin-order-table-wrap { overflow-x: auto; }
+  .admin-order-table { width: 100%; min-width: 620px; border: 0 !important; border-radius: 0 !important; }
+  .admin-order-table th, .admin-order-table td { padding: 13px 16px; text-align: left; }
+  .admin-order-table th { color: var(--order-muted); font-size: .7rem; font-weight: 800; text-transform: uppercase; }
+  .admin-order-table td { color: var(--order-text); }
+  .admin-order-payments { display: grid; gap: 12px; padding: 18px; }
+  .admin-order-payment { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 18px; padding: 18px; border: 1px solid var(--order-line); border-radius: 12px; background: var(--order-soft); }
+  .admin-order-payment h3 { margin: 0 0 10px; color: var(--order-text); font-size: .98rem; font-weight: 800; }
+  .admin-order-payment dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px 20px; margin: 0; }
+  .admin-order-payment dl div { min-width: 0; }
+  .admin-order-payment dt { color: var(--order-muted); font-size: .72rem; }
+  .admin-order-payment dd { margin: 2px 0 0; color: var(--order-text); font-size: .84rem; font-weight: 700; overflow-wrap: anywhere; }
+  .admin-order-actions { display: flex; flex-wrap: wrap; align-content: flex-start; justify-content: flex-end; gap: 9px; }
+  .admin-order-actions a, .admin-order-actions button { display: inline-flex; min-height: 40px; align-items: center; justify-content: center; gap: 8px; padding: 9px 13px; border: 1px solid var(--order-line); border-radius: 9px; background: var(--order-surface); color: var(--order-text); font: inherit; font-size: .8rem; font-weight: 800; text-decoration: none; cursor: pointer; }
+  .admin-order-actions .approve { border-color: #059669; background: #059669; color: #fff; }
+  .admin-order-actions .reject { border-color: #dc2626; background: #dc2626; color: #fff; }
+  .admin-order-empty { padding: 22px; color: var(--order-muted); }
+  .admin-order-shipment-summary { padding: 16px 20px 0; color: var(--order-muted); font-size: .88rem; }
+  .admin-order-shipment-summary p { margin: 0 0 7px; overflow-wrap: anywhere; }
+  .admin-order-shipment-summary strong { color: var(--order-text); }
+  .admin-order-shipment-summary a { color: var(--primary); font-weight: 700; }
+  .admin-shipping-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px; padding: 18px 20px; }
+  .admin-shipping-field { min-width: 0; }
+  .admin-shipping-field label { display: block; margin-bottom: 5px; color: var(--order-muted); font-size: .75rem; font-weight: 800; }
+  .admin-shipping-field input, .admin-shipping-field select, .admin-shipping-field textarea { width: 100%; min-height: 40px; border: 1px solid var(--order-line); border-radius: 7px; background: var(--order-surface); color: var(--order-text); padding: 8px 10px; font: inherit; font-size: .85rem; }
+  .admin-shipping-field textarea { min-height: 74px; resize: vertical; }
+  .admin-shipping-field ul.errorlist, .admin-shipping-error { margin: 4px 0 0; color: #dc2626; font-size: .78rem; }
+  .admin-shipping-field.wide, .admin-order-actions.wide { grid-column: 1 / -1; }
+  .admin-shipping-events { margin: 0 20px 18px; border-top: 1px solid var(--order-line); padding-top: 14px; }
+  .admin-shipping-events h3 { margin: 0 0 10px; color: var(--order-text); font-size: .9rem; font-weight: 800; }
+  .admin-shipping-events p { margin: 0; padding: 8px 0; border-bottom: 1px solid var(--order-line); color: var(--order-muted); font-size: .82rem; }
+  .admin-shipping-events p strong { color: var(--order-text); }
+  @media (max-width: 700px) { .admin-order-meta { grid-template-columns: 1fr; } .admin-order-payment { grid-template-columns: 1fr; } .admin-order-actions { justify-content: flex-start; } .admin-order-payment dl { grid-template-columns: 1fr; } }
+  @media (max-width: 700px) { .admin-shipping-form { grid-template-columns: 1fr; padding: 15px; } .admin-shipping-field.wide, .admin-order-actions.wide { grid-column: auto; } }
+</style>
+<link rel="stylesheet" href="{% static 'css/admin-order-detail.css' %}?v=20261010-detail">
+
+<section class="admin-order-detail">
+  <header class="admin-order-header">
+    <div>
+      <a class="admin-order-back" href="{% url 'historial_pedidos_admin' %}"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Volver a pedidos</a>
+      <h1 class="admin-order-title">Pedido #{{ pedido.id }} <span class="admin-order-status {% if pedido.estado == 'pagado' %}paid{% elif pedido.estado == 'cancelado' %}rejected{% else %}pending{% endif %}">{{ pedido.get_estado_display|default:pedido.estado|capfirst }}</span></h1>
+      <p class="admin-order-muted">Detalle administrativo para revisar entrega, productos y evidencia de pago.</p>
+    </div>
+    <div class="admin-order-total"><span>Total del pedido</span><strong>${{ pedido.total|floatformat:2 }}</strong></div>
+  </header>
+
+  <section class="admin-order-meta" aria-label="Datos del cliente">
+    <div class="admin-order-meta-item"><span>Cliente</span><strong>{{ pedido.cliente.get_full_name|default:pedido.cliente.username }}</strong></div>
+    <div class="admin-order-meta-item"><span>Correo</span><strong>{{ pedido.cliente.email|default:'No indicado' }}</strong></div>
+    <div class="admin-order-meta-item"><span>Estado operativo</span><strong>{{ pedido.get_estado_operativo_display }}{% if pedido.requiere_revision_operativa %} · Requiere revisión{% endif %}</strong></div>
+    <div class="admin-order-meta-item"><span>Destinatario</span><strong>{% if pedido.envio %}{{ pedido.envio.nombre_destinatario|default:'Pendiente de verificar' }}{% else %}Sin datos congelados{% endif %}</strong></div>
+    <div class="admin-order-meta-item"><span>Teléfono de entrega</span><strong>{% if pedido.envio %}{{ pedido.envio.telefono|default:'Pendiente de verificar' }}{% else %}Sin datos congelados{% endif %}</strong></div>
+    <div class="admin-order-meta-item"><span>Dirección de entrega</span><strong>{% if pedido.envio %}{{ pedido.envio.direccion|default:'Pendiente de verificar' }}{% else %}Sin datos congelados{% endif %}</strong></div>
+    <div class="admin-order-meta-item"><span>Fecha del pedido</span><strong>{{ pedido.fecha_creacion|date:'d/m/Y H:i' }}</strong></div>
+    <div class="admin-order-meta-item"><span>Stock</span><strong>{% if pedido.stock_descontado %}Descontado al facturar{% else %}Reservado; pendiente de aprobación{% endif %}</strong></div>
+  </section>
+
+  <section class="admin-order-section">
+    <header><h2>Productos del pedido</h2></header>
+    <div class="admin-order-table-wrap">
+      <table class="admin-order-table">
+        <thead><tr><th>Producto</th><th>Cantidad</th><th>Precio unitario</th><th>Subtotal</th></tr></thead>
+        <tbody>
+          {% for item in pedido.items.all %}
+          <tr><td>{% if item.producto %}{{ item.producto.Descripcion }}{% else %}Producto eliminado{% endif %}</td><td>{{ item.cantidad }}</td><td>${{ item.precio|floatformat:2 }}</td><td>${{ item.subtotal|floatformat:2 }}</td></tr>
+          {% empty %}<tr><td colspan="4">El pedido no tiene productos.</td></tr>{% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="admin-order-section">
+    <header><h2>Pagos y comprobantes</h2></header>
+    <div class="admin-order-payments">
+      {% for pago in pedido.pagos.all %}
+      <article class="admin-order-payment">
+        <div>
+          <h3>{{ pago.get_metodo_display }} · ${{ pago.monto|floatformat:2 }}</h3>
+          <dl>
+            <div><dt>Estado</dt><dd>{{ pago.get_estado_display }}{% if pago.verificado %} · verificado{% endif %}</dd></div>
+            <div><dt>Banco de origen</dt><dd>{{ pago.banco_origen|default:'No indicado' }}</dd></div>
+            <div><dt>Cédula del pagador</dt><dd>{{ pago.cedula_pagador|default:'No indicada' }}</dd></div>
+            <div><dt>Referencia</dt><dd>{{ pago.numero_referencia|default:pago.referencia|default:'No indicada' }}</dd></div>
+          </dl>
+        </div>
+        <div class="admin-order-actions">
+          {% if pago.comprobante and perms.dashboard.view_payment_evidence %}<a href="{% url 'admin_comprobante_pago' pago.id %}"><i class="fa-solid fa-download" aria-hidden="true"></i> Descargar comprobante</a>{% elif not pago.comprobante %}<span class="admin-order-muted">No hay comprobante adjunto.</span>{% endif %}
+          {% if pedido.estado == 'pendiente' and perms.dashboard.verify_order_payments %}
+          <form method="post" action="{% url 'confirmar_pago_admin' pago.id %}">{% csrf_token %}<button class="approve" type="submit"><i class="fa-solid fa-check" aria-hidden="true"></i> Aprobar y facturar</button></form>
+          {% endif %}
+        </div>
+      </article>
+      {% empty %}<p class="admin-order-empty">No hay pagos registrados para este pedido.</p>{% endfor %}
+      {% if pedido.estado == 'pendiente' and perms.dashboard.verify_order_payments %}
+      <form method="post" action="{% url 'rechazar_pedido' pedido.id %}" class="admin-order-actions">{% csrf_token %}<button class="reject" type="submit"><i class="fa-solid fa-xmark" aria-hidden="true"></i> Rechazar pedido</button></form>
+      {% endif %}
+    </div>
+  </section>
+
+  <section class="admin-order-section">
+    <header><h2>Preparación y envío</h2></header>
+    {% if pedido.envio %}
+    <div class="admin-order-shipment-summary">
+      <p><strong>Estado:</strong> {{ pedido.envio.get_estado_display }}{% if pedido.envio.requiere_revision %} · Datos históricos por verificar{% endif %}</p>
+      <p><strong>Transportista:</strong> {{ pedido.envio.transportista|default:'Sin asignar' }} · <strong>Guía:</strong> {{ pedido.envio.numero_guia|default:'Sin asignar' }}</p>
+      {% if pedido.envio.url_seguimiento %}<p><a href="{{ pedido.envio.url_seguimiento }}" target="_blank" rel="noopener noreferrer">Abrir seguimiento del transportista</a></p>{% endif %}
+    </div>
+    {% if perms.dashboard.manage_fulfillment %}
+    <form class="admin-shipping-form" method="post" action="{% url 'actualizar_envio_admin' pedido.id %}">
+      {% csrf_token %}
+      {% for error in envio_form.non_field_errors %}<p class="admin-shipping-error">{{ error }}</p>{% endfor %}
+      <div class="admin-shipping-field"><label for="{{ envio_form.estado.id_for_label }}">Estado</label>{{ envio_form.estado }}{{ envio_form.estado.errors }}</div>
+      <div class="admin-shipping-field"><label for="{{ envio_form.nombre_destinatario.id_for_label }}">Destinatario</label>{{ envio_form.nombre_destinatario }}{{ envio_form.nombre_destinatario.errors }}</div>
+      <div class="admin-shipping-field"><label for="{{ envio_form.telefono.id_for_label }}">Teléfono</label>{{ envio_form.telefono }}{{ envio_form.telefono.errors }}</div>
+      <div class="admin-shipping-field wide"><label for="{{ envio_form.direccion.id_for_label }}">Dirección de entrega</label>{{ envio_form.direccion }}{{ envio_form.direccion.errors }}</div>
+      <div class="admin-shipping-field"><label for="{{ envio_form.transportista.id_for_label }}">Transportista</label>{{ envio_form.transportista }}{{ envio_form.transportista.errors }}</div>
+      <div class="admin-shipping-field"><label for="{{ envio_form.numero_guia.id_for_label }}">Número de guía</label>{{ envio_form.numero_guia }}{{ envio_form.numero_guia.errors }}</div>
+      <div class="admin-shipping-field wide"><label for="{{ envio_form.url_seguimiento.id_for_label }}">URL de seguimiento</label>{{ envio_form.url_seguimiento }}{{ envio_form.url_seguimiento.errors }}</div>
+      <div class="admin-shipping-field wide"><label for="{{ envio_form.observaciones.id_for_label }}">Observaciones o incidencia</label>{{ envio_form.observaciones }}{{ envio_form.observaciones.errors }}</div>
+      <div class="admin-order-actions wide"><button class="approve" type="submit"><i class="fa-solid fa-truck" aria-hidden="true"></i> Guardar seguimiento</button></div>
+    </form>
+    {% endif %}
+    <div class="admin-shipping-events" aria-label="Historial del envío">
+      <h3>Actividad</h3>
+      {% for evento in pedido.envio.eventos.all %}
+      <p><strong>{{ evento.get_estado_nuevo_display }}</strong> · {{ evento.creado|date:'d/m/Y H:i' }}{% if evento.actor %} · {{ evento.actor.get_full_name|default:evento.actor.username }}{% endif %}{% if evento.descripcion %}<br>{{ evento.descripcion }}{% endif %}</p>
+      {% empty %}<p class="admin-order-muted">Aún no hay eventos registrados.</p>{% endfor %}
+    </div>
+    {% else %}
+    <p class="admin-order-empty">El envío se crea al confirmar el pago.</p>
+    {% endif %}
+  </section>
+</section>
+{% endblock %}

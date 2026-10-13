@@ -1,0 +1,188 @@
+{% extends 'base/pan_con_queso.html' %}
+{% load static %}
+{% block arroz_con_pollo %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/themify-icons@0.1.2/css/themify-icons.css">
+<style>
+    body {
+        background: #f5f7fb;
+    }
+    .ver-cliente-main {
+        min-height: 100vh;
+        display: flex;
+        align-items: flex-start;
+        justify-content: flex-start;
+        padding: 24px 16px 40px;
+    }
+    .ver-cliente-container {
+        background: #ffffff;
+        border-radius: 24px;
+        box-shadow: 0 16px 28px rgba(15,23,42,0.08);
+        padding: 0 0 36px;
+        width: 100%;
+        max-width: 100%;
+        margin: 0;
+        overflow: hidden;
+        border: 1px solid rgba(148,163,184,0.18);
+    }
+    @media print {
+        .sidebar, nav, header { display: none !important; }
+        body, .ver-cliente-main, .ver-cliente-container {
+            width: 100% !important;
+            max-width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: #fff !important;
+            box-shadow: none !important;
+            border: 0 !important;
+        }
+        .ver-cliente-header { border-radius: 0 !important; }
+    }
+    .ver-cliente-header {
+        background: #ecf5ff;
+        padding: 32px 20px 24px;
+        text-align: center;
+        border-radius: 0 0 24px 24px;
+        margin-bottom: 24px;
+    }
+    .ver-cliente-header .ti-user {
+        font-size: 3rem;
+        color: #2563eb;
+        margin-bottom: 10px;
+        display: block;
+    }
+    .ver-cliente-title {
+        color: #0f172a;
+        font-size: 2rem;
+        font-weight: 800;
+        letter-spacing: 0.5px;
+        margin-bottom: 0;
+    }
+    .ver-cliente-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0 12px;
+        margin: 0 auto 24px auto;
+        padding: 0 28px;
+        background: transparent;
+    }
+    .ver-cliente-table td {
+        padding: 0;
+        font-size: 1.1rem;
+        vertical-align: middle;
+        border: none;
+    }
+    .ver-cliente-label {
+        color: #0f172a;
+        font-weight: 700;
+        width: 220px;
+        min-width: 160px;
+        text-align: left;
+        font-size: 1.05rem;
+        letter-spacing: 0.4px;
+        padding-left: 16px;
+        padding-bottom: 4px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .ver-cliente-icon {
+        font-size: 1.25em;
+        color: #2563eb;
+    }
+    .ver-cliente-value {
+        color: #334155;
+        font-size: 1.05rem;
+        font-weight: 500;
+        text-align: left;
+        padding-left: 18px;
+        padding-bottom: 4px;
+        word-break: break-word;
+    }
+    .btn-pdf {
+        background: #2563eb;
+        color: #fff;
+        border: none;
+        padding: 14px 36px;
+        border-radius: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: background 0.2s ease;
+        font-size: 1rem;
+        margin: 28px auto 0 auto;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        box-shadow: 0 12px 24px rgba(37,99,235,0.12);
+        justify-content: center;
+    }
+    .btn-pdf:hover {
+        background: #1d4ed8;
+    }
+    @media (max-width: 1200px) {
+        .ver-cliente-container { width: 100%; max-width: 100%; padding: 0 0 28px; }
+        .ver-cliente-table { padding: 0 16px; }
+    }
+    @media (max-width: 900px) {
+        .ver-cliente-main { padding: 24px 14px 40px; }
+        .ver-cliente-container { width: 100%; min-width: unset; max-width: 100%; border-radius: 20px; }
+        .ver-cliente-header { padding: 22px 18px 16px; }
+        .ver-cliente-title { font-size: 1.6rem; }
+        .ver-cliente-table td { font-size: 1rem; }
+        .ver-cliente-label { padding-left: 10px; }
+    }
+</style>
+<div class="ver-cliente-main">
+    <div class="ver-cliente-container">
+        <div class="ver-cliente-header">
+            <span class="ti-user"></span>
+            <div class="ver-cliente-title">Datos del Cliente</div>
+        </div>
+        <table class="ver-cliente-table">
+            <tr>
+                <td class="ver-cliente-label"><span class="ti-id-badge ver-cliente-icon"></span>Cédula:</td>
+                <td class="ver-cliente-value">{{ cliente.cedula }}</td>
+            </tr>
+            <tr>
+                <td class="ver-cliente-label"><span class="ti-user ver-cliente-icon"></span>Nombre:</td>
+                <td class="ver-cliente-value">{{ cliente.nombre|default:'' }} {{ cliente.apellido|default:'' }}</td>
+            </tr>
+            <tr>
+                <td class="ver-cliente-label"><span class="ti-mobile ver-cliente-icon"></span>Teléfono:</td>
+                <td class="ver-cliente-value">{{ cliente.telefono }}</td>
+            </tr>
+            <tr>
+                <td class="ver-cliente-label"><span class="ti-direction-alt ver-cliente-icon"></span>Dirección:</td>
+                <td class="ver-cliente-value">{{ cliente.direccion }}</td>
+            </tr>
+            <tr>
+                <td class="ver-cliente-label"><span class="ti-email ver-cliente-icon"></span>Email:</td>
+                <td class="ver-cliente-value">{{ cliente.email }}</td>
+            </tr>
+            <tr>
+                <td class="ver-cliente-label"><span class="ti-calendar ver-cliente-icon"></span>Fecha Nacimiento:</td>
+                <td class="ver-cliente-value">{{ cliente.fecha_nacimiento }}</td>
+            </tr>
+            <tr>
+                <td class="ver-cliente-label"><span class="ti-time ver-cliente-icon"></span>Registro:</td>
+                <td class="ver-cliente-value">{{ cliente.fecha_registro }}</td>
+            </tr>
+        </table>
+        <div style="text-align:center;">
+            <a href="{% url 'cliente_pdf' cliente.id %}" class="btn-pdf"><span class="ti-printer"></span> Imprimir PDF</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block help_content %}
+<div>
+    <h4>Ayuda: Ficha de Cliente</h4>
+    <p>Detalles del cliente y acciones rápidas.</p>
+    <ul>
+        <li><strong>Imprimir:</strong> Usa el botón <em>Imprimir PDF</em> para exportar la ficha.</li>
+        <li><strong>Editar:</strong> Desde la lista de clientes puedes editar los datos si hace falta corregir información.</li>
+        <li><strong>Notas:</strong> Mantén teléfono y email actualizados para notificaciones y facturación.</li>
+    </ul>
+</div>
+{% endblock %}

@@ -1,0 +1,90 @@
+{% extends 'base/pan_con_queso.html' %}
+{% load static %}
+
+{% block help_content %}
+Ventas canceladas/anuladas: aquí podrás ver solo facturas con estado anulada.
+{% endblock %}
+
+{% block arroz_con_pollo %}
+<div class="glass-panel">
+  <div class="header" style="display:flex; justify-content:space-between; gap:14px; align-items:flex-start; margin-bottom:16px;">
+    <div>
+      <h2 style="margin:0; color:#01243f; font-weight:900; display:flex; align-items:center; gap:10px;">
+        <i class="fa-solid fa-ban"></i> Ventas anuladas
+      </h2>
+      <p style="margin:6px 0 0 0; color:#1976d2; font-weight:800;">
+        Total anuladas: {{ facturas.paginator.count }} • Facturadas: {{ total_facturadas }}
+      </p>
+    </div>
+
+    <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+      <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+        <a href="{% url 'reporte_facturas_pdf' %}" target="_blank" style="display:inline-flex; align-items:center; gap:8px; background:#00b2ff; color:#fff; border-radius:12px; padding:10px 14px; text-decoration:none; font-weight:700;">
+          <i class="fa-solid fa-file-pdf"></i> PDF facturas
+        </a>
+        <a href="{% url 'reporte_facturas_excel' %}" style="display:inline-flex; align-items:center; gap:8px; background:#00b2ff; color:#fff; border-radius:12px; padding:10px 14px; text-decoration:none; font-weight:700;">
+          <i class="fa-solid fa-file-excel"></i> Excel facturas
+        </a>
+      </div>
+      <a class="btn-modern" style="background:#fff; color:#01243f; border:1px solid rgba(0,178,255,.25); box-shadow:none;"
+         href="{% url 'listar_facturas' %}">
+        <i class="fa-solid fa-arrow-left"></i> Volver
+      </a>
+    </div>
+  </div>
+
+  <div class="table-glass" style="margin-bottom:0;">
+    <table style="margin:0;">
+      <thead>
+        <tr>
+          <th>Número</th>
+          <th>Cédula</th>
+          <th>Cliente</th>
+          <th>Fecha</th>
+          <th class="right">Monto Total</th>
+          <th class="right">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for f in facturas %}
+        <tr>
+          <td>#{{ f.numero }}</td>
+          <td>{{ f.cliente.cedula }}</td>
+          <td>{{ f.cliente.nombre }} {{ f.cliente.apellido }}</td>
+          <td>{{ f.fecha|date:"d/m/Y H:i" }}</td>
+          <td class="right"><b>${{ f.total|floatformat:2 }}</b></td>
+          <td class="right">
+            <div style="display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;">
+              <a href="{% url 'ver_factura' f.numero %}" class="btn-modern" style="padding:10px 14px; font-size:0.95rem; background:#fff; color:#01243f; border:1px solid rgba(0,178,255,.25); box-shadow:none; text-decoration:none;">
+                <i class="fa-solid fa-eye"></i> Ver
+              </a>
+              <a href="{% url 'reporte_factura_pdf' f.numero %}" target="_blank" class="btn-modern" style="padding:10px 14px; font-size:0.95rem; background:#fff; color:#01243f; border:1px solid rgba(0,178,255,.25); box-shadow:none; text-decoration:none;">
+                <i class="fa-solid fa-print"></i> Imprimir
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="6" class="muted" style="padding:18px 14px;">No hay facturas anuladas.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div style="margin-top:16px; display:flex; justify-content:flex-end; gap:8px; flex-wrap:wrap;">
+    {% if facturas.has_previous %}
+      <a class="btn-modern" style="background:#fff; color:#01243f; border:1px solid rgba(0,178,255,.25); box-shadow:none; text-decoration:none; padding:10px 16px;"
+         href="?page={{ facturas.previous_page_number }}">&laquo; Anterior</a>
+    {% endif %}
+    <span style="align-self:center; font-weight:900; color:#1976d2; padding:10px 16px;">
+      Página {{ facturas.number }} de {{ facturas.paginator.num_pages }}
+    </span>
+    {% if facturas.has_next %}
+      <a class="btn-modern" style="background:#fff; color:#01243f; border:1px solid rgba(0,178,255,.25); box-shadow:none; text-decoration:none; padding:10px 16px;"
+         href="?page={{ facturas.next_page_number }}">Siguiente &raquo;</a>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

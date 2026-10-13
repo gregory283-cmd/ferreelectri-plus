@@ -1,0 +1,105 @@
+/* General styles for the user dashboard */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background: radial-gradient(circle at top, #07101d 0%, #020814 45%, #01050d 100%);
+    color: #eef6ff;
+}
+
+/* Header styles */
+header {
+    background-color: rgba(0, 123, 255, 0.18);
+    color: #e9f7ff;
+    padding: 1rem;
+    text-align: center;
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+/* Container styles */
+.container {
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 1.5rem;
+    background: rgba(10, 18, 34, 0.96);
+    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,0.08);
+}
+
+/* Table styles */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+    background: rgba(10, 18, 34, 0.96);
+    border: 1px solid rgba(255,255,255,0.08);
+}
+
+table th, table td {
+    padding: 0.75rem;
+    text-align: left;
+    border: 1px solid rgba(255,255,255,0.08);
+    color: #eef6ff;
+}
+
+table th {
+    background-color: rgba(0, 123, 255, 0.95);
+    color: white;
+}
+
+table tr:nth-child(even) {
+    background-color: rgba(255,255,255,0.04);
+}
+
+/* Button styles */
+button {
+    background-color: #00b2ff;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+}
+
+button:hover {
+    background-color: #0090cc;
+}
+
+/* Form styles */
+form {
+    margin: 1rem 0;
+}
+
+form input, form select {
+    width: 100%;
+    padding: 0.5rem;
+    margin: 0.5rem 0;
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 4px;
+    background: rgba(255,255,255,0.05);
+    color: #eef6ff;
+}
+
+form input[type="submit"] {
+    background-color: #00b2ff;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+form input[type="submit"]:hover {
+    background-color: #0090cc;
+}
+
+/* Footer styles */
+footer {
+    text-align: center;
+    padding: 1rem;
+    background: rgba(10, 18, 34, 0.95);
+    color: #aabedb;
+    margin-top: 2rem;
+    font-size: 0.9rem;
+}

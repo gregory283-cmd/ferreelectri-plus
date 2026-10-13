@@ -1,0 +1,50 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "django-check",
+			"type": "shell",
+			"command": "${workspaceFolder}/.venv-1/Scripts/python.exe manage.py check",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "django-migrate",
+			"type": "shell",
+			"command": "${workspaceFolder}/.venv-1/Scripts/python.exe manage.py migrate",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "django-runserver",
+			"type": "shell",
+			"command": "${workspaceFolder}/.venv-1/Scripts/python.exe manage.py runserver 0.0.0.0:8000",
+			"args": [],
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "django-tests-admin",
+			"type": "shell",
+			"command": "${workspaceFolder}/.venv-1/Scripts/python.exe manage.py test dashboard.tests.SeguridadTest --verbosity 2 --noinput",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "django-tests-admin",
+			"type": "shell",
+			"command": "${workspaceFolder}/.venv-1/Scripts/python.exe manage.py test dashboard.tests.SeguridadTest --verbosity 2 --noinput",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		}
+	]
+}

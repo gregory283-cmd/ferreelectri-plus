@@ -1,0 +1,125 @@
+{% extends 'base/pan_con_queso.html' %}
+{% block content %}
+<div class="card payment-card" style="max-width:840px;margin:32px auto;padding:20px;">
+    <h2>Pago del pedido #{{ pedido.id }}</h2>
+    <p>Total a pagar: <strong>${{ pedido.total|floatformat:2 }}</strong></p>
+    <form method="post" enctype="multipart/form-data" id="pagoForm">
+        {% csrf_token %}
+        <div class="field">
+            <label>Método de pago:</label>
+            <div class="method-options">
+                <label><input type="radio" name="metodo" value="TRANSFERENCIA" required onclick="toggleMetodo('TRANSFERENCIA')"> Transferencia bancaria</label>
+                <label><input type="radio" name="metodo" value="COMPROBANTE" onclick="toggleMetodo('COMPROBANTE')"> Otro pago manual</label>
+                <label><input type="radio" name="metodo" value="STRIPE" onclick="toggleMetodo('STRIPE')"> Pagar con tarjeta (Stripe)</label>
+            </div>
+        </div>
+        <div id="transferenciaInfo" class="hidden">
+            <strong>Datos bancarios:</strong>
+            <p>Banco: <em>Banco Ejemplo</em> - Cuenta: <em>123456789</em> - Titular: <em>FERREELECTRI</em></p>
+        </div>
+        <div id="comprobanteUpload" class="hidden">
+            <label>Comprobante de transferencia (imagen, máximo 5 MB):</label>
+            <input type="file" name="comprobante" accept="image/*" />
+        </div>
+        <div class="field">
+            <label>Referencia / Nota (opcional):</label>
+            <input type="text" name="referencia" />
+        </div>
+        <div id="stripeAction" class="hidden">
+            <a id="stripeCheckoutBtn" href="{% url 'stripe_checkout' pedido.id %}" class="btn btn-secondary">Pagar con tarjeta (Stripe)</a>
+        </div>
+        <div class="actions">
+            <button type="button" class="btn-main" onclick="openPagoModal()">Continuar al pago</button>
+            <a href="{% url 'mis_pedidos' %}" class="btn">Volver</a>
+        </div>
+    </form>
+
+    <!-- Modal de confirmación de pago -->
+    <div id="pagoModal" class="modal hidden">
+        <div class="modal-content">
+            <h3>Confirmar pago</h3>
+            <p>Total a pagar: <strong>${{ pedido.total|floatformat:2 }}</strong></p>
+            <form id="confirmPagoForm">
+                <label>Método:</label>
+                <select name="metodo" required class="select-method">
+                    <option value="">-- Selecciona --</option>
+                    <option value="TRANSFERENCIA">Transferencia bancaria</option>
+                    <option value="COMPROBANTE">Otro pago manual</option>
+                    <option value="STRIPE">Tarjeta (Stripe)</option>
+                </select>
+                <div class="field">
+                    <label>Referencia (obligatoria para transferencias y comprobantes)</label>
+                    <input type="text" name="referencia" />
+                </div>
+                <div class="field">
+                    <label>Monto</label>
+                    <input type="number" step="0.01" name="monto" value="{{ pedido.total|floatformat:2 }}" required />
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn" onclick="closePagoModal()">Cancelar</button>
+                    <button type="button" class="btn-main" onclick="submitPago()">Enviar pago</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <style>
+        /* Base */
+        .hidden{display:none}
+        .payment-card{box-shadow:0 18px 50px rgba(2,6,23,0.08);border-radius:12px}
+        .method-options label{display:inline-block;margin-right:12px}
+        .field{margin-top:12px}
+        .actions{margin-top:14px}
+        .modal{position:fixed;left:0;right:0;top:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:flex-start;justify-content:center;padding-top:60px;z-index:1000}
+        .modal-content{max-width:520px;width:100%;background:var(--card-bg,#fff);color:var(--text,#0f172a);padding:20px;border-radius:10px;box-shadow:0 10px 30px rgba(2,6,23,0.12)}
+        .modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
+        .select-method{width:100%;padding:8px;border-radius:8px;border:1px solid #dfe7f5;background:var(--input-bg);color:var(--text)}
+        /* Fuerza contraste en opciones cuando el navegador permita aplicar estilos */
+        .select-method option{background:var(--card-bg);color:var(--text)}
+
+        /* Light theme variables */
+        :root{--bg:#f7fafc;--card-bg:#fff;--text:#0f172a;--muted:#556;--accent:linear-gradient(90deg,#25d366,#0ea5a5)}
+
+        /* Dark theme using prefers-color-scheme */
+        @media (prefers-color-scheme: dark){
+            :root{--bg:#071226;--card-bg:#081226;--text:#e6eef8;--muted:#9fb0c8}
+            .modal{background:rgba(0,0,0,0.65)}
+            .select-method{background:#0b1624;color:var(--text);border:1px solid #163043}
+        }
+        body{background:var(--bg)}
+
+        /* Ensure selects/options contrast on all themes */
+        select, option{background:transparent;color:inherit}
+    </style>
+
+    <script>
+        function toggleMetodo(m) {
+            var method = m.toUpperCase();
+            var requiresProof = method === 'TRANSFERENCIA' || method === 'COMPROBANTE';
+            document.getElementById('transferenciaInfo').classList.toggle('hidden', method !== 'TRANSFERENCIA');
+            document.getElementById('comprobanteUpload').classList.toggle('hidden', !requiresProof);
+            document.querySelector('#comprobanteUpload input[name="comprobante"]').required = requiresProof;
+            document.getElementById('stripeAction').classList.toggle('hidden', method !== 'STRIPE');
+        }
+
+        function openPagoModal() { document.getElementById('pagoModal').classList.remove('hidden'); }
+        function closePagoModal(){ document.getElementById('pagoModal').classList.add('hidden'); }
+
+        function submitPago(){
+            var form = document.getElementById('confirmPagoForm');
+            var data = new FormData(form);
+            var metodo = data.get('metodo');
+            var referencia = data.get('referencia') || '';
+            var monto = data.get('monto');
+            if(!metodo){ alert('Selecciona un método de pago'); return; }
+            if((metodo === 'TRANSFERENCIA' || metodo === 'COMPROBANTE') && !referencia){ alert('La referencia es obligatoria para este método.'); return; }
+            if((metodo === 'TRANSFERENCIA' || metodo === 'COMPROBANTE') && !document.querySelector('#pagoForm input[name="comprobante"]').files.length){ alert('Adjunta una imagen del comprobante.'); return; }
+            var mainForm = document.getElementById('pagoForm');
+            var metodoInput = document.createElement('input'); metodoInput.type='hidden'; metodoInput.name='metodo'; metodoInput.value=metodo; mainForm.appendChild(metodoInput);
+            var referenciaInput = document.createElement('input'); referenciaInput.type='hidden'; referenciaInput.name='referencia'; referenciaInput.value=referencia; mainForm.appendChild(referenciaInput);
+            var montoInput = document.createElement('input'); montoInput.type='hidden'; montoInput.name='monto'; montoInput.value=monto; mainForm.appendChild(montoInput);
+            mainForm.submit();
+        }
+    </script>
+</div>
+{% endblock %}

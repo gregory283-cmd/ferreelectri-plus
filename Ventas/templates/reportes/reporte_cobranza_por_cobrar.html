@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{ titulo }}</title>
+  <style>
+    body { font-family: Arial, Helvetica, sans-serif; color:#0a1a2f; }
+    .header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:18px; }
+    .title { font-size:20px; font-weight:800; }
+    .sub { color:#1976d2; font-weight:700; margin-top:6px; }
+    .box { border:2px solid #00b2ff; border-radius:12px; padding:12px 14px; margin-bottom:14px; }
+    table { width:100%; border-collapse: collapse; }
+    th, td { border:1px solid #dbeafe; padding:10px 8px; font-size:13px; }
+    th { background:#00b2ff; color:#fff; font-weight:800; }
+    .right { text-align:right; }
+    .muted { color:#64748b; font-weight:700; }
+    .badge { display:inline-block; padding:4px 10px; border-radius:999px; font-weight:800; font-size:12px; }
+    .badge-red { background:rgba(231,76,60,.12); color:#c0392b; border:1px solid rgba(231,76,60,.22); }
+    .badge-green { background:rgba(39,174,96,.12); color:#1e8449; border:1px solid rgba(39,174,96,.22); }
+    .footer { margin-top:14px; font-size:12px; color:#64748b; }
+  </style>
+  {% include 'reportes/pdf_design.html' %}
+</head>
+<body>
+  <div class="header">
+    <div>
+      <div class="title">{{ titulo }}</div>
+      <div class="sub">
+        Rango: {{ from_date|default:"(sin desde)" }} - {{ to_date|default:"(sin hasta)" }}
+      </div>
+      {% if cliente_cedula %}
+        <div class="muted">Cliente C.I.: {{ cliente_cedula }}</div>
+      {% endif %}
+      {% if dias_mas %}
+        <div class="muted">Mayor a {{ dias_mas }} días</div>
+      {% endif %}
+      <div style="margin-top:6px;">
+        {% if include_facturadas %}
+          <span class="badge badge-green">Facturadas</span>
+        {% endif %}
+        {% if include_anuladas %}
+          <span class="badge badge-red">Anuladas</span>
+        {% endif %}
+      </div>
+    </div>
+    <div class="muted" style="text-align:right;">
+      Generado: {{ now|date:"d/m/Y H:i" }}
+    </div>
+  </div>
+
+  <div class="box">
+    <div class="muted" style="margin-bottom:8px;">Resumen</div>
+    <div style="display:flex; justify-content:space-between;">
+      <div><b>Total registros:</b> {{ facturas|length }}</div>
+      <div><b>Cobranza (total):</b> ${{ total_cobranza|floatformat:2 }}</div>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Número</th>
+        <th>Fecha</th>
+        <th>Cliente</th>
+        <th class="right">Estado</th>
+        <th class="right">Monto</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for f in facturas %}
+      <tr>
+        <td>#{{ f.numero }}</td>
+        <td>{{ f.fecha|date:"d/m/Y" }}</td>
+        <td>{{ f.cliente.nombre }} {{ f.cliente.apellido }}</td>
+        <td class="right">
+          {% if f.estado == 'anulada' %}
+            Anulada
+          {% else %}
+            Facturada
+          {% endif %}
+        </td>
+        <td class="right">${{ f.total|floatformat:2 }}</td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="5" class="muted" style="text-align:center;">No hay datos para los filtros seleccionados.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="footer">
+    Nota: Este reporte usa el filtro por estado y fechas sobre Factura.
+  </div>
+</body>
+</html>

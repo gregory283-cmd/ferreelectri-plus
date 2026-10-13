@@ -1,0 +1,130 @@
+{% extends "base/pan_con_queso.html" %}
+{% block arroz_con_pollo %}
+<style>
+    .auditoria-wrapper {
+        margin: 0;
+        padding: 40px 24px 30px 24px;
+        background: transparent;
+        min-height: 100vh;
+        width: 100%;
+        max-width: none;
+        box-sizing: border-box;
+    }
+    .table-responsive {
+        overflow-x: auto;
+        border-radius: 12px;
+        box-shadow: 0 2px 12px 0 rgba(0,178,255,0.08);
+        background: transparent;
+        margin-bottom: 40px;
+        border: 1px solid rgba(255,255,255,0.08);
+    }
+        /* Detalles: recortar con ellipsis cuando el ancho no alcanza; permitir wrap en pantallas pequeñas */
+        td.td-details {
+            max-width: 48ch;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        td.td-useragent {
+            max-width: 36ch;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        @media (max-width: 900px) {
+            td.td-details, td.td-useragent { white-space: normal; }
+        }
+    table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        font-size: 1.08rem;
+        min-width: 700px;
+    }
+    thead tr {
+        background: #00b2ff;
+        color: #fff;
+        position: sticky;
+        top: 0;
+        z-index: 2;
+    }
+    th, td {
+        padding: 14px 16px;
+        text-align: left;
+        border-bottom: 1px solid #e6f7ff;
+    }
+    th {
+        font-weight: 700;
+        letter-spacing: 1px;
+        font-size: 1.1rem;
+    }
+    tbody tr:hover {
+        background: #e6f7ff;
+        transition: background 0.2s;
+    }
+    tbody tr:last-child td {
+        border-bottom: none;
+    }
+    .volver-btn {
+        background: #00b2ff;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        padding: 10px 22px;
+        font-weight: 600;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: background 0.2s, color 0.2s;
+        box-shadow: 0 2px 8px 0 rgba(0,178,255,0.08);
+        outline: none;
+        margin-bottom: 24px;
+        display: inline-block;
+        text-decoration: none;
+    }
+    .volver-btn:hover {
+        background: #0090cc;
+        color: #fff;
+    }
+    @media (max-width: 900px) {
+        .auditoria-wrapper { padding: 15px; }
+        table { min-width: 500px; }
+    }
+</style>
+<div class="auditoria-wrapper">
+    <a href="{% url 'dashboard' %}" class="volver-btn">&larr; Volver al dashboard</a>
+    <h2 style="color:#00b2ff; font-size:2.1rem; font-weight:800; margin-bottom:32px;">Auditoría completa (últimos 7 días)</h2>
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Usuario</th>
+                    <th>Acción</th>
+                    <th>Modelo</th>
+                    <th>Detalles</th>
+                    <th>Fecha</th>
+                    {% if include_ip %}<th>IP</th>{% endif %}
+                    {% if include_user_agent %}<th>User Agent</th>{% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td>{{ log.username }}</td>
+                    <td>{{ log.action }}</td>
+                    <td>{{ log.model_name }}</td>
+                        <td class="td-details" title="{{ log.raw_details|default:'' }}">{{ log.details }}</td>
+                    <td>{{ log.timestamp|date:"d/m/Y H:i" }}</td>
+                    {% if include_ip %}<td>{{ log.ip_address }}</td>{% endif %}
+                    {% if include_user_agent %}<td style="max-width:200px;overflow-x:auto;">{{ log.user_agent }}</td>{% endif %}
+                        {% if include_user_agent %}<td class="td-useragent" title="{{ log.user_agent|default:'' }}">{{ log.user_agent }}</td>{% endif %}
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="{{ colspan }}">No hay registros de auditoría en los últimos 7 días.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

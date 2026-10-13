@@ -1,0 +1,578 @@
+{% extends 'base/pan_con_queso.html' %}
+
+{% block arroz_con_pollo %}
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+
+{% comment %} help_content definido al final del archivo (evita que aparezca visible dentro del bloque arroz_con_pollo) {% endcomment %}
+
+<div class="compras-main-card">
+    <div class="compras-content-wrapper">
+        <div class="compras-header-bar" style="gap:12px; flex-wrap:wrap; align-items:center;">
+            <div class="compras-header-title">
+                <span class="material-symbols-outlined icon-lg" aria-hidden="true">receipt_long</span>
+                <div><p class="purchases-eyebrow">ABASTECIMIENTO · OPERACIONES</p><h1>Compras a proveedores</h1><p class="purchases-subtitle">Historial de entradas, proveedores y estado de cada operación.</p></div>
+            </div>
+            <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                <a href="{% url 'reporte_compras_csv' %}" class="btn-nueva-compra btn-report">
+                    <span class="material-symbols-outlined">download</span>
+                    <span>Descargar compras</span>
+                </a>
+                <a href="{% url 'formato_compras' %}" class="btn-nueva-compra">
+                    <span class="material-symbols-outlined">add_shopping_cart</span>
+                    <span>Nueva Compra</span>
+                </a>
+            </div>
+        </div>
+
+        <div class="compras-stats-row">
+            <div class="compras-stat-card highlight">
+                <div class="compras-stat-title">
+                    <span class="material-symbols-outlined">shopping_cart_checkout</span>
+                    <span>Total Compras</span>
+                </div>
+                <div class="compras-stat-value">${{ total_compras|floatformat:2 }}</div>
+            </div>
+            <div class="compras-stat-card">
+                <div class="compras-stat-title">
+                    <span class="material-symbols-outlined">calendar_month</span>
+                    <span>Compras este mes</span>
+                </div>
+                <div class="compras-stat-value">${{ total_compras_mes|floatformat:2 }}</div>
+            </div>
+        </div>
+
+        <form class="compras-search" method="get" action="{% url 'listar_compras' %}" role="search">
+            <label class="sr-only" for="buscar-compra">Buscar compras</label>
+            <input id="buscar-compra" type="search" name="q" value="{{ search_query }}" placeholder="N° de control fiscal, proveedor o RIF" autocomplete="off">
+            <button type="submit" class="btn-nueva-compra compras-search-submit"><span class="material-symbols-outlined" aria-hidden="true">search</span> Buscar</button>
+            {% if search_query %}<a class="compras-search-clear" href="{% url 'listar_compras' %}">Limpiar</a>{% endif %}
+        </form>
+
+        <div class="tabla-compras-responsive">
+            <table class="tabla-compras">
+                <thead>
+                    <tr>
+                        <th>N°</th>
+                        <th>Cédula</th>
+                        <th>Proveedor</th>
+                        <th>Fecha de emisión</th>
+                        <th>Estado</th>
+                        <th style="text-align:center;">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for compra in compras %}
+                    <tr class="{% if compra.estado == 'ANULADA' %}anulada-row{% endif %}">
+                        <td>{{ compra.id }}</td>
+                        <td>{{ compra.proveedor.cedula }}</td>
+                        <td>{{ compra.proveedor.nombre }}</td>
+                        <td>{{ compra.fecha_emision|date:"d/m/Y" }}</td>
+                        <td>
+                            {% if compra.estado == "ANULADA" %}
+                                <span class="estado-anulada">Anulada</span>
+                            {% else %}
+                                <span class="estado-activa">Activa</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align:center;">
+                            <a href="{% url 'ver_compra' compra.id %}" class="btn-accion btn-ver" title="Ver/Imprimir" aria-label="Ver compra {{ compra.id }}">
+                                <span class="material-symbols-outlined">visibility</span>
+                            </a>
+                            {% if compra.estado != "ANULADA" %}
+                                <a href="{% url 'modificar_compra' compra.id %}" class="btn-accion btn-editar" title="Modificar">
+                                    <span class="material-symbols-outlined">edit</span>
+                                </a>
+                                <form method="post" action="{% url 'anular_compra' compra.id %}" class="table-action-form" onsubmit="return confirm('¿Anular la compra {{ compra.id }}? Se descontará el stock correspondiente.');">
+                                    {% csrf_token %}<button type="submit" class="btn-accion btn-anular" title="Anular" aria-label="Anular compra {{ compra.id }}"><span class="material-symbols-outlined" aria-hidden="true">block</span></button>
+                                </form>
+                            {% else %}
+                                {% if perms.Compras.delete_compra %}
+                                <form method="post" action="{% url 'eliminar_compra' compra.id %}" class="table-action-form" onsubmit="return confirm('¿Eliminar permanentemente la compra anulada {{ compra.id }}?');">
+                                    {% csrf_token %}<button type="submit" class="btn-accion btn-borrar" title="Eliminar" aria-label="Eliminar compra {{ compra.id }}"><span class="material-symbols-outlined" aria-hidden="true">delete</span></button>
+                                </form>
+                                {% endif %}
+                                {% if perms.Compras.change_compra %}
+                                <form method="post" action="{% url 'reactivar_compra' compra.id %}" class="table-action-form" onsubmit="return confirm('¿Reactivar la compra {{ compra.id }}?');">
+                                    {% csrf_token %}<button type="submit" class="btn-accion btn-verde" title="Reactivar" aria-label="Reactivar compra {{ compra.id }}"><span class="material-symbols-outlined" aria-hidden="true">autorenew</span></button>
+                                </form>
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr class="empty-row"><td colspan="6">No hay compras registradas.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginación -->
+        <div class="paginacion">
+            {% if compras.has_previous %}
+                <a href="?q={{ search_query|urlencode }}&page={{ compras.previous_page_number }}">&laquo; Anterior</a>
+            {% endif %}
+            <span>Página {{ compras.number }} de {{ compras.paginator.num_pages }}</span>
+            {% if compras.has_next %}
+                <a href="?q={{ search_query|urlencode }}&page={{ compras.next_page_number }}">Siguiente &raquo;</a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% if messages %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    {% for message in messages %}
+        Swal.fire({
+            icon: '{% if "error" in message.tags %}error{% elif "success" in message.tags %}success{% else %}info{% endif %}',
+            title: '{{ message|escapejs }}',
+            confirmButtonColor: '#1976d2'
+        });
+    {% endfor %}
+});
+</script>
+{% endif %}
+
+<style>
+.compras-main-card {
+    margin: 100px 0.5rem 2rem 290px;
+    background: var(--surface);
+    color: var(--text-primary);
+    border-radius: 18px;
+    box-shadow: 0 16px 50px rgba(15, 23, 42, 0.12);
+    padding: 2rem 1.5rem;
+    max-width: min(calc(100vw - 280px), 1180px);
+    width: auto;
+    min-width: auto;
+    transition: margin 0.3s, max-width 0.3s;
+}
+.compras-header-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+}
+.compras-header-title {
+    display: flex;
+    align-items: center;
+    gap: 0.7em;
+    font-size: 1.6em;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+.icon-lg {
+    font-size: 2em;
+    color: #1976d2;
+}
+.btn-nueva-compra {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    background: #1976d2;
+    color: #fff;
+    padding: 0.7em 1.5em;
+    border-radius: 8px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: background 0.2s;
+}
+</script>
+.compras-main-card { width:min(100%,1500px); max-width:none; min-width:0; margin:0 auto; padding:26px; border:1px solid var(--admin-line,#d8e2e9); border-radius:12px; background:var(--admin-surface,#fff); color:var(--admin-text,#193247); box-shadow:var(--admin-shadow,0 14px 36px rgba(18,43,61,.08)); }
+.compras-content-wrapper { width:100%; }
+.compras-header-bar { align-items:flex-end!important; margin-bottom:20px; opacity:1!important; transform:none!important; animation:none!important; }
+.compras-header-title { align-items:flex-start; gap:12px; color:var(--admin-text,#193247); }
+.compras-header-title .icon-lg { color:#176b78; font-size:24px; }
+.compras-header-title h1 { margin:0; color:var(--admin-text,#193247); font:750 25px/1.2 'DM Sans','Segoe UI',sans-serif; letter-spacing:0; }
+.purchases-eyebrow { margin:0 0 5px; color:#24777a; font-size:10px; font-weight:800; letter-spacing:.12em; }
+.purchases-subtitle { margin:5px 0 0; color:var(--admin-muted,#647b8b); font-size:13px; font-weight:400; }
+.compras-main-card .btn-nueva-compra { display:inline-flex; min-height:40px; align-items:center; justify-content:center; gap:7px; border:1px solid #176b78; border-radius:6px; background:#176b78; color:white; padding:0 13px; font-size:11px; font-weight:700; text-decoration:none; box-shadow:none; }
+.compras-main-card .btn-nueva-compra:hover { background:#115762; }
+.compras-main-card .btn-nueva-compra.btn-report { border-color:var(--admin-line-strong,#cbd8df); background:var(--admin-surface,#fff); color:var(--admin-text,#345366); }
+.compras-stats-row { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin-bottom:16px; }
+.compras-stat-card, .compras-stat-card.highlight { min-width:0; border:1px solid var(--admin-line,#d8e2e9); border-radius:8px; background:var(--admin-surface,#fff); padding:16px 18px; box-shadow:none; opacity:1!important; transform:none!important; animation:none!important; }
+.compras-stat-card.highlight { border-left:3px solid #176b78; }
+.compras-stat-title { margin-bottom:8px; color:var(--admin-muted,#647b8b); font-size:11px; font-weight:700; }
+.compras-stat-title .material-symbols-outlined { color:#176b78; font-size:17px; }
+.compras-stat-value { color:var(--admin-text,#193247); font:700 23px/1.2 'DM Sans','Segoe UI',sans-serif; font-variant-numeric:tabular-nums; }
+.compras-search { display:flex; width:100%; min-width:0; align-items:center; gap:8px; margin:0 0 15px; padding:5px; border:1px solid var(--admin-line-strong,#cbd8df); border-radius:8px; background:var(--admin-surface-raised,var(--admin-surface,#fff)); transition:border-color .18s, box-shadow .18s; }
+.compras-search:focus-within { border-color:#328b90; box-shadow:0 0 0 3px rgba(50,139,144,.16); }
+:root[data-theme] .main-content .compras-main-card .compras-search input:not([type="checkbox"]):not([type="radio"]) { width:100%; min-width:0; min-height:40px; flex:1 1 auto; border:0 !important; border-radius:5px; outline:none; background:transparent !important; color:var(--admin-text,#193247) !important; padding:0 12px; box-shadow:none !important; font:500 13px 'DM Sans','Segoe UI',sans-serif; }
+:root[data-theme] .main-content .compras-main-card .compras-search input::placeholder { color:var(--admin-muted,#647b8b) !important; opacity:.9; }
+.compras-search .compras-search-submit { min-width:104px; min-height:40px; flex:0 0 auto; border-radius:6px; background:#176b78; padding:0 14px; font-size:12px; }
+.compras-search .compras-search-submit:hover { background:#115762; }
+.compras-search .compras-search-submit .material-symbols-outlined { font-size:18px; }
+.compras-search-clear { display:inline-flex; min-height:40px; flex:0 0 auto; align-items:center; justify-content:center; border:1px solid var(--admin-line-strong,#cbd8df); border-radius:6px; color:var(--admin-muted,#647b8b); padding:0 12px; font-size:12px; font-weight:700; text-decoration:none; }
+.compras-search-clear:hover { border-color:#328b90; color:#176b78; }
+.tabla-compras-responsive { overflow-x:auto; border:1px solid var(--admin-line,#d8e2e9); border-radius:8px; opacity:1!important; transform:none!important; animation:none!important; }
+.compras-main-card .tabla-compras { min-width:760px; margin:0; border-collapse:separate; border-spacing:0; background:var(--admin-surface,#fff); }
+.compras-main-card .tabla-compras th { border-bottom:1px solid var(--admin-line-strong,#cbd8df); background:var(--admin-table-head,#eaf1f5); color:var(--admin-text,#193247); padding:12px 13px; font-size:10px; letter-spacing:.06em; text-transform:uppercase; white-space:nowrap; }
+.compras-main-card .tabla-compras td { border-bottom:1px solid var(--admin-line,#e3eaee); background:var(--admin-surface,#fff); color:var(--admin-text,#334b5b); padding:12px 13px; font-size:12px; }
+.compras-main-card .tabla-compras tr:nth-child(even) td { background:var(--admin-surface-soft,#f7f9fa); }
+.compras-main-card .tabla-compras tr:hover:not(.empty-row) td { background:rgba(23,107,120,.07); }
+.compras-main-card .tabla-compras tbody tr { opacity:1!important; transform:none!important; animation:none!important; }
+.compras-main-card .empty-row td { padding:30px; background:var(--admin-surface,#fff); color:var(--admin-muted,#647b8b); text-align:center; }
+.estado-anulada, .estado-activa { display:inline-flex; border:1px solid #d6e0e5; border-radius:4px; padding:4px 7px; font-size:10px; font-weight:750; }
+.estado-activa { border-color:#b6d8ce; background:#edf7f3; color:#246b58; }
+.estado-anulada { border-color:#e9c9c5; background:#fbf0ef; color:#a4443b; }
+.anulada-row td { opacity:.78; }
+.compras-main-card .btn-accion { display:inline-grid; width:33px; height:33px; place-items:center; margin:0; border:1px solid var(--admin-line-strong,#cbd8df); border-radius:5px; background:var(--admin-surface,#fff); color:var(--admin-text,#345366); padding:0; }
+.compras-main-card .btn-accion .material-symbols-outlined { font-size:17px; }
+.compras-main-card .btn-anular, .compras-main-card .btn-borrar { border-color:#e6c2be; color:#a4443b; }
+.compras-main-card .btn-verde { border-color:#b6d8ce; color:#246b58; }
+.table-action-form { display:inline-flex; margin:0 2px; }
+.paginacion { display:flex; justify-content:center; align-items:center; gap:10px; margin:17px 0 0; color:var(--admin-muted,#647b8b); font-size:11px; opacity:1!important; transform:none!important; animation:none!important; }
+.paginacion a { display:inline-flex; min-height:34px; align-items:center; border:1px solid var(--admin-line-strong,#cbd8df); border-radius:5px; background:var(--admin-surface,#fff); color:var(--admin-text,#193247); padding:0 10px; text-decoration:none; }
+html[data-theme="dark"] .compras-main-card { --admin-surface:#101d2b; --admin-surface-soft:#142435; --admin-line:#2a3b4d; --admin-line-strong:#3a5064; --admin-table-head:#1a3043; --admin-text:#e8f0f6; --admin-muted:#a6b7c5; }
+html[data-theme="dark"] .compras-main-card .tabla-compras td { color:#dce6ed; }
+html[data-theme="dark"] .estado-activa { border-color:#2e6655; background:#17382f; color:#a8dec9; }
+html[data-theme="dark"] .estado-anulada { border-color:#704642; background:#3c2828; color:#f1b4ac; }
+@media(max-width:900px) { .compras-main-card { padding:19px; } .compras-header-bar { align-items:flex-start!important; } }
+@media(max-width:620px) { .compras-main-card { padding:14px; } .compras-header-bar { flex-direction:column; } .compras-header-bar > div:last-child { width:100%; } .compras-header-bar .btn-nueva-compra { flex:1; } .compras-search { flex-wrap:wrap; } .compras-main-card .compras-search input { flex-basis:100%; } .compras-search .compras-search-submit { flex:1 1 140px; } .compras-stats-row { grid-template-columns:1fr; gap:8px; } .paginacion { flex-wrap:wrap; } }
+    .btn-accion {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
+        border-radius: 6px;
+        padding: 0.5em 0.9em;
+        margin: 0 2px;
+        font-size: 0.95em;
+        cursor: pointer;
+        background: #f5f7fa;
+        color: #1976d2;
+        transition: background 0.2s, color 0.2s, transform 0.2s;
+        text-decoration: none;
+    }
+    .btn-accion:hover { transform: translateY(-1px); }
+    .btn-ver {
+        background: #1976d2;
+        color: #fff;
+    }
+    .btn-ver:hover { background: #125ea7; color: #fff; }
+    .btn-editar {
+        background: #0288d1;
+        color: #fff;
+    }
+    .btn-editar:hover { background: #0277bd; color: #fff; }
+    .btn-anular {
+        background: #d32f2f;
+        color: #fff;
+    }
+    .btn-anular:hover { background: #b71c1c; color: #fff; }
+    .btn-borrar {
+        background: #b71c1c;
+        color: #fff;
+    }
+    .btn-borrar:hover { background: #961f1f; color: #fff; }
+html[data-theme="dark"] .compras-main-card {
+    background: rgba(10,18,34,0.94);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: #eef4ff;
+}
+html[data-theme="dark"] .compras-stat-card {
+    background: rgba(255,255,255,0.05);
+    border-color: rgba(255,255,255,0.12);
+}
+html[data-theme="dark"] .compras-stat-card.highlight {
+    background: rgba(67,233,123,0.12);
+    border-left-color: rgba(67,233,123,0.8);
+}
+html[data-theme="dark"] .compras-header-title,
+html[data-theme="dark"] .compras-stat-title,
+html[data-theme="dark"] .compras-stat-value {
+    color: #e8f4ff;
+}
+html[data-theme="dark"] .tabla-compras {
+    background: rgba(11,18,32,0.96);
+}
+html[data-theme="dark"] .tabla-compras th {
+    background: rgba(11,18,32,0.98);
+    color: #eaf4ff;
+    border-bottom: 2px solid rgba(0,178,255,0.35);
+}
+html[data-theme="dark"] .tabla-compras td {
+    color: rgba(234,244,255,0.95);
+    border-color: rgba(255,255,255,0.12);
+}
+html[data-theme="dark"] .tabla-compras tr:nth-child(even) {
+    background: rgba(255,255,255,0.03);
+}
+html[data-theme="dark"] .tabla-compras tr:hover:not(.empty-row) {
+    background: rgba(0,178,255,0.10);
+}
+html[data-theme="dark"] .empty-row td {
+    background: rgba(255,255,255,0.04);
+    color:#d8e4ff;
+}
+html[data-theme="dark"] .btn-accion {
+    background: rgba(255,255,255,0.06);
+    color: rgba(234,244,255,0.95);
+    border: 1px solid rgba(255,255,255,0.10);
+}
+html[data-theme="dark"] .btn-ver:hover { background: rgba(255,255,255,0.08); color: #bbdefb; }
+html[data-theme="dark"] .btn-editar:hover { background: rgba(255,255,255,0.08); color: #ffe082; }
+html[data-theme="dark"] .btn-anular:hover { background: rgba(255,255,255,0.08); color: #ffb3b3; }
+html[data-theme="dark"] .btn-borrar:hover { background: rgba(255,255,255,0.08); color: #ffadad; }
+.estado-anulada { color: #d32f2f; font-weight: bold; }
+.estado-activa { color: #388e3c; font-weight: bold; }
+.anulada-row { background: #fff0f0; }
+.paginacion { margin: 1.5em 0; text-align: center; }
+.paginacion a { margin: 0 0.5em; color: #1976d2; text-decoration: none; font-weight: 600; }
+.paginacion span { margin: 0 0.5em; }
+@media (max-width: 1400px) {
+    .compras-main-card {
+        margin-left: 180px;
+        margin-right: 1em;
+        max-width: 98vw;
+        min-width: unset;
+    }
+}
+@media (max-width: 900px) {
+    .compras-main-card {
+        margin: 1em 0.5em;
+        max-width: 100vw;
+        min-width: unset;
+        padding: 1em 0.5em;
+    }
+    .form-cerrar-sesion {
+        position: fixed;
+        top: 0;
+        right: 0;
+        z-index: 1100;
+        margin: 0;
+        padding: 0.5em 0.7em 0 0; /* separación del borde */
+    }
+    .salir {
+        padding: 0 !important;
+        width: 48px !important;
+        height: 48px !important;
+        min-width: 48px !important;
+        min-height: 48px !important;
+        border-radius: 50% !important;
+        background: #fff !important;
+        color: #00b2ff !important;
+        box-shadow: 0 2px 8px 0 rgba(0,178,255,0.08);
+        font-size: 1.8rem !important;
+        justify-content: center;
+        align-items: center;
+        gap: 0 !important;
+        display: flex !important;
+    }
+    .salir:hover {
+        background: #00b2ff !important;
+        color: #fff !important;
+    }
+    .salir-text {
+        display: none !important;
+    }
+    .salir .material-symbols-outlined {
+        font-size: 2rem !important;
+        margin: 0 !important;
+    }
+}
+.form-cerrar-sesion {
+    position: absolute;
+    top: 32px;
+    right: 38px;
+    z-index: 100;
+    margin: 0;
+}
+.salir {
+    background: #fff;
+    color: #00b2ff;
+    border: 2px solid #00b2ff;
+    border-radius: 12px;
+    padding: 10px 28px;
+    font-weight: 700;
+    font-size: 1.1rem;
+    box-shadow: 0 2px 8px 0 rgba(0,178,255,0.08);
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    outline: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.salir .material-symbols-outlined {
+    font-size: 2rem;
+}
+.salir-text {
+    display: inline;
+}
+
+/* Animación para el título y barra superior */
+.compras-header-bar {
+    opacity: 0;
+    transform: translateY(-40px) scale(0.96) skewX(-8deg);
+    animation: comprasHeaderIn 0.2s cubic-bezier(.68,-0.55,.27,1.55) forwards;
+    animation-delay: 0.05s;
+    will-change: opacity, transform;
+}
+@keyframes comprasHeaderIn {
+    0% { opacity: 0; transform: translateY(-40px) scale(0.96) skewX(-8deg);}
+    60% { opacity: 1; transform: translateY(8px) scale(1.04) skewX(2deg);}
+    100% { opacity: 1; transform: none;}
+}
+
+/* Animación para el botón "Nueva Compra" */
+.btn-nueva-compra {
+    opacity: 0;
+    transform: scale(0.92) rotate(-8deg);
+    animation: comprasBtnNuevaIn 0.2s cubic-bezier(.68,-0.55,.27,1.55) forwards;
+    animation-delay: 0.7s;
+    will-change: opacity, transform;
+}
+@keyframes comprasBtnNuevaIn {
+    0% { opacity: 0; transform: scale(0.92) rotate(-8deg);}
+    60% { opacity: 1; transform: scale(1.06) rotate(2deg);}
+    100% { opacity: 1; transform: none;}
+}
+
+/* Animación para las tarjetas de estadísticas */
+.compras-stat-card {
+    opacity: 0;
+    transform: translateY(40px) scale(0.97) rotate(-4deg);
+    animation: comprasStatCardIn 0.2s cubic-bezier(.68,-0.55,.27,1.55) forwards;
+    will-change: opacity, transform;
+}
+.compras-stat-card:nth-child(1) { animation-delay: 0.18s; }
+.compras-stat-card:nth-child(2) { animation-delay: 0.36s; }
+@keyframes comprasStatCardIn {
+    0% { opacity: 0; transform: translateY(40px) scale(0.97) rotate(-4deg);}
+    60% { opacity: 1; transform: translateY(-8px) scale(1.04) rotate(2deg);}
+    80% { transform: translateY(2px) scale(0.98) rotate(-1deg);}
+    100% { opacity: 1; transform: none;}
+}
+
+/* Animación para la tabla de compras */
+.tabla-compras-responsive {
+    opacity: 0;
+    transform: translateY(60px) scale(0.97);
+    animation: comprasTablaIn 0.2s cubic-bezier(.68,-0.55,.27,1.55) forwards;
+    animation-delay: 1.1s;
+    will-change: opacity, transform;
+}
+@keyframes comprasTablaIn {
+    0% { opacity: 0; transform: translateY(60px) scale(0.97);}
+    60% { opacity: 1; transform: translateY(-8px) scale(1.03);}
+    80% { transform: translateY(2px) scale(0.99);}
+    100% { opacity: 1; transform: none;}
+}
+
+/* Animación para filas de la tabla */
+.tabla-compras tbody tr {
+    opacity: 0;
+    transform: translateX(-40px) scale(0.97);
+    animation: comprasFilaIn 0.7s cubic-bezier(.68,-0.55,.27,1.55) forwards;
+}
+.tabla-compras tbody tr:nth-child(1) { animation-delay: 1.25s; }
+.tabla-compras tbody tr:nth-child(2) { animation-delay: 1.33s; }
+.tabla-compras tbody tr:nth-child(3) { animation-delay: 1.41s; }
+.tabla-compras tbody tr:nth-child(4) { animation-delay: 1.49s; }
+.tabla-compras tbody tr:nth-child(5) { animation-delay: 1.57s; }
+@keyframes comprasFilaIn {
+    0% { opacity: 0; transform: translateX(-40px) scale(0.97);}
+    70% { opacity: 1; transform: translateX(8px) scale(1.03);}
+    100% { opacity: 1; transform: none;}
+}
+
+/* Animación para la paginación */
+.paginacion {
+    opacity: 0;
+    transform: translateY(30px) scale(0.97);
+    animation: comprasPaginacionIn 0.2s cubic-bezier(.68,-0.55,.27,1.55) forwards;
+    animation-delay: 0.5s;
+    will-change: opacity, transform;
+}
+@keyframes comprasPaginacionIn {
+    0% { opacity: 0; transform: translateY(30px) scale(0.97);}
+    60% { opacity: 1; transform: translateY(-6px) scale(1.03);}
+    100% { opacity: 1; transform: none;}
+}
+</style>
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+function confirmarAccionCrud(e, url, titulo, texto, icono, confirmBtn, cancelBtn) {
+    e.preventDefault();
+    Swal.fire({
+        title: titulo,
+        text: texto,
+        icon: icono,
+        showCancelButton: true,
+        confirmButtonColor: '#1976d2',
+        cancelButtonColor: '#d33',
+        confirmButtonText: confirmBtn,
+        cancelButtonText: cancelBtn
+    }).then((result) => {
+        if (result.isConfirmed) {
+            window.location.href = url;
+        }
+    });
+}
+document.addEventListener('DOMContentLoaded', function() {
+    // Anular compra
+    document.querySelectorAll('.btn-anular[href]').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            confirmarAccionCrud(
+                e,
+                this.href,
+                '¿Seguro que deseas anular esta compra?',
+                'La puedes activar cuando quieras.',
+                'warning',
+                'Sí, anular',
+                'Cancelar'
+            );
+        });
+    });
+    // Borrar compra anulada
+    document.querySelectorAll('.btn-borrar[href]').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            confirmarAccionCrud(
+                e,
+                this.href,
+                '¿Seguro que deseas eliminar esta compra anulada?',
+                'Esta acción eliminará la compra de forma permanente.',
+                'error',
+                'Sí, eliminar',
+                'Cancelar'
+            );
+        });
+    });
+    // Reactivar compra
+    document.querySelectorAll('.btn-verde[href]').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            confirmarAccionCrud(
+                e,
+                this.href,
+                '¿Reactivar esta compra?',
+                'La compra volverá a estar activa.',
+                'question',
+                'Sí, reactivar',
+                'Cancelar'
+            );
+        });
+    });
+});
+</script>
+
+{% endblock %}
+
+{% block help_content %}
+<div>
+    <h4>Ayuda: Compras (rápido)</h4>
+    <p>En esta pantalla gestionas las compras con proveedores y el historial.</p>
+    <ul>
+        <li><strong>Crear compra:</strong> Haz clic en <em>"Nueva Compra"</em> y selecciona o crea el proveedor.</li>
+        <li><strong>Añadir productos:</strong> En el formulario de la compra escribe el <em>código</em> del artículo para autocompletar (Enter/Tab/blur), o usa F2 para abrir la búsqueda avanzada.</li>
+        <li><strong>Ver costos guardados:</strong> Al editar una compra verás el costo histórico en cada línea; confirme antes de guardar si requiere actualizar el costo del producto.</li>
+        <li><strong>Guardar:</strong> Usa el botón <em>Guardar</em> al terminar; si hay validaciones incompletas recibirás un aviso.</li>
+    </ul>
+    <p>Consejos:</p>
+    <ol>
+        <li>Si el proveedor no existe se creará automáticamente (se asigna un email temporal si hace falta). Revísalo luego en Proveedores.</li>
+        <li>Revisa el stock después de guardar para verificar los movimientos de inventario.</li>
+    </ol>
+</div>
+{% endblock %}

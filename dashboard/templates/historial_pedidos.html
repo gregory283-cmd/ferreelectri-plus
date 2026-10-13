@@ -1,0 +1,130 @@
+<!-- filepath: dashboard/templates/historial_pedidos.html -->
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mis Pedidos</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        body {
+            background: linear-gradient(120deg, #f3e7ff 0%, #e3f0ff 100%);
+            min-height: 100vh;
+            margin: 0;
+        }
+        .pedidos-card {
+            background: rgba(255,255,255,0.92);
+            border-radius: 22px;
+            box-shadow: 0 8px 32px #ff80ab33, 0 2px 8px #25d36633;
+            padding: 38px 32px 28px 32px;
+            max-width: 950px;
+            margin: 40px auto 0 auto;
+            animation: fadeInUp .8s cubic-bezier(.7,.04,.33,.97);
+        }
+        .pedidos-card h2 {
+            color: #ff80ab;
+            font-weight: 900;
+            margin-bottom: 18px;
+            text-align: center;
+            letter-spacing: 1px;
+        }
+        .pedidos-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: transparent;
+            margin-bottom: 18px;
+        }
+        .pedidos-table th, .pedidos-table td {
+            padding: 12px 10px;
+            border-bottom: 1.5px solid #e3e3e3;
+            text-align: center;
+        }
+        .pedidos-table th {
+            background: linear-gradient(90deg,#ff80ab22,#25d36622);
+            color: #ff80ab;
+            font-weight: 700;
+            font-size: 1.08em;
+        }
+        .pedidos-table tr:last-child td {
+            border-bottom: none;
+        }
+        .pedidos-table tr:hover {
+            background: #f3e7ff55;
+        }
+        .btn-main {
+            background: linear-gradient(90deg,#ff80ab 60%,#25d366 100%);
+            color: #fff;
+            font-weight: 700;
+            border: none;
+            border-radius: 12px;
+            padding: 8px 18px;
+            box-shadow: 0 2px 12px #ff80ab33;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background 0.2s, color 0.2s, transform 0.2s, box-shadow 0.3s;
+        }
+        .btn-main:hover {
+            background: #fffbe7;
+            color: #ff80ab;
+            transform: scale(1.06);
+            box-shadow: 0 8px 32px #ff80ab55;
+        }
+        .icon-list {
+            font-size: 2.2em;
+            color: #ff80ab;
+            margin-bottom: 8px;
+            display: block;
+            text-align: center;
+            animation: bounceIn 1.2s;
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(60px);}
+            to { opacity: 1; transform: translateY(0);}
+        }
+        @keyframes bounceIn {
+            0% { transform: scale(0.5);}
+            60% { transform: scale(1.2);}
+            100% { transform: scale(1);}
+        }
+    </style>
+</head>
+<body>
+<div class="pedidos-card">
+    <span class="icon-list"><i class="fa fa-list"></i></span>
+    <h2>Mis Pedidos</h2>
+    {% if pedidos %}
+    <table class="pedidos-table" id="pedidosTable">
+        <tr>
+            <th>ID</th>
+            <th>Fecha</th>
+            <th>Total</th>
+            <th>Estado</th>
+            <th>Detalle</th>
+        </tr>
+        {% for pedido in pedidos %}
+        <tr>
+            <td>#{{ pedido.id }}</td>
+            <td>{{ pedido.creado|date:"d/m/Y H:i" }}</td>
+            <td>${{ pedido.total }}</td>
+            <td>{{ pedido.estado }}</td>
+            <td>
+                <a href="{% url 'detalle_pedido_cliente' pedido.id %}" class="btn-main"><i class="fa fa-eye"></i> Ver</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <p style="text-align:center; color:#ff80ab; font-weight:600;">No tienes pedidos aún.</p>
+    {% endif %}
+</div>
+<script>
+    // Animación de filas al cargar
+    document.querySelectorAll('#pedidosTable tr').forEach((row, i) => {
+        row.style.opacity = 0;
+        setTimeout(() => {
+            row.style.transition = "opacity .7s";
+            row.style.opacity = 1;
+        }, 200 + i*100);
+    });
+</script>
+</body>
+</html>
