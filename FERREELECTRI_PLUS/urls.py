@@ -10,6 +10,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
+    path('media/productos/<path:filename>', inventario_views.servir_imagen_producto, name='producto_media'),
     path('media/comprobantes/<path:filename>', dashboard_views.descargar_comprobante_admin, name='private_payment_receipt'),
     # Redirige la ruta falsa del admin hacia el login real del sistema.
     path('admin/', RedirectView.as_view(url='/admin-panel/login/', permanent=False), name='admin_redirect'),

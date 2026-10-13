@@ -1,5 +1,11 @@
 # Create your views here.
+from mimetypes import guess_type
+from pathlib import Path
+
+from django.conf import settings
+from django.http import FileResponse, Http404
 from django.shortcuts import render, redirect, get_object_or_404
+from django.views.decorators.http import require_GET
 from .models import Productos, PresentacionProducto, MovimientoInventario, Categoria
 from .forms import ProductosForm, ActualizarPrecioForm, CategoriaForm
 from django.contrib import messages
@@ -20,6 +26,22 @@ import json
 from Ventas.models import DetalleFactura
 
 from decimal import Decimal, InvalidOperation
+
+
+@require_GET
+def servir_imagen_producto(request, filename):
+    product_media_root = (Path(settings.MEDIA_ROOT) / 'productos').resolve()
+    image_path = (product_media_root / filename).resolve()
+    try:
+        image_path.relative_to(product_media_root)
+    except ValueError:
+        raise Http404
+    if not image_path.is_file():
+        raise Http404
+    return FileResponse(
+        image_path.open('rb'),
+        content_type=guess_type(image_path.name)[0] or 'application/octet-stream',
+    )
 
 
 def parse_presentations_from_request(request):

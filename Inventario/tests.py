@@ -1,8 +1,10 @@
 import json
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from decimal import Decimal
 
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from .models import Categoria, PresentacionProducto, Productos
 
@@ -18,6 +20,24 @@ class InventarioTestCase(TestCase):
         )
         self.client.force_login(self.user)
         self.producto = Productos.objects.create(Descripcion="Martillo", Cantidad=5)
+
+    def test_imagen_de_producto_se_sirve_sin_exponer_archivos_privados(self):
+        with TemporaryDirectory() as media_root:
+            products_directory = Path(media_root) / 'productos'
+            products_directory.mkdir()
+            (products_directory / 'test-image.png').write_bytes(b'public-image')
+            (Path(media_root) / 'private-media').mkdir()
+            (Path(media_root) / 'private-media' / 'receipt.png').write_bytes(b'private')
+
+            with override_settings(MEDIA_ROOT=media_root):
+                response = self.client.get('/media/productos/test-image.png')
+                traversal_response = self.client.get(
+                    '/media/productos/%2E%2E/private-media/receipt.png'
+                )
+
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(b''.join(response.streaming_content), b'public-image')
+            self.assertEqual(traversal_response.status_code, 404)
 
     def test_lista_productos_renderiza_busqueda_y_resumen(self):
         response = self.client.get(reverse('listar_productos'))
