@@ -1540,14 +1540,6 @@ def login_view(request):
             return redirect(reverse('dashboard'))
         return redirect(reverse('panel_cliente'))
 
-    now_timestamp = timezone.now().timestamp()
-    unlocked_until = 0
-    if not settings.DEBUG:
-        unlocked_until = float(request.session.get('admin_login_unlocked_until', 0) or 0)
-        if now_timestamp >= unlocked_until:
-            request.session.pop('admin_login_unlocked_until', None)
-            return redirect('index')
-
     if request.method == 'POST':
         form = AuthenticationForm(request, data=request.POST)
         if form.is_valid():
@@ -1575,7 +1567,6 @@ def login_view(request):
             return render(request, 'registration/login.html', {
                 'form': form,
                 'next': next_value,
-                'admin_login_expires_at': int(unlocked_until),
             })
         if is_ajax:
             return JsonResponse({'ok': False, 'errors': form.errors}, status=400)
@@ -1584,7 +1575,6 @@ def login_view(request):
     return render(request, 'registration/login.html', {
         'form': form,
         'next': next_value,
-        'admin_login_expires_at': int(unlocked_until),
     })
 
 

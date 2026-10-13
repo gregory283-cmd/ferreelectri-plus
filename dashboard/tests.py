@@ -2146,15 +2146,23 @@ class SeguridadTest(TestCase):
         self.assertRedirects(response, reverse('login_cliente'))
 
     @override_settings(DEBUG=False)
-    def test_login_admin_no_se_muestra_sin_desbloqueo(self):
-        response = self.client.get(reverse('login_admin_custom'))
+    def test_login_admin_directo_en_produccion(self):
+        admin_user = User.objects.create_user(
+            username='admin-prod-login',
+            email='admin-prod-login@test.com',
+            password='Admin123!',
+            is_staff=True,
+            is_superuser=True,
+        )
 
-        self.assertRedirects(response, reverse('index'))
+        response = self.client.get(reverse('login_admin_custom'))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, 'adminLoginCountdown')
         post_response = self.client.post(
             reverse('login_admin_custom'),
-            {'username': 'admin', 'password': 'Admin123!'},
+            {'username': admin_user.username, 'password': 'Admin123!'},
         )
-        self.assertRedirects(post_response, reverse('index'))
+        self.assertRedirects(post_response, reverse('dashboard'))
 
     @override_settings(DEBUG=True)
     def test_login_admin_es_directo_en_desarrollo_y_no_renderiza_modal(self):
@@ -2384,21 +2392,15 @@ class SeguridadTest(TestCase):
         self.assertContains(response, 'El código venció o ya no es válido.')
         self.assertNotIn('recupera_codigo_hash', self.client.session)
 
-    def test_login_admin_desbloqueado_expira_en_sesenta_segundos(self):
+    def test_login_admin_no_depende_del_desbloqueo_temporal(self):
         session = self.client.session
-        session['admin_login_unlocked_until'] = time.time() + 60
+        session['admin_login_unlocked_until'] = time.time() - 1
         session.save()
 
         response = self.client.get(reverse('login_admin_custom'))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'adminLoginCountdown')
-
-        session = self.client.session
-        session['admin_login_unlocked_until'] = time.time() - 1
-        session.save()
-        expired_response = self.client.get(reverse('login_admin_custom'))
-        self.assertRedirects(expired_response, reverse('index'))
+        self.assertNotContains(response, 'adminLoginCountdown')
 
     def test_staff_no_va_al_admin_desde_vista_cliente(self):
         user = User.objects.create_user(username='staff-client-view', email='staff-client-view@test.com', password='Admin123!')
