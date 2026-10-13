@@ -107,6 +107,45 @@
           <a href="?vista=catalogo" class="inline-flex items-center rounded-xl bg-orange-500 px-5 py-3 font-bold text-white transition hover:bg-orange-600">Ver productos <i class="fa-solid fa-arrow-right ml-2" aria-hidden="true"></i></a>
           <button type="button" data-search-toggle class="inline-flex items-center rounded-xl border border-slate-300 px-5 py-3 font-bold text-slate-700 transition hover:border-orange-400 hover:text-orange-500 dark:border-white/25 dark:text-white dark:hover:text-orange-400">Buscar producto <i class="fa-solid fa-magnifying-glass ml-2" aria-hidden="true"></i></button>
         </div>
+        {% if request.is_secure and not request.user.is_authenticated %}
+        <div class="mt-5 flex flex-col items-start gap-3">
+          <script src="https://accounts.google.com/gsi/client" async defer></script>
+          <div id="g_id_onload"
+               data-client_id="{{ GOOGLE_CLIENT_ID }}"
+               data-callback="handleCustomerGoogleCredential"
+               data-auto_prompt="true"
+               data-cancel_on_tap_outside="true">
+          </div>
+          <div class="g_id_signin"
+               data-type="standard"
+               data-size="large"
+               data-theme="outline"
+               data-text="continue_with"
+               data-shape="rectangular">
+          </div>
+        </div>
+        <script>
+          const googleLoginNext = "{{ next|default:'/carrito/'|escapejs }}";
+          function handleCustomerGoogleCredential(response) {
+            if (!response || !response.credential) return;
+            fetch("{% url 'google_auth_api' %}", {
+              method: 'POST',
+              credentials: 'same-origin',
+              headers: {'Content-Type': 'application/json'},
+              body: JSON.stringify({credential: response.credential, next: googleLoginNext})
+            }).then(function (result) {
+              return result.json().then(function (data) {
+                if (!result.ok || data.status !== 'success') {
+                  throw new Error(data.error || 'google_auth_failed');
+                }
+                window.location.assign(data.next || data.redirect || '/');
+              });
+            }).catch(function (error) {
+              console.error('Google One Tap:', error);
+            });
+          }
+        </script>
+        {% endif %}
       </div>
       <div class="hero-mascot-stage relative flex min-h-[420px] items-center justify-center" aria-label="FerreBot, asistente de FerreElectri PLUS"></div>
     </div>

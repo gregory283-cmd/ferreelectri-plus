@@ -2003,8 +2003,6 @@ window.addEventListener('DOMContentLoaded', animateOnScroll);
         window.pendingAddAction = action || null;
         document.getElementById('globalLoginModal').style.display = 'flex';
         showGlobalLoginTab('cliente');
-        // Inicializar Google One Tap sólo al abrir el modal (evita prompt global en carga)
-        try { initGoogleOneTap(); } catch(e) {}
     }
 
     function closeGlobalLoginModal(cancel = false) {
@@ -2117,46 +2115,6 @@ window.addEventListener('DOMContentLoaded', animateOnScroll);
     // Expose opener
     window.openGlobalLoginModal = openGlobalLoginModal;
 })();
-</script>
-
-<!-- Google Identity Services (One Tap) -->
-{% if not request.user.is_authenticated and request.is_secure %}
-<script src="https://accounts.google.com/gsi/client" async defer></script>
-<div id="g_id_onload"
-    data-client_id="{{ GOOGLE_CLIENT_ID }}"
-    data-callback="handleCredentialResponse"
-    data-auto_prompt="false"
-    data-cancel_on_tap_outside="true">
-</div>
-<div class="g_id_signin"
-    data-type="standard"
-    data-size="large"
-    data-theme="outline"
-    data-text="continue_with"
-    data-shape="rectangular">
-</div>
-{% endif %}
-<script>
-window.GOOGLE_CLIENT_ID = "{{ GOOGLE_CLIENT_ID }}";
-function handleCredentialResponse(response) {
-    if (!response || !response.credential) return;
-    fetch("{% url 'google_auth_api' %}", {
-        method: 'POST',
-        credentials: 'same-origin',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({credential: response.credential})
-    }).then(function (result) {
-        return result.json().then(function (data) {
-            if (!result.ok || data.status !== 'success') throw new Error(data.error || 'google_auth_failed');
-            window.location.href = data.redirect || '/';
-        });
-    }).catch(function (error) { console.error('Google One Tap:', error); });
-}
-function initGoogleOneTap() {
-    // El nuevo estándar de Google Identity Services usa el markup <div id="g_id_onload">.
-    // Mantener esta función para compatibilidad con otras llamadas existentes.
-    return;
-}
 </script>
 
 <script>

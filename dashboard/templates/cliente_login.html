@@ -65,36 +65,6 @@
       <input type="hidden" name="next" value="{{ next|default:'/carrito/' }}">
       <button type="submit" class="auth-btn auth-google"><i class="fa-brands fa-google"></i> Continuar con Google</button>
     </form>
-    {% if request.is_secure %}
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <div id="g_id_onload"
-         data-client_id="{{ GOOGLE_CLIENT_ID }}"
-         data-callback="handleCustomerGoogleCredential"
-         data-auto_prompt="true"
-         data-cancel_on_tap_outside="true">
-    </div>
-    <script>
-      const googleLoginNext = "{{ next|default:'/carrito/'|escapejs }}";
-      function handleCustomerGoogleCredential(response) {
-        if (!response || !response.credential) return;
-        fetch("{% url 'google_auth_api' %}", {
-          method: 'POST',
-          credentials: 'same-origin',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({credential: response.credential, next: googleLoginNext})
-        }).then(function (result) {
-          return result.json().then(function (data) {
-            if (!result.ok || data.status !== 'success') {
-              throw new Error(data.error || 'google_auth_failed');
-            }
-            window.location.assign(data.next || data.redirect || '/');
-          });
-        }).catch(function (error) {
-          console.error('Google One Tap:', error);
-        });
-      }
-    </script>
-    {% endif %}
     <a href="{% url 'index' %}" class="auth-back-link"><i class="fa-solid fa-arrow-left"></i> Volver a la página principal</a>
     </section>
   </div>

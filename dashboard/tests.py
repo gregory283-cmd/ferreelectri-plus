@@ -2145,15 +2145,27 @@ class SeguridadTest(TestCase):
 
         self.assertRedirects(response, reverse('login_cliente'))
 
-    def test_login_cliente_seguro_muestra_google_one_tap(self):
+    def test_login_cliente_no_muestra_google_one_tap(self):
         response = self.client.get(reverse('login_cliente'), secure=True)
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'https://accounts.google.com/gsi/client')
-        self.assertContains(response, 'data-auto_prompt="true"')
-        self.assertContains(response, 'data-callback="handleCustomerGoogleCredential"')
-        self.assertContains(response, reverse('google_auth_api'))
-        self.assertNotContains(response, 'next: <script')
+        self.assertNotContains(response, 'g_id_onload')
+
+    def test_google_one_tap_solo_aparece_en_el_hero(self):
+        home = self.client.get(reverse('index'), secure=True, HTTP_HOST='localhost')
+        catalog = self.client.get(
+            f"{reverse('productos')}?vista=catalogo",
+            secure=True,
+            HTTP_HOST='localhost',
+        )
+
+        self.assertEqual(home.status_code, 200)
+        self.assertContains(home, 'https://accounts.google.com/gsi/client')
+        self.assertContains(home, 'data-auto_prompt="true"')
+        self.assertContains(home, 'data-callback="handleCustomerGoogleCredential"')
+        self.assertContains(home, reverse('google_auth_api'))
+        self.assertEqual(catalog.status_code, 200)
+        self.assertNotContains(catalog, 'g_id_onload')
 
     @override_settings(DEBUG=False)
     def test_login_admin_directo_en_produccion(self):
