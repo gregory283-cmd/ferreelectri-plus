@@ -123,11 +123,22 @@
                data-text="continue_with"
                data-shape="rectangular">
           </div>
+          <p id="google-login-feedback" class="max-w-md text-sm font-semibold text-red-600 dark:text-red-300" role="status" aria-live="polite" hidden></p>
         </div>
         <script>
           const googleLoginNext = "{{ next|default:'/carrito/'|escapejs }}";
+          const googleLoginFeedback = document.getElementById('google-login-feedback');
+          const googleLoginErrors = {
+            admin_forbidden: 'Esta cuenta tiene acceso administrativo. Inicia sesión desde el panel administrativo.',
+            invalid_token: 'Google no pudo validar la cuenta. Inténtalo otra vez.',
+            aud_mismatch: 'El Client ID de Google no coincide con la configuración de esta tienda.',
+            issuer_mismatch: 'Google no pudo confirmar el origen de esta cuenta.',
+            email_not_verified: 'Verifica el correo de tu cuenta de Google antes de continuar.'
+          };
           function handleCustomerGoogleCredential(response) {
             if (!response || !response.credential) return;
+            googleLoginFeedback.hidden = true;
+            googleLoginFeedback.textContent = '';
             fetch("{% url 'google_auth_api' %}", {
               method: 'POST',
               credentials: 'same-origin',
@@ -142,6 +153,9 @@
               });
             }).catch(function (error) {
               console.error('Google One Tap:', error);
+              googleLoginFeedback.textContent = googleLoginErrors[error.message]
+                || 'No se pudo iniciar sesión con Google. Usa el botón de ingreso o inténtalo de nuevo.';
+              googleLoginFeedback.hidden = false;
             });
           }
         </script>
