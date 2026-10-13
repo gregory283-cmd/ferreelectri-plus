@@ -589,14 +589,15 @@ SOCIALACCOUNT_PROVIDERS = {
     }
 }
 
-CACHES = {
-    'default': {
-        # LocMemCache evita bloqueos de red cuando Redis no está iniciado localmente.
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'ferreelectri-local-cache',
-        'TIMEOUT': 300,
-    },
-}
+if not REDIS_URL or 'test' in sys.argv:
+    CACHES = {
+        'default': {
+            # LocMemCache evita bloqueos de red cuando Redis no está iniciado localmente.
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'ferreelectri-local-cache',
+            'TIMEOUT': 300,
+        },
+    }
 
 # Durante pruebas, evitamos el sistema de manifiesto porque no existen entradas compiladas.
 if 'test' in sys.argv:
