@@ -427,8 +427,9 @@
   .navbar .sidebar-menu,
   .navbar ul {
     display: flex !important;
-    flex: 1 1 auto !important;
+    flex: 0 1 auto !important;
     flex-direction: column !important;
+    justify-content: flex-start !important;
     align-items: stretch !important;
     width: 100% !important;
     min-width: 0 !important;
@@ -436,6 +437,10 @@
     padding: 8px 0 16px !important;
     overflow-x: hidden !important;
     overflow-y: auto !important;
+  }
+
+  .navbar .sidebar-menu li.logout {
+    margin-top: 8px !important;
   }
 
   body.admin-sidebar-open .navbar {
