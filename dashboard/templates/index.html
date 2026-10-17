@@ -117,11 +117,6 @@
                data-cancel_on_tap_outside="true">
           </div>
           <p id="google-login-feedback" class="max-w-md text-sm font-semibold text-red-600 dark:text-red-300" role="status" aria-live="polite" hidden></p>
-          <form method="post" action="{% url 'social:begin' 'google-oauth2' %}" class="landing-google-fallback">
-            {% csrf_token %}
-            <input type="hidden" name="next" value="{{ next|default:'/carrito/' }}">
-            <button type="submit" class="landing-google-button"><i class="fa-brands fa-google" aria-hidden="true"></i> Continuar con Google</button>
-          </form>
         </div>
         <script>
           const googleLoginNext = "{{ next|default:'/carrito/'|escapejs }}";
@@ -133,14 +128,14 @@
             issuer_mismatch: 'Google no pudo confirmar el origen de esta cuenta.',
             email_not_verified: 'Verifica el correo de tu cuenta de Google antes de continuar.',
             rate_limited: 'Hubo demasiados intentos. Espera un minuto y vuelve a probar.',
-            google_auth_dependency_missing: 'El servidor no tiene disponible la verificación de Google. Usa el botón de acceso alternativo.',
+            google_auth_dependency_missing: 'El servidor no tiene disponible la verificación de Google. Inténtalo más tarde.',
             no_email: 'Google no compartió un correo verificado para esta cuenta.',
-            invalid_server_response: 'El servidor no respondió correctamente. Usa el botón de acceso alternativo.',
-            request_timeout: 'La verificación tardó demasiado. Usa el botón de acceso alternativo.'
+            invalid_server_response: 'El servidor no respondió correctamente. Inténtalo de nuevo.',
+            request_timeout: 'La verificación tardó demasiado. Inténtalo de nuevo.'
           };
           function handleCustomerGoogleCredential(response) {
             if (!response || !response.credential) {
-              googleLoginFeedback.textContent = 'Google no entregó una credencial. Usa el botón de acceso alternativo.';
+              googleLoginFeedback.textContent = 'Google no entregó una credencial. Inténtalo de nuevo.';
               googleLoginFeedback.hidden = false;
               return;
             }
@@ -170,7 +165,7 @@
               console.error('Google One Tap:', error);
               const errorKey = error.name === 'AbortError' ? 'request_timeout' : error.message;
               googleLoginFeedback.textContent = googleLoginErrors[errorKey]
-                || 'No se pudo completar Google One Tap. Usa el botón de acceso alternativo o inténtalo de nuevo.';
+                || 'No se pudo completar Google One Tap. Inténtalo de nuevo.';
             }).finally(function () {
               window.clearTimeout(timeoutId);
             });

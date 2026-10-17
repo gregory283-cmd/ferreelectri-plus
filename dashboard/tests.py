@@ -2166,7 +2166,7 @@ class SeguridadTest(TestCase):
         self.assertContains(home, 'data-callback="handleCustomerGoogleCredential"')
         self.assertNotContains(home, 'class="g_id_signin"')
         self.assertContains(home, 'google-login-feedback')
-        self.assertContains(home, 'Continuar con Google')
+        self.assertNotContains(home, 'landing-google-button')
         self.assertContains(home, 'Esta cuenta tiene acceso administrativo.')
         self.assertContains(home, reverse('google_auth_api'))
         self.assertEqual(catalog.status_code, 200)
