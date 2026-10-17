@@ -2199,8 +2199,9 @@ class SeguridadTest(TestCase):
             'family_name': 'Google',
         }
 
+        csrf_client = Client(enforce_csrf_checks=True)
         with patch('dashboard.views.id_token.verify_oauth2_token', return_value=verified_payload):
-            response = self.client.post(
+            response = csrf_client.post(
                 reverse('google_auth_api'),
                 data=json.dumps({'credential': 'verified-test-token', 'next': '/carrito/'}),
                 content_type='application/json',
@@ -2211,8 +2212,8 @@ class SeguridadTest(TestCase):
         user = User.objects.get(email__iexact=customer.email)
         self.assertFalse(user.is_staff)
         self.assertFalse(user.is_superuser)
-        self.assertEqual(self.client.session['_auth_user_id'], str(user.pk))
-        self.assertEqual(self.client.session['cliente_id'], cliente.pk)
+        self.assertEqual(csrf_client.session['_auth_user_id'], str(user.pk))
+        self.assertEqual(csrf_client.session['cliente_id'], cliente.pk)
         cliente.refresh_from_db()
         self.assertEqual(cliente.user_id, user.pk)
         customer.refresh_from_db()

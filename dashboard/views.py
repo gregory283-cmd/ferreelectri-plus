@@ -4335,6 +4335,7 @@ def google_identity_login(request):
     return JsonResponse({'ok': True, 'status': 'success', 'redirect': '/', 'next': next_url, 'created': created})
 
 
+@csrf_exempt
 def google_auth_api(request):
     return google_identity_login(request)
 
