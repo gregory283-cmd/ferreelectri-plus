@@ -2162,6 +2162,8 @@ class CreditsGalleryTest(TestCase):
         self.assertContains(response, reverse('creditos_reporte_pdf'))
         self.assertContains(response, 'id="creditDetailReport"')
         self.assertContains(response, 'id="creditDetailContributions"')
+        self.assertContains(response, 'data-project-role="Diseño de interfaces y experiencia de usuario"')
+        self.assertContains(response, 'id="creditDetailProjectRole"')
         self.assertContains(response, 'id="creditReportForm"')
         self.assertContains(response, 'data-photo-input="gregory"')
         self.assertContains(response, 'color: #f4f7fa !important')

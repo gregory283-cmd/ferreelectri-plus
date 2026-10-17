@@ -562,6 +562,7 @@ CREDIT_TEAM = (
         'name': 'Yulimar Cabeza',
         'initials': 'YC',
         'role': 'Ingeniería en Informática',
+        'project_role': 'Arquitectura de software y operaciones',
         'area': 'Arquitectura y operación',
         'tone': 'amber',
         'description': 'Participó en la estructuración del sistema, la lógica operativa y la optimización funcional de los flujos administrativos.',
@@ -579,6 +580,7 @@ CREDIT_TEAM = (
         'name': 'Gregory Gómez',
         'initials': 'GG',
         'role': 'Ingeniería en Informática',
+        'project_role': 'Diseño de interfaces y experiencia de usuario',
         'area': 'Interfaz y experiencia',
         'tone': 'cyan',
         'description': 'Contribuyó al diseño de interfaces, la experiencia de usuario y la implementación visual del sistema.',
@@ -596,6 +598,7 @@ CREDIT_TEAM = (
         'name': 'Yeferson Ramírez',
         'initials': 'YR',
         'role': 'Ingeniería en Informática',
+        'project_role': 'Calidad funcional, pruebas y seguridad',
         'area': 'Calidad y seguridad',
         'tone': 'mint',
         'description': 'Aportó a la ingeniería del producto, la calidad funcional y el desarrollo del entorno operativo.',
@@ -718,14 +721,39 @@ def _draw_credit_photo(pdf, member, photo, x, y, width, height, *, dark=False):
     pdf.drawCentredString(x + width / 2, y + height / 2 - 12, member['initials'])
 
 
+def _draw_credit_skill_cards(pdf, skills, x, y, width, *, columns=2, card_height=36, font_size=8.5):
+    palettes = (
+        ('#fff1df', '#a45b08'),
+        ('#e5f6fb', '#087d9b'),
+        ('#e8f7f0', '#147b59'),
+        ('#edf0ff', '#4353a8'),
+    )
+    gap_x = 9
+    gap_y = 8
+    card_width = (width - gap_x * (columns - 1)) / columns
+    rows = (len(skills) + columns - 1) // columns
+    for index, skill in enumerate(skills):
+        row, column = divmod(index, columns)
+        card_x = x + column * (card_width + gap_x)
+        card_y = y - (row + 1) * card_height - row * gap_y
+        background, foreground = palettes[index % len(palettes)]
+        pdf.setFillColor(HexColor(background))
+        pdf.roundRect(card_x, card_y, card_width, card_height, 7, stroke=0, fill=1)
+        pdf.setFillColor(HexColor(foreground))
+        pdf.roundRect(card_x, card_y, 4, card_height, 2, stroke=0, fill=1)
+        pdf.setFont('Helvetica-Bold', font_size)
+        pdf.drawString(card_x + 12, card_y + card_height / 2 - font_size * .34, skill)
+    return y - rows * card_height - max(0, rows - 1) * gap_y
+
+
 def _draw_credit_profile_page(pdf, member, page_number, page_count, photo=None):
     page_width, page_height = _draw_credit_pdf_header(pdf, 'Perfil de contribucion', page_number, page_count)
     accent = HexColor({'amber': '#b76a12', 'cyan': '#087d9b', 'mint': '#17845e'}.get(member['tone'], '#176a91'))
     x = 42
     content_width = page_width - 84
     photo_x = x
-    photo_width = 176
-    photo_height = 252
+    photo_width = 188
+    photo_height = 270
     photo_y = page_height - 144 - photo_height
     _draw_credit_photo(pdf, member, photo, photo_x, photo_y, photo_width, photo_height)
 
@@ -738,6 +766,7 @@ def _draw_credit_profile_page(pdf, member, page_number, page_count, photo=None):
     y -= 4
     y = _draw_credit_wrapped(pdf, member['role'], detail_x + 14, y, detail_width - 14, font='Helvetica-Bold', size=9.5, leading=13, color=accent) - 15
     for heading, body in (
+        ('ROL EN EL PROYECTO', member['project_role']),
         ('AREA DE CONTRIBUCION', member['area']),
         ('PERFIL PROFESIONAL', member['description']),
         ('IMPACTO EN EL PROYECTO', member['impact']),
@@ -763,20 +792,8 @@ def _draw_credit_profile_page(pdf, member, page_number, page_count, photo=None):
     pdf.setFillColor(HexColor('#102a43'))
     pdf.setFont('Helvetica-Bold', 9.5)
     pdf.drawString(x, y, 'HERRAMIENTAS Y AREAS TECNICAS')
-    y -= 18
-    chip_x = x
-    for item in member['stack']:
-        chip_width = pdf.stringWidth(item, 'Helvetica-Bold', 7.5) + 18
-        if chip_x + chip_width > page_width - 42:
-            chip_x = x
-            y -= 27
-        pdf.setFillColor(HexColor('#edf3f7'))
-        pdf.roundRect(chip_x, y - 6, chip_width, 21, 6, stroke=0, fill=1)
-        pdf.setFillColor(HexColor('#203b52'))
-        pdf.setFont('Helvetica-Bold', 7.5)
-        pdf.drawString(chip_x + 9, y + 1, item)
-        chip_x += chip_width + 8
-    y -= 38
+    y -= 8
+    y = _draw_credit_skill_cards(pdf, member['stack'], x, y, content_width, columns=2, card_height=34, font_size=8.5) - 10
     pdf.setFillColor(HexColor('#687c8c'))
     pdf.setFont('Helvetica-Oblique', 8)
     pdf.drawString(x, y, 'Perfil de contribucion al sistema FerreElectri PLUS')
@@ -824,7 +841,9 @@ def _draw_credit_group_report(pdf, photos):
         y = card_top - 28
         y = _draw_credit_wrapped(pdf, member['name'], text_x, y, text_width, font='Helvetica-Bold', size=10, leading=12, color=navy) - 2
         y = _draw_credit_wrapped(pdf, member['role'], text_x, y, text_width, font='Helvetica-Bold', size=7, leading=9, color=accent) - 2
-        _draw_credit_wrapped(pdf, member['area'], text_x, y, text_width, size=7, leading=9, color=HexColor('#4d6274'))
+        _draw_credit_wrapped(pdf, member['project_role'], text_x, y, text_width, font='Helvetica-Bold', size=6.6, leading=8, color=HexColor('#334c60'))
+        y -= 2
+        _draw_credit_wrapped(pdf, member['area'], text_x, y, text_width, size=6.6, leading=8, color=HexColor('#4d6274'))
 
         y = image_y - 13
         y = _draw_credit_wrapped(pdf, member['description'], x + 12, y, card_width - 24, size=7.2, leading=9.2, color=HexColor('#273c4f')) - 7
@@ -839,9 +858,9 @@ def _draw_credit_group_report(pdf, photos):
 
         pdf.setFillColor(navy)
         pdf.setFont('Helvetica-Bold', 7.4)
-        pdf.drawString(x + 12, y, 'HERRAMIENTAS')
-        y -= 11
-        y = _draw_credit_wrapped(pdf, '  |  '.join(member['stack']), x + 12, y, card_width - 24, font='Helvetica-Bold', size=6.8, leading=8.3, color=accent) - 5
+        pdf.drawString(x + 12, y, 'HERRAMIENTAS Y AREAS TECNICAS')
+        y -= 4
+        y = _draw_credit_skill_cards(pdf, member['stack'], x + 12, y, card_width - 24, columns=2, card_height=25, font_size=6.8) - 7
         pdf.setFillColor(navy)
         pdf.setFont('Helvetica-Bold', 7.4)
         pdf.drawString(x + 12, y, 'IMPACTO')

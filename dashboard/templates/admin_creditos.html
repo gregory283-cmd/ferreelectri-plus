@@ -193,10 +193,13 @@
   .credits-name-row { display: grid; justify-content: start; gap: 4px; }
   .credits-name { font-size: clamp(1.05rem, 1.6vw, 1.5rem); }
   .credits-role { color: var(--credit-accent); }
+  .credit-dialog-project-role { display: block; margin-top: 12px; color: #dce7ef; font-size: .92rem; font-weight: 750; line-height: 1.4; }
   .credits-description { display: none; }
   .credits-photo-control {
-    position: absolute;
+    position: relative;
+    inset: auto;
     display: grid;
+    flex: 0 0 42px;
     box-sizing: border-box;
     width: 42px;
     height: 42px;
@@ -227,6 +230,7 @@
   .credit-dialog-content { position: relative; display: flex; flex-direction: column; justify-content: center; padding: clamp(24px, 4vw, 42px); overflow-y: auto; }
   .credit-dialog-top { align-items: start; }
   .credit-dialog-top h2 { margin: 10px 0 6px; font-size: clamp(1.5rem, 3vw, 2rem); }
+  .credit-dialog-project-role { margin: 12px 0 0 !important; }
   .credit-detail-dialog p { margin: 24px 0 0; }
   .credit-dialog-stack { margin-top: 26px; }
   .credit-dialog-contributions { margin-top: 22px; }
@@ -343,9 +347,18 @@
   .credit-dialog-content .credits-eyebrow { color: #74d4ed; }
   .credit-dialog-content .credits-role { color: #88d9ed; }
   .credit-dialog-content .credits-stack-title { color: #b3c2cf; }
+  .credit-dialog-content .credit-dialog-project-role { color: #dce7ef !important; }
   .credit-dialog-content .credit-dialog-contributions ul,
   .credit-dialog-content .credit-dialog-contributions li { color: #f4f7fa !important; }
-  .credit-dialog-content .credits-stack span { border-color: rgba(255,255,255,.16); background: #1b2a39; color: #f2f6f8; }
+  .credit-dialog-content .credits-stack { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .credit-dialog-content .credits-stack span { position: relative; display: flex; min-height: 48px; align-items: center; padding: 9px 12px 9px 36px; border: 1px solid rgba(255,255,255,.12); border-radius: 9px; background: linear-gradient(135deg, #2b3b4b, #1b2a39); color: #f5f8fb; font-size: .84rem; font-weight: 750; line-height: 1.3; }
+  .credit-dialog-content .credits-stack span::before { position: absolute; left: 13px; width: 10px; height: 10px; border-radius: 50%; background: #ffbd69; box-shadow: 0 0 0 4px rgba(255,189,105,.12); content: ''; }
+  .credit-dialog-content .credits-stack span:nth-child(2) { background: linear-gradient(135deg, #1b4656, #17313f); }
+  .credit-dialog-content .credits-stack span:nth-child(2)::before { background: #63d2ee; box-shadow: 0 0 0 4px rgba(99,210,238,.12); }
+  .credit-dialog-content .credits-stack span:nth-child(3) { background: linear-gradient(135deg, #1d493e, #17352e); }
+  .credit-dialog-content .credits-stack span:nth-child(3)::before { background: #73dfb1; box-shadow: 0 0 0 4px rgba(115,223,177,.12); }
+  .credit-dialog-content .credits-stack span:nth-child(4) { background: linear-gradient(135deg, #333e63, #252e4a); }
+  .credit-dialog-content .credits-stack span:nth-child(4)::before { background: #a8b7ff; box-shadow: 0 0 0 4px rgba(168,183,255,.12); }
   .credit-dialog-close { border-color: rgba(255,255,255,.18); background: #263747; color: #fff; }
   .credit-dialog-close:hover { background: #354b5e; }
   @media (max-width: 720px) {
@@ -406,7 +419,7 @@
   <div class="credits-gallery" aria-label="Integrantes del equipo">
     {% for member in team_members %}
     <article class="credits-shard" data-tone="{{ member.tone }}">
-      <button type="button" class="credits-card-open" data-credit-card data-report-member="{{ member.slug }}" data-name="{{ member.name }}" data-initials="{{ member.initials }}" data-role="{{ member.role }}" data-area="{{ member.area }}" data-description="{{ member.description }}" data-contributions="{{ member.contributions|join:'||' }}" data-stack="{{ member.stack|join:'|' }}" data-report-url="{% url 'credito_individual_pdf' member.slug %}" aria-label="Abrir ficha de {{ member.name }}">
+      <button type="button" class="credits-card-open" data-credit-card data-report-member="{{ member.slug }}" data-name="{{ member.name }}" data-initials="{{ member.initials }}" data-role="{{ member.role }}" data-project-role="{{ member.project_role }}" data-area="{{ member.area }}" data-description="{{ member.description }}" data-contributions="{{ member.contributions|join:'||' }}" data-stack="{{ member.stack|join:'|' }}" data-report-url="{% url 'credito_individual_pdf' member.slug %}" aria-label="Abrir ficha de {{ member.name }}">
         <span class="credits-portrait"><img class="credits-photo" alt="" data-photo-image="{{ member.photo_key }}"><span class="credits-monogram">{{ member.initials }}</span><span class="credits-index">0{{ forloop.counter }} / 03</span><span class="credits-open-label">Presiona aquí para ver la ficha</span><span class="credits-copy"><span class="credits-name-row"><span class="credits-name">{{ member.name }}</span><span class="credits-role">{{ member.area }}</span></span></span></span>
       </button>
       <div class="credits-card-controls">
@@ -429,7 +442,7 @@
     <div class="credit-dialog-visual"><img id="creditDetailPhoto" alt=""><span class="credit-dialog-monogram" id="creditDetailInitials">YC</span></div>
     <div class="credit-dialog-content">
       <div class="credit-dialog-top">
-        <div><span class="credits-eyebrow" id="creditDetailArea"></span><h2 id="creditDetailName"></h2><span class="credits-role" id="creditDetailRole"></span></div>
+        <div><span class="credits-eyebrow" id="creditDetailArea"></span><h2 id="creditDetailName"></h2><span class="credits-role" id="creditDetailRole"></span><span class="credit-dialog-project-role" id="creditDetailProjectRole"></span></div>
         <button class="credit-dialog-close" type="button" data-close-credit aria-label="Cerrar ficha"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
       </div>
       <p id="creditDetailDescription"></p>
@@ -446,6 +459,7 @@
     if (!dialog) return;
     var name = document.getElementById('creditDetailName');
     var role = document.getElementById('creditDetailRole');
+    var projectRole = document.getElementById('creditDetailProjectRole');
     var area = document.getElementById('creditDetailArea');
     var description = document.getElementById('creditDetailDescription');
     var stack = document.getElementById('creditDetailStack');
@@ -532,6 +546,7 @@
       card.addEventListener('click', function () {
         name.textContent = card.dataset.name || '';
         role.textContent = card.dataset.role || '';
+        projectRole.textContent = card.dataset.projectRole || '';
         area.textContent = card.dataset.area || '';
         description.textContent = card.dataset.description || '';
         contributions.textContent = '';
