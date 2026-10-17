@@ -375,6 +375,10 @@
   .navbar {
     position: fixed !important;
     inset: 0 auto 0 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    flex-wrap: nowrap !important;
+    justify-content: flex-start !important;
     width: min(86vw, 280px) !important;
     height: 100dvh !important;
     max-height: 100dvh !important;
@@ -409,8 +413,9 @@
   }
 
   body.admin-sidebar-open #admin-sidebar .sidebar-menu {
-    flex: 0 0 auto !important;
-    overflow-y: visible !important;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
   }
 
   .navbar > a img {
@@ -427,12 +432,13 @@
   .navbar .sidebar-menu,
   .navbar ul {
     display: flex !important;
-    flex: 0 1 auto !important;
+    flex: 1 1 auto !important;
     flex-direction: column !important;
     justify-content: flex-start !important;
     align-items: stretch !important;
     width: 100% !important;
     min-width: 0 !important;
+    min-height: 0 !important;
     margin: 8px 0 0 !important;
     padding: 8px 0 16px !important;
     overflow-x: hidden !important;
