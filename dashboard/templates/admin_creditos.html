@@ -228,7 +228,7 @@
   .credit-detail-dialog p { margin: 24px 0 0; }
   .credit-dialog-stack { margin-top: 26px; }
   .credit-dialog-contributions { margin-top: 22px; }
-  .credit-dialog-contributions ul { display: grid; gap: 8px; margin: 9px 0 0; padding-left: 18px; color: var(--credits-muted); font-size: .86rem; line-height: 1.5; }
+  .credit-dialog-contributions ul { display: grid; gap: 8px; margin: 9px 0 0; padding-left: 18px; color: #dce7ef; font-size: .86rem; line-height: 1.5; }
   .credit-dialog-actions { display: flex; justify-content: flex-end; margin-top: auto; padding-top: 22px; }
   .credit-dialog-close { position: absolute; top: 18px; right: 18px; z-index: 2; }
   @media (max-width: 720px) {
@@ -393,25 +393,30 @@
       <span class="credits-photo-status" id="creditsPhotoStatus" role="status" aria-live="polite"></span>
       <span class="credits-count">03 integrantes</span>
       <a href="{% url 'manual_usuario' %}" target="_blank" rel="noopener noreferrer" class="credits-manual"><i class="fa-solid fa-file-lines" aria-hidden="true"></i> Manual de usuario</a>
-      <a href="{% url 'creditos_reporte_pdf' %}" class="credits-manual"><i class="fa-solid fa-file-pdf" aria-hidden="true"></i> Informe del equipo</a>
+      <a href="{% url 'creditos_reporte_pdf' %}" class="credits-manual" data-credit-report data-report-url="{% url 'creditos_reporte_pdf' %}"><i class="fa-solid fa-file-pdf" aria-hidden="true"></i> Informe del equipo</a>
     </div>
   </div>
 
   <div class="credits-gallery" aria-label="Integrantes del equipo">
     {% for member in team_members %}
     <article class="credits-shard" data-tone="{{ member.tone }}">
-      <button type="button" class="credits-card-open" data-credit-card data-name="{{ member.name }}" data-initials="{{ member.initials }}" data-role="{{ member.role }}" data-area="{{ member.area }}" data-description="{{ member.description }}" data-contributions="{{ member.contributions|join:'||' }}" data-stack="{{ member.stack|join:'|' }}" data-report-url="{% url 'credito_individual_pdf' member.slug %}" aria-label="Abrir ficha de {{ member.name }}">
-        <span class="credits-portrait"><img class="credits-photo" alt="" data-photo-image="{{ member.slug }}"><span class="credits-monogram">{{ member.initials }}</span><span class="credits-index">0{{ forloop.counter }} / 03</span><span class="credits-open-label">Presiona aquí para ver la ficha</span><span class="credits-copy"><span class="credits-name-row"><span class="credits-name">{{ member.name }}</span><span class="credits-role">{{ member.area }}</span></span></span></span>
+      <button type="button" class="credits-card-open" data-credit-card data-report-member="{{ member.slug }}" data-name="{{ member.name }}" data-initials="{{ member.initials }}" data-role="{{ member.role }}" data-area="{{ member.area }}" data-description="{{ member.description }}" data-contributions="{{ member.contributions|join:'||' }}" data-stack="{{ member.stack|join:'|' }}" data-report-url="{% url 'credito_individual_pdf' member.slug %}" aria-label="Abrir ficha de {{ member.name }}">
+        <span class="credits-portrait"><img class="credits-photo" alt="" data-photo-image="{{ member.photo_key }}"><span class="credits-monogram">{{ member.initials }}</span><span class="credits-index">0{{ forloop.counter }} / 03</span><span class="credits-open-label">Presiona aquí para ver la ficha</span><span class="credits-copy"><span class="credits-name-row"><span class="credits-name">{{ member.name }}</span><span class="credits-role">{{ member.area }}</span></span></span></span>
       </button>
       <div class="credits-card-controls">
         <label class="credits-photo-control" for="photo-{{ member.slug }}" title="Agregar foto de {{ member.name }}" aria-label="Agregar foto de {{ member.name }}">+</label>
-        <a class="credits-report-control" href="{% url 'credito_individual_pdf' member.slug %}" title="Descargar informe de {{ member.name }}" aria-label="Descargar informe de {{ member.name }}"><i class="fa-solid fa-file-pdf" aria-hidden="true"></i></a>
+        <a class="credits-report-control" href="{% url 'credito_individual_pdf' member.slug %}" data-credit-report data-report-url="{% url 'credito_individual_pdf' member.slug %}" data-report-member="{{ member.slug }}" title="Descargar informe de {{ member.name }}" aria-label="Descargar informe de {{ member.name }}"><i class="fa-solid fa-file-pdf" aria-hidden="true"></i></a>
       </div>
-      <input class="credits-photo-input" id="photo-{{ member.slug }}" type="file" accept="image/*" data-photo-input="{{ member.slug }}">
+      <input class="credits-photo-input" id="photo-{{ member.slug }}" type="file" accept="image/*" data-photo-input="{{ member.photo_key }}">
     </article>
     {% endfor %}
   </div>
 </section>
+
+<form id="creditReportForm" method="post" target="_blank" hidden>
+  {% csrf_token %}
+  <input type="hidden" id="creditReportPhotos" name="photos_json" value="{}">
+</form>
 
 <dialog class="credit-detail-dialog" id="creditDetailDialog" aria-labelledby="creditDetailName">
   <div class="credit-dialog-inner">
@@ -424,7 +429,7 @@
       <p id="creditDetailDescription"></p>
       <div class="credit-dialog-contributions"><span class="credits-stack-title">Aportes al sistema</span><ul id="creditDetailContributions"></ul></div>
       <div class="credit-dialog-stack"><span class="credits-stack-title">Stack principal</span><div class="credits-stack" id="creditDetailStack"></div></div>
-      <div class="credit-dialog-actions"><a class="credits-manual" id="creditDetailReport" href="#"><i class="fa-solid fa-file-pdf" aria-hidden="true"></i> Descargar informe</a></div>
+      <div class="credit-dialog-actions"><a class="credits-manual" id="creditDetailReport" href="#" data-report-url="" data-report-member=""><i class="fa-solid fa-file-pdf" aria-hidden="true"></i> Descargar informe</a></div>
     </div>
   </div>
 </dialog>
@@ -443,7 +448,34 @@
     var photo = document.getElementById('creditDetailPhoto');
     var initials = document.getElementById('creditDetailInitials');
     var photoStatus = document.getElementById('creditsPhotoStatus');
+    var reportForm = document.getElementById('creditReportForm');
+    var reportPhotos = document.getElementById('creditReportPhotos');
     var photoKeyPrefix = 'ferreelectri-credit-photo-';
+
+    function submitReport(url, memberSlug) {
+      var photos = {};
+      document.querySelectorAll('[data-credit-card]').forEach(function (card) {
+        var slug = card.dataset.reportMember;
+        if (memberSlug && slug !== memberSlug) return;
+        var input = card.closest('.credits-shard').querySelector('[data-photo-input]');
+        var saved = localStorage.getItem(photoKeyPrefix + input.dataset.photoInput);
+        if (saved) photos[slug] = saved;
+      });
+      reportForm.action = url;
+      reportPhotos.value = JSON.stringify(photos);
+      reportForm.requestSubmit();
+    }
+
+    document.querySelectorAll('[data-credit-report]').forEach(function (button) {
+      button.addEventListener('click', function (event) {
+        event.preventDefault();
+        submitReport(button.dataset.reportUrl, button.dataset.reportMember || '');
+      });
+    });
+    reportLink.addEventListener('click', function (event) {
+      event.preventDefault();
+      submitReport(reportLink.dataset.reportUrl, reportLink.dataset.reportMember);
+    });
 
     function applyPhoto(key, source) {
       var galleryImage = document.querySelector('[data-photo-image="' + key + '"]');
@@ -503,6 +535,8 @@
           contributions.appendChild(point);
         });
         reportLink.href = card.dataset.reportUrl || '#';
+        reportLink.dataset.reportUrl = card.dataset.reportUrl || '';
+        reportLink.dataset.reportMember = card.dataset.reportMember || '';
         stack.textContent = '';
         (card.dataset.stack || '').split('|').filter(Boolean).forEach(function (item) {
           var tag = document.createElement('span');

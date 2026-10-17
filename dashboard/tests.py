@@ -1,3 +1,4 @@
+import base64
 import json
 import hashlib
 import hmac
@@ -2131,6 +2132,8 @@ class AdminLoginResponsivePresentationTest(TestCase):
         response = self.client.get(reverse('login_admin_custom'))
 
         self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, reverse('cliente_registro'))
+        self.assertContains(response, reverse('recuperar_admin'))
         self.assertContains(response, '.hero-badge, .hero-logo, .hero-features, .hero-footer { display: none; }')
         self.assertContains(response, 'html, body { height: auto; min-height: 100%; overflow-x: hidden; overflow-y: auto; }')
         self.assertContains(response, 'class="hero-title-line full rotating-line"')
@@ -2159,6 +2162,9 @@ class CreditsGalleryTest(TestCase):
         self.assertContains(response, reverse('creditos_reporte_pdf'))
         self.assertContains(response, 'id="creditDetailReport"')
         self.assertContains(response, 'id="creditDetailContributions"')
+        self.assertContains(response, 'id="creditReportForm"')
+        self.assertContains(response, 'data-photo-input="gregory"')
+        self.assertContains(response, 'color: #dce7ef')
         self.assertContains(response, 'credit-dialog-visual')
         self.assertContains(response, 'credit-dialog-content')
         self.assertContains(response, 'transform: translate(-50%, -50%)')
@@ -2188,6 +2194,28 @@ class CreditsGalleryTest(TestCase):
         self.client.logout()
         anonymous_report = self.client.get(reverse('creditos_reporte_pdf'))
         self.assertEqual(anonymous_report.status_code, 302)
+
+    def test_group_report_is_one_page_and_individual_report_embeds_browser_photo(self):
+        staff = User.objects.create_user(username='credit-photo-staff', password='StrongTestPass123!', is_staff=True)
+        self.client.force_login(staff)
+        image_buffer = BytesIO()
+        Image.new('RGB', (24, 32), color='#2878b8').save(image_buffer, format='JPEG')
+        photo_data = 'data:image/jpeg;base64,' + base64.b64encode(image_buffer.getvalue()).decode('ascii')
+
+        group_report = self.client.post(
+            reverse('creditos_reporte_pdf'),
+            {'photos_json': json.dumps({'gregory-gomez': photo_data})},
+        )
+        individual_report = self.client.post(
+            reverse('credito_individual_pdf', args=['gregory-gomez']),
+            {'photos_json': json.dumps({'gregory-gomez': photo_data})},
+        )
+
+        self.assertEqual(group_report.status_code, 200)
+        self.assertIn(b'/Count 1', group_report.content)
+        self.assertIn(b'/Subtype /Image', group_report.content)
+        self.assertEqual(individual_report.status_code, 200)
+        self.assertIn(b'/Subtype /Image', individual_report.content)
 
 
 class SeguridadTest(TestCase):
@@ -2489,6 +2517,10 @@ class SeguridadTest(TestCase):
         self.assertIn('recupera_codigo_hash', session)
         self.assertNotIn('recupera_codigo', session)
         self.assertGreater(session['recupera_expira_en'], time.time())
+
+        verification_page = self.client.get(reverse('recuperar_codigo_admin'))
+        self.assertContains(verification_page, 'Código enviado al correo')
+        self.assertContains(verification_page, 'ad**********ry@test.com')
 
         response = self.client.post(
             reverse('recuperar_codigo_admin'),

@@ -216,6 +216,19 @@
             color: #00b2ff;
             font-size: 1.2em;
         }
+        .recovery-email-notice {
+            width: 100%;
+            margin: -5px 0 12px;
+            padding: 11px 13px;
+            border: 1px solid rgba(0, 111, 175, .18);
+            border-radius: 10px;
+            background: #eaf6fc;
+            color: #294b61;
+            font-size: .9em;
+            line-height: 1.45;
+            text-align: center;
+        }
+        .recovery-email-notice strong { color: #075b83; overflow-wrap: anywhere; }
         .recup-label {
             color: #1976d2;
             font-weight: 600;
@@ -357,6 +370,9 @@
                 Cambiando la contraseña de:
                 <span class="recup-user">{{ usuario_nombre|default:"Usuario desconocido" }}</span>
             </div>
+            {% if email_enmascarado %}
+            <p class="recovery-email-notice">Código enviado al correo <strong>{{ email_enmascarado }}</strong></p>
+            {% endif %}
             <label class="recup-label"><span class="material-icons">confirmation_number</span> Código de verificación</label>
             <input type="text" name="codigo" class="recup-input" maxlength="12" required placeholder="Código recibido">
 

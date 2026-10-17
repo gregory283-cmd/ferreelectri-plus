@@ -1,6 +1,8 @@
 import os
 import json
 import csv
+import base64
+import binascii
 import hashlib
 import re
 import time
@@ -70,13 +72,14 @@ from django.urls import reverse
 from django.contrib.admin.views.decorators import staff_member_required
 from django_ratelimit.decorators import ratelimit
 from django_ratelimit.exceptions import Ratelimited
-from reportlab.lib.pagesizes import A4
+from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib.colors import HexColor
-from reportlab.lib.utils import simpleSplit
+from reportlab.lib.utils import ImageReader, simpleSplit
 from reportlab.pdfgen import canvas
 from reportlab.lib.units import mm
 from django.http import FileResponse, HttpResponse
 from io import BytesIO
+from PIL import Image as PILImage
 
 try:
     import stripe
@@ -555,6 +558,7 @@ def admin_creditos(request):
 CREDIT_TEAM = (
     {
         'slug': 'yulimar-cabeza',
+        'photo_key': 'yulimar',
         'name': 'Yulimar Cabeza',
         'initials': 'YC',
         'role': 'Ingeniería en Informática',
@@ -571,6 +575,7 @@ CREDIT_TEAM = (
     },
     {
         'slug': 'gregory-gomez',
+        'photo_key': 'gregory',
         'name': 'Gregory Gómez',
         'initials': 'GG',
         'role': 'Ingeniería en Informática',
@@ -587,6 +592,7 @@ CREDIT_TEAM = (
     },
     {
         'slug': 'yeferson-ramirez',
+        'photo_key': 'yeferson',
         'name': 'Yeferson Ramírez',
         'initials': 'YR',
         'role': 'Ingeniería en Informática',
@@ -637,114 +643,227 @@ def _draw_credit_pdf_header(pdf, label, page_number, page_count):
     return page_width, page_height
 
 
-def _draw_credit_profile_page(pdf, member, page_number, page_count):
+def _decode_credit_report_photo(value):
+    if not isinstance(value, str) or len(value) > 1_800_000:
+        return None
+    try:
+        header, encoded = value.split(',', 1)
+        if header not in {'data:image/jpeg;base64', 'data:image/png;base64'}:
+            return None
+        raw = base64.b64decode(encoded, validate=True)
+        if len(raw) > 1_300_000:
+            return None
+        with PILImage.open(BytesIO(raw)) as source:
+            if source.format not in {'JPEG', 'PNG'} or source.width > 5000 or source.height > 5000:
+                return None
+            source.thumbnail((1100, 1300))
+            if source.mode in {'RGBA', 'LA'}:
+                rgba = source.convert('RGBA')
+                image = PILImage.new('RGB', rgba.size, '#ffffff')
+                image.paste(rgba, mask=rgba.getchannel('A'))
+            else:
+                image = source.convert('RGB')
+            output = BytesIO()
+            image.save(output, format='JPEG', quality=82, optimize=True)
+            output.seek(0)
+            return output
+    except (ValueError, OSError, binascii.Error):
+        return None
+
+
+def _credit_report_photos(request, member_slugs):
+    if request.method != 'POST':
+        return {}
+    payload = request.POST.get('photos_json', '')
+    if not payload or len(payload) > 1_900_000:
+        return {}
+    try:
+        submitted = json.loads(payload)
+    except (TypeError, ValueError):
+        return {}
+    if not isinstance(submitted, dict):
+        return {}
+    return {
+        slug: photo
+        for slug in member_slugs
+        if (photo := _decode_credit_report_photo(submitted.get(slug))) is not None
+    }
+
+
+def _draw_credit_photo(pdf, member, photo, x, y, width, height, *, dark=False):
+    background = HexColor('#172737' if dark else '#e6edf2')
+    pdf.setFillColor(background)
+    pdf.roundRect(x, y, width, height, 8, stroke=0, fill=1)
+    if photo:
+        photo.seek(0)
+        image = ImageReader(photo)
+        image_width, image_height = image.getSize()
+        scale = min(width / image_width, height / image_height)
+        draw_width = image_width * scale
+        draw_height = image_height * scale
+        pdf.drawImage(
+            image,
+            x + (width - draw_width) / 2,
+            y + (height - draw_height) / 2,
+            width=draw_width,
+            height=draw_height,
+            preserveAspectRatio=True,
+            mask='auto',
+        )
+        return
+
+    accent = HexColor({'amber': '#b76a12', 'cyan': '#087d9b', 'mint': '#17845e'}[member['tone']])
+    pdf.setFillColor(accent)
+    pdf.setFont('Helvetica-Bold', min(42, height * .42))
+    pdf.drawCentredString(x + width / 2, y + height / 2 - 12, member['initials'])
+
+
+def _draw_credit_profile_page(pdf, member, page_number, page_count, photo=None):
     page_width, page_height = _draw_credit_pdf_header(pdf, 'Perfil de contribucion', page_number, page_count)
     accent = HexColor({'amber': '#b76a12', 'cyan': '#087d9b', 'mint': '#17845e'}.get(member['tone'], '#176a91'))
     x = 42
     content_width = page_width - 84
-    y = page_height - 148
-    pdf.setFillColor(accent)
-    pdf.roundRect(x, y - 6, 5, 55, 2, stroke=0, fill=1)
-    _draw_credit_wrapped(pdf, member['name'], x + 18, y + 28, content_width - 18, font='Helvetica-Bold', size=21, leading=25, color=HexColor('#102a43'))
-    _draw_credit_wrapped(pdf, member['role'], x + 18, y + 4, content_width - 18, font='Helvetica-Bold', size=10, leading=14, color=accent)
-    y -= 55
+    photo_x = x
+    photo_y = page_height - 424
+    photo_width = 176
+    photo_height = 252
+    _draw_credit_photo(pdf, member, photo, photo_x, photo_y, photo_width, photo_height)
 
+    detail_x = photo_x + photo_width + 22
+    detail_width = content_width - photo_width - 22
+    y = page_height - 150
+    pdf.setFillColor(accent)
+    pdf.roundRect(detail_x, y - 14, 4, 52, 2, stroke=0, fill=1)
+    _draw_credit_wrapped(pdf, member['name'], detail_x + 14, y + 24, detail_width - 14, font='Helvetica-Bold', size=20, leading=24, color=HexColor('#102a43'))
+    y -= 4
+    y = _draw_credit_wrapped(pdf, member['role'], detail_x + 14, y, detail_width - 14, font='Helvetica-Bold', size=9.5, leading=13, color=accent) - 15
     for heading, body in (
         ('AREA DE CONTRIBUCION', member['area']),
         ('PERFIL PROFESIONAL', member['description']),
+        ('IMPACTO EN EL PROYECTO', member['impact']),
     ):
         pdf.setFillColor(HexColor('#102a43'))
-        pdf.setFont('Helvetica-Bold', 10)
-        pdf.drawString(x, y, heading)
-        y -= 18
-        y = _draw_credit_wrapped(pdf, body, x, y, content_width, size=10, leading=15)
-        y -= 17
+        pdf.setFont('Helvetica-Bold', 9)
+        pdf.drawString(detail_x, y, heading)
+        y -= 15
+        y = _draw_credit_wrapped(pdf, body, detail_x, y, detail_width, size=9, leading=13)
+        y -= 12
 
+    y = page_height - 452
     pdf.setFillColor(HexColor('#102a43'))
     pdf.setFont('Helvetica-Bold', 10)
     pdf.drawString(x, y, 'APORTES AL SISTEMA')
-    y -= 21
+    y -= 18
     for contribution in member['contributions']:
         pdf.setFillColor(accent)
         pdf.circle(x + 4, y + 3, 3, stroke=0, fill=1)
-        y = _draw_credit_wrapped(pdf, contribution, x + 16, y, content_width - 16, size=9.5, leading=14)
-        y -= 9
+        y = _draw_credit_wrapped(pdf, contribution, x + 16, y, content_width - 16, size=9.2, leading=13)
+        y -= 7
 
     pdf.setFillColor(HexColor('#102a43'))
-    pdf.setFont('Helvetica-Bold', 10)
+    pdf.setFont('Helvetica-Bold', 9.5)
     pdf.drawString(x, y, 'HERRAMIENTAS Y AREAS TECNICAS')
-    y -= 21
+    y -= 18
     chip_x = x
     for item in member['stack']:
-        chip_width = pdf.stringWidth(item, 'Helvetica-Bold', 8) + 20
+        chip_width = pdf.stringWidth(item, 'Helvetica-Bold', 7.5) + 18
         if chip_x + chip_width > page_width - 42:
             chip_x = x
-            y -= 32
+            y -= 27
         pdf.setFillColor(HexColor('#edf3f7'))
-        pdf.roundRect(chip_x, y - 7, chip_width, 23, 6, stroke=0, fill=1)
+        pdf.roundRect(chip_x, y - 6, chip_width, 21, 6, stroke=0, fill=1)
         pdf.setFillColor(HexColor('#203b52'))
-        pdf.setFont('Helvetica-Bold', 8)
-        pdf.drawString(chip_x + 10, y + 1, item)
+        pdf.setFont('Helvetica-Bold', 7.5)
+        pdf.drawString(chip_x + 9, y + 1, item)
         chip_x += chip_width + 8
-    y -= 43
-
-    pdf.setFillColor(HexColor('#102a43'))
-    pdf.setFont('Helvetica-Bold', 10)
-    pdf.drawString(x, y, 'IMPACTO EN EL PROYECTO')
-    y -= 18
-    _draw_credit_wrapped(pdf, member['impact'], x, y, content_width, size=10, leading=15)
+    y -= 38
+    pdf.setFillColor(HexColor('#687c8c'))
+    pdf.setFont('Helvetica-Oblique', 8)
+    pdf.drawString(x, y, 'Perfil de contribucion al sistema FerreElectri PLUS')
 
 
-def _draw_credit_group_cover(pdf, page_count):
-    page_width, page_height = _draw_credit_pdf_header(pdf, 'Informe del equipo', 1, page_count)
-    x = 42
-    content_width = page_width - 84
-    y = page_height - 145
-    y = _draw_credit_wrapped(
-        pdf,
-        'Este informe resume las responsabilidades, aportes y areas tecnicas del equipo que participa en la ingenieria de FerreElectri PLUS.',
-        x, y, content_width, size=11, leading=17, color=HexColor('#26384a'),
-    ) - 20
-    pdf.setFillColor(HexColor('#102a43'))
-    pdf.setFont('Helvetica-Bold', 11)
-    pdf.drawString(x, y, 'EQUIPO DEL PROYECTO')
-    y -= 22
-    card_height = 112
-    for member in CREDIT_TEAM:
-        pdf.setFillColor(HexColor('#f1f5f8'))
-        pdf.roundRect(x, y - card_height + 10, content_width, card_height, 9, stroke=0, fill=1)
-        accent = HexColor({'amber': '#b76a12', 'cyan': '#087d9b', 'mint': '#17845e'}[member['tone']])
+def _draw_credit_group_report(pdf, photos):
+    page_width, page_height = landscape(A4)
+    navy = HexColor('#102a43')
+    pdf.setFillColor(navy)
+    pdf.rect(0, page_height - 82, page_width, 82, stroke=0, fill=1)
+    pdf.setFillColor(HexColor('#f97316'))
+    pdf.rect(0, page_height - 86, page_width, 4, stroke=0, fill=1)
+    pdf.setFillColor(HexColor('#ffffff'))
+    pdf.setFont('Helvetica-Bold', 9)
+    pdf.drawString(36, page_height - 30, 'FERREELECTRI PLUS  /  INGENIERIA')
+    pdf.setFont('Helvetica-Bold', 20)
+    pdf.drawString(36, page_height - 58, 'Equipo del proyecto | Informe de contribuciones')
+    pdf.setFillColor(HexColor('#d6e3ee'))
+    pdf.setFont('Helvetica', 8)
+    pdf.drawRightString(page_width - 36, page_height - 30, timezone.localdate().strftime('%d/%m/%Y'))
+
+    margin = 36
+    gutter = 12
+    card_width = (page_width - margin * 2 - gutter * 2) / 3
+    card_top = page_height - 105
+    card_bottom = 58
+    card_height = card_top - card_bottom
+    accent_by_tone = {'amber': '#b76a12', 'cyan': '#087d9b', 'mint': '#17845e'}
+    for index, member in enumerate(CREDIT_TEAM):
+        x = margin + index * (card_width + gutter)
+        accent = HexColor(accent_by_tone[member['tone']])
+        pdf.setFillColor(HexColor('#f3f6f8'))
+        pdf.roundRect(x, card_bottom, card_width, card_height, 8, stroke=0, fill=1)
         pdf.setFillColor(accent)
-        pdf.roundRect(x, y - card_height + 10, 5, card_height, 2, stroke=0, fill=1)
-        _draw_credit_wrapped(pdf, member['name'], x + 18, y - 12, content_width - 36, font='Helvetica-Bold', size=13, leading=17, color=HexColor('#102a43'))
-        _draw_credit_wrapped(pdf, f"{member['area']}  |  {member['role']}", x + 18, y - 32, content_width - 36, font='Helvetica-Bold', size=8.5, leading=12, color=accent)
-        _draw_credit_wrapped(pdf, member['description'], x + 18, y - 50, content_width - 36, size=8.5, leading=12, color=HexColor('#43566a'))
-        y -= card_height + 8
-    y -= 2
-    pdf.setFillColor(HexColor('#102a43'))
-    pdf.setFont('Helvetica-Bold', 10)
-    pdf.drawString(x, y, 'COLABORACION TRANSVERSAL')
-    y -= 18
-    _draw_credit_wrapped(
-        pdf,
-        'Arquitectura, experiencia de uso y calidad se complementan para sostener procesos comprensibles, mantenibles y confiables. Cada perfil desarrolla una perspectiva distinta del mismo producto y contribuye a su operacion integral.',
-        x, y, content_width, size=9.5, leading=14,
-    )
+        pdf.roundRect(x, card_bottom, 4, card_height, 2, stroke=0, fill=1)
+
+        image_width = 64
+        image_height = 78
+        image_x = x + 12
+        image_y = card_top - 94
+        _draw_credit_photo(pdf, member, photos.get(member['slug']), image_x, image_y, image_width, image_height)
+
+        text_x = image_x + image_width + 10
+        text_width = card_width - (text_x - x) - 12
+        y = card_top - 28
+        y = _draw_credit_wrapped(pdf, member['name'], text_x, y, text_width, font='Helvetica-Bold', size=10, leading=12, color=navy) - 2
+        y = _draw_credit_wrapped(pdf, member['role'], text_x, y, text_width, font='Helvetica-Bold', size=7, leading=9, color=accent) - 2
+        _draw_credit_wrapped(pdf, member['area'], text_x, y, text_width, size=7, leading=9, color=HexColor('#4d6274'))
+
+        y = image_y - 13
+        y = _draw_credit_wrapped(pdf, member['description'], x + 12, y, card_width - 24, size=7.2, leading=9.2, color=HexColor('#273c4f')) - 7
+        pdf.setFillColor(navy)
+        pdf.setFont('Helvetica-Bold', 7.4)
+        pdf.drawString(x + 12, y, 'APORTES AL SISTEMA')
+        y -= 12
+        for contribution in member['contributions']:
+            pdf.setFillColor(accent)
+            pdf.circle(x + 15, y + 2, 2, stroke=0, fill=1)
+            y = _draw_credit_wrapped(pdf, contribution, x + 22, y, card_width - 34, size=6.7, leading=8.2, color=HexColor('#273c4f')) - 3
+
+        pdf.setFillColor(navy)
+        pdf.setFont('Helvetica-Bold', 7.4)
+        pdf.drawString(x + 12, y, 'HERRAMIENTAS')
+        y -= 11
+        y = _draw_credit_wrapped(pdf, '  |  '.join(member['stack']), x + 12, y, card_width - 24, font='Helvetica-Bold', size=6.8, leading=8.3, color=accent) - 5
+        pdf.setFillColor(navy)
+        pdf.setFont('Helvetica-Bold', 7.4)
+        pdf.drawString(x + 12, y, 'IMPACTO')
+        y -= 11
+        _draw_credit_wrapped(pdf, member['impact'], x + 12, y, card_width - 24, size=6.8, leading=8.3, color=HexColor('#273c4f'))
+
+    pdf.setStrokeColor(HexColor('#d6e0e8'))
+    pdf.line(36, 38, page_width - 36, 38)
+    pdf.setFillColor(HexColor('#647789'))
+    pdf.setFont('Helvetica', 7.5)
+    pdf.drawString(36, 24, 'Documento institucional  |  FerreElectri PLUS')
+    pdf.drawRightString(page_width - 36, 24, '1 / 1')
 
 
 @user_passes_test(lambda u: u.is_staff, login_url='login_admin_custom')
 def creditos_reporte_pdf(request):
     output = BytesIO()
-    pdf = canvas.Canvas(output, pagesize=A4, pageCompression=1)
-    page_count = len(CREDIT_TEAM) + 1
+    pdf = canvas.Canvas(output, pagesize=landscape(A4), pageCompression=1)
+    photos = _credit_report_photos(request, {member['slug'] for member in CREDIT_TEAM})
     pdf.setTitle('Informe del equipo de ingenieria - FerreElectri PLUS')
     pdf.setAuthor('FerreElectri PLUS')
-    _draw_credit_group_cover(pdf, page_count)
-    pdf.showPage()
-    for index, member in enumerate(CREDIT_TEAM, start=2):
-        _draw_credit_profile_page(pdf, member, index, page_count)
-        if index < page_count:
-            pdf.showPage()
+    _draw_credit_group_report(pdf, photos)
     pdf.save()
     response = HttpResponse(output.getvalue(), content_type='application/pdf')
     response['Content-Disposition'] = 'attachment; filename="informe-grupal-ferreelectri-plus.pdf"'
@@ -758,9 +877,10 @@ def credito_individual_pdf(request, slug):
         return HttpResponse('No existe el perfil solicitado.', status=404)
     output = BytesIO()
     pdf = canvas.Canvas(output, pagesize=A4, pageCompression=1)
+    photos = _credit_report_photos(request, {slug})
     pdf.setTitle(f"Perfil profesional - {member['name']}")
     pdf.setAuthor('FerreElectri PLUS')
-    _draw_credit_profile_page(pdf, member, 1, 1)
+    _draw_credit_profile_page(pdf, member, 1, 1, photos.get(slug))
     pdf.save()
     response = HttpResponse(output.getvalue(), content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="informe-{slug}-ferreelectri-plus.pdf"'
@@ -1596,7 +1716,7 @@ def solicitar_recuperacion_admin(request):
         _clear_recovery_session(request)
         if not usuario:
             return render(request, 'recuperar.html', {
-                'error': 'No existe una cuenta registrada con ese correo. Revisa el correo o regístrate.',
+                'error': 'No existe una cuenta administrativa con ese correo. Verifica el dato o contacta al administrador del sistema.',
             })
 
         request.session['recupera_scope'] = 'admin'
