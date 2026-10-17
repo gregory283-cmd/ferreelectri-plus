@@ -33,6 +33,9 @@
       opacity: 1;
     }
     @media (max-width: 640px) {
+      .site-footer {
+        margin-top: 20px;
+      }
       #productos-grid {
         display: flex;
         gap: 12px;
@@ -79,7 +82,7 @@
     });
   </script>
 
-  <div class="flex min-h-screen w-full items-start flex-col gap-8 bg-slate-50 px-4 py-10 dark:bg-slate-950 sm:px-6 lg:flex-row lg:px-12">
+  <div class="flex min-h-0 w-full items-start flex-col gap-8 bg-slate-50 px-4 pt-6 pb-2 dark:bg-slate-950 sm:min-h-screen sm:px-6 sm:py-10 lg:flex-row lg:px-12">
     <aside id="catalog-sidebar" class="w-full flex-shrink-0 lg:sticky lg:top-24 lg:z-20 lg:w-1/4 xl:w-1/5">
       <h3 class="mb-3 pl-2 text-xs font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 lg:mb-6">
         {% if request.GET.categoria %}Filtrando: {{ request.GET.categoria }}{% else %}Catálogo completo{% endif %}

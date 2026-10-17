@@ -695,7 +695,6 @@
       if (tooltip) tooltip.classList.toggle('hidden', open);
       if (open) {
         heroGuide.hidden = true;
-        input.focus();
         scrollToLatestMessage();
         window.setTimeout(scrollToLatestMessage, 380);
       } else if (window.updateFerreBotLauncher) {
@@ -709,7 +708,6 @@
       chat.classList.remove('hidden');
       chat.classList.add('flex');
       footer.classList.remove('hidden');
-      input.focus();
     }
     function scrollToLatestMessage() {
       window.requestAnimationFrame(function () {
