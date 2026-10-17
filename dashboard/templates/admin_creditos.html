@@ -213,10 +213,14 @@
     cursor: pointer;
     transition: background .2s ease, transform .2s ease;
   }
-  .credits-card-controls { position: absolute; top: 18px; right: 10%; z-index: 4; display: flex; align-items: center; gap: 14px; padding: 0; border: 0; background: transparent !important; box-shadow: none !important; }
+  .credits-page .credits-card-controls { position: absolute; top: 18px; right: 10%; z-index: 4; display: flex; align-items: center; gap: 14px; padding: 0; border: 0; background: none !important; background-color: transparent !important; background-image: none !important; box-shadow: none !important; }
+  .credits-page .credits-card-controls::before,
+  .credits-page .credits-card-controls::after { display: none !important; background: none !important; content: none !important; }
   .credits-report-control { display: grid; box-sizing: border-box; width: 42px; height: 42px; padding: 0; place-items: center; border: 1px solid rgba(255,255,255,.66); border-radius: 50%; background: rgba(7,18,32,.94) !important; color: #fff !important; box-shadow: 0 3px 12px rgba(0,0,0,.25); text-decoration: none; transition: background .2s ease, transform .2s ease; }
   .credits-report-control:hover { transform: scale(1.08); background: #087d9b; color: #fff; }
   .credits-photo-control { box-sizing: border-box; background: rgba(7,18,32,.94) !important; box-shadow: 0 3px 12px rgba(0,0,0,.25); }
+  .credits-page .credits-card-controls .credits-photo-control,
+  .credits-page .credits-card-controls .credits-report-control { background-color: rgba(7,18,32,.94) !important; background-image: none !important; }
   .credits-photo-control:hover { transform: scale(1.08); background: var(--credit-accent) !important; }
   .credits-photo-input { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; clip-path: inset(50%); }
   .credits-photo-status { min-height: 1.2em; color: var(--credits-muted); font-size: .75rem; }
