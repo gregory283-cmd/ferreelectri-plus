@@ -2164,7 +2164,7 @@ class CreditsGalleryTest(TestCase):
         self.assertContains(response, 'id="creditDetailContributions"')
         self.assertContains(response, 'id="creditReportForm"')
         self.assertContains(response, 'data-photo-input="gregory"')
-        self.assertContains(response, 'color: #dce7ef')
+        self.assertContains(response, 'color: #f4f7fa !important')
         self.assertContains(response, 'credit-dialog-visual')
         self.assertContains(response, 'credit-dialog-content')
         self.assertContains(response, 'transform: translate(-50%, -50%)')

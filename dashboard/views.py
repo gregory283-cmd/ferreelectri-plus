@@ -724,14 +724,14 @@ def _draw_credit_profile_page(pdf, member, page_number, page_count, photo=None):
     x = 42
     content_width = page_width - 84
     photo_x = x
-    photo_y = page_height - 424
     photo_width = 176
     photo_height = 252
+    photo_y = page_height - 144 - photo_height
     _draw_credit_photo(pdf, member, photo, photo_x, photo_y, photo_width, photo_height)
 
     detail_x = photo_x + photo_width + 22
     detail_width = content_width - photo_width - 22
-    y = page_height - 150
+    y = photo_y + photo_height - 42
     pdf.setFillColor(accent)
     pdf.roundRect(detail_x, y - 14, 4, 52, 2, stroke=0, fill=1)
     _draw_credit_wrapped(pdf, member['name'], detail_x + 14, y + 24, detail_width - 14, font='Helvetica-Bold', size=20, leading=24, color=HexColor('#102a43'))

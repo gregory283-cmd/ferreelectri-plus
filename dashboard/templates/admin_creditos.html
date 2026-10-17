@@ -197,26 +197,28 @@
   .credits-photo-control {
     position: absolute;
     display: grid;
+    box-sizing: border-box;
     width: 42px;
     height: 42px;
     place-items: center;
     border: 1px solid rgba(255,255,255,.5);
     border-radius: 50%;
-    background: rgba(5, 15, 29, .72);
-    color: #fff;
-    font-size: 1.5rem;
+    background: rgba(7,18,32,.94) !important;
+    color: #fff !important;
+    font-size: 1rem;
     line-height: 1;
     cursor: pointer;
     transition: background .2s ease, transform .2s ease;
   }
-  .credits-card-controls { position: absolute; top: 18px; right: 10%; z-index: 4; display: flex; gap: 8px; }
-  .credits-report-control { display: grid; width: 42px; height: 42px; place-items: center; border: 1px solid rgba(255,255,255,.5); border-radius: 50%; background: rgba(5,15,29,.78); color: #fff; text-decoration: none; transition: background .2s ease, transform .2s ease; }
+  .credits-card-controls { position: absolute; top: 18px; right: 10%; z-index: 4; display: flex; align-items: center; gap: 14px; }
+  .credits-report-control { display: grid; box-sizing: border-box; width: 42px; height: 42px; padding: 0; place-items: center; border: 1px solid rgba(255,255,255,.66); border-radius: 50%; background: rgba(7,18,32,.94) !important; color: #fff !important; box-shadow: 0 3px 12px rgba(0,0,0,.25); text-decoration: none; transition: background .2s ease, transform .2s ease; }
   .credits-report-control:hover { transform: scale(1.08); background: #087d9b; color: #fff; }
-  .credits-photo-control:hover { transform: scale(1.08); background: var(--credit-accent); }
+  .credits-photo-control { box-sizing: border-box; background: rgba(7,18,32,.94) !important; box-shadow: 0 3px 12px rgba(0,0,0,.25); }
+  .credits-photo-control:hover { transform: scale(1.08); background: var(--credit-accent) !important; }
   .credits-photo-input { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; clip-path: inset(50%); }
   .credits-photo-status { min-height: 1.2em; color: var(--credits-muted); font-size: .75rem; }
-  .credit-detail-dialog { width: min(860px, calc(100vw - 32px)); max-height: min(82vh, 680px); overflow: hidden; }
-  .credit-dialog-inner { display: grid; grid-template-columns: minmax(220px, .78fr) minmax(0, 1.22fr); min-height: 430px; padding: 0; }
+  .credit-detail-dialog { width: min(1080px, calc(100vw - 40px)); max-height: min(82vh, 760px); overflow: hidden; }
+  .credit-dialog-inner { display: grid; grid-template-columns: minmax(260px, .9fr) minmax(0, 1.1fr); min-height: 430px; padding: 0; }
   .credit-dialog-visual { position: relative; display: grid; min-height: 100%; place-items: center; overflow: hidden; background: radial-gradient(ellipse at 50% 35%, color-mix(in srgb, var(--dialog-accent, #45a6d2) 30%, var(--credits-surface)), #080e18 78%); }
   .credit-dialog-visual::after { position: absolute; inset: 45% 0 0; background: linear-gradient(transparent, rgba(3, 10, 20, .68)); content: ""; }
   .credit-dialog-visual img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; }
@@ -228,7 +230,9 @@
   .credit-detail-dialog p { margin: 24px 0 0; }
   .credit-dialog-stack { margin-top: 26px; }
   .credit-dialog-contributions { margin-top: 22px; }
-  .credit-dialog-contributions ul { display: grid; gap: 8px; margin: 9px 0 0; padding-left: 18px; color: #dce7ef; font-size: .86rem; line-height: 1.5; }
+  .credit-dialog-contributions ul,
+  .credit-dialog-contributions li { color: #f4f7fa !important; }
+  .credit-dialog-contributions ul { display: grid; gap: 7px; margin: 9px 0 0; padding-left: 18px; font-size: .9rem; line-height: 1.5; }
   .credit-dialog-actions { display: flex; justify-content: flex-end; margin-top: auto; padding-top: 22px; }
   .credit-dialog-close { position: absolute; top: 18px; right: 18px; z-index: 2; }
   @media (max-width: 720px) {
@@ -317,9 +321,9 @@
   .credit-detail-dialog {
     position: fixed;
     inset: 50% auto auto 50%;
-    width: min(880px, calc(100vw - 36px));
-    height: min(540px, calc(100dvh - 36px));
-    max-height: calc(100dvh - 36px);
+    width: min(1080px, calc(100vw - 40px));
+    height: min(780px, calc(100dvh - 32px));
+    max-height: calc(100dvh - 32px);
     margin: 0;
     padding: 0;
     overflow: hidden;
@@ -331,14 +335,16 @@
     box-shadow: 0 32px 100px rgba(0,0,0,.5);
   }
   .credit-detail-dialog::backdrop { background: rgba(7, 15, 25, .72); backdrop-filter: blur(7px); }
-  .credit-dialog-inner { height: 100%; min-height: 0; grid-template-columns: minmax(260px, .85fr) minmax(0, 1.15fr); }
+  .credit-dialog-inner { height: 100%; min-height: 0; grid-template-columns: minmax(320px, .9fr) minmax(0, 1.1fr); }
   .credit-dialog-visual { min-height: 0; background: radial-gradient(ellipse at 50% 35%, color-mix(in srgb, var(--dialog-accent, #45a6d2) 32%, #172737), #08111d 78%); }
-  .credit-dialog-content { min-width: 0; color: #f4f7fa; }
+  .credit-dialog-content { min-width: 0; overflow: visible; color: #f4f7fa; }
   .credit-dialog-content h2 { color: #fff !important; }
   .credit-dialog-content p { color: #d3dde6 !important; }
   .credit-dialog-content .credits-eyebrow { color: #74d4ed; }
   .credit-dialog-content .credits-role { color: #88d9ed; }
   .credit-dialog-content .credits-stack-title { color: #b3c2cf; }
+  .credit-dialog-content .credit-dialog-contributions ul,
+  .credit-dialog-content .credit-dialog-contributions li { color: #f4f7fa !important; }
   .credit-dialog-content .credits-stack span { border-color: rgba(255,255,255,.16); background: #1b2a39; color: #f2f6f8; }
   .credit-dialog-close { border-color: rgba(255,255,255,.18); background: #263747; color: #fff; }
   .credit-dialog-close:hover { background: #354b5e; }
@@ -404,8 +410,8 @@
         <span class="credits-portrait"><img class="credits-photo" alt="" data-photo-image="{{ member.photo_key }}"><span class="credits-monogram">{{ member.initials }}</span><span class="credits-index">0{{ forloop.counter }} / 03</span><span class="credits-open-label">Presiona aquí para ver la ficha</span><span class="credits-copy"><span class="credits-name-row"><span class="credits-name">{{ member.name }}</span><span class="credits-role">{{ member.area }}</span></span></span></span>
       </button>
       <div class="credits-card-controls">
-        <label class="credits-photo-control" for="photo-{{ member.slug }}" title="Agregar foto de {{ member.name }}" aria-label="Agregar foto de {{ member.name }}">+</label>
-        <a class="credits-report-control" href="{% url 'credito_individual_pdf' member.slug %}" data-credit-report data-report-url="{% url 'credito_individual_pdf' member.slug %}" data-report-member="{{ member.slug }}" title="Descargar informe de {{ member.name }}" aria-label="Descargar informe de {{ member.name }}"><i class="fa-solid fa-file-pdf" aria-hidden="true"></i></a>
+        <label class="credits-photo-control" for="photo-{{ member.slug }}" title="Agregar foto de {{ member.name }}" aria-label="Agregar foto de {{ member.name }}"><i class="fa-solid fa-camera" aria-hidden="true"></i></label>
+        <a class="credits-report-control" href="{% url 'credito_individual_pdf' member.slug %}" data-credit-report data-report-url="{% url 'credito_individual_pdf' member.slug %}" data-report-member="{{ member.slug }}" title="Descargar informe de {{ member.name }}" aria-label="Descargar informe de {{ member.name }}"><i class="fa-solid fa-download" aria-hidden="true"></i></a>
       </div>
       <input class="credits-photo-input" id="photo-{{ member.slug }}" type="file" accept="image/*" data-photo-input="{{ member.photo_key }}">
     </article>
