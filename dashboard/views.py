@@ -752,8 +752,8 @@ def _draw_credit_profile_page(pdf, member, page_number, page_count, photo=None):
     x = 42
     content_width = page_width - 84
     photo_x = x
-    photo_width = 188
-    photo_height = 270
+    photo_width = 205
+    photo_height = 300
     photo_y = page_height - 144 - photo_height
     _draw_credit_photo(pdf, member, photo, photo_x, photo_y, photo_width, photo_height)
 
@@ -786,14 +786,14 @@ def _draw_credit_profile_page(pdf, member, page_number, page_count, photo=None):
     for contribution in member['contributions']:
         pdf.setFillColor(accent)
         pdf.circle(x + 4, y + 3, 3, stroke=0, fill=1)
-        y = _draw_credit_wrapped(pdf, contribution, x + 16, y, content_width - 16, size=9.2, leading=13)
-        y -= 7
+        y = _draw_credit_wrapped(pdf, contribution, x + 16, y, content_width - 16, size=10, leading=15)
+        y -= 8
 
     pdf.setFillColor(HexColor('#102a43'))
     pdf.setFont('Helvetica-Bold', 9.5)
     pdf.drawString(x, y, 'HERRAMIENTAS Y AREAS TECNICAS')
     y -= 8
-    y = _draw_credit_skill_cards(pdf, member['stack'], x, y, content_width, columns=2, card_height=34, font_size=8.5) - 10
+    y = _draw_credit_skill_cards(pdf, member['stack'], x, y, content_width, columns=2, card_height=48, font_size=9.2) - 10
     pdf.setFillColor(HexColor('#687c8c'))
     pdf.setFont('Helvetica-Oblique', 8)
     pdf.drawString(x, y, 'Perfil de contribucion al sistema FerreElectri PLUS')
@@ -840,13 +840,12 @@ def _draw_credit_group_report(pdf, photos):
         text_width = card_width - (text_x - x) - 12
         y = card_top - 28
         y = _draw_credit_wrapped(pdf, member['name'], text_x, y, text_width, font='Helvetica-Bold', size=10, leading=12, color=navy) - 2
-        y = _draw_credit_wrapped(pdf, member['role'], text_x, y, text_width, font='Helvetica-Bold', size=7, leading=9, color=accent) - 2
-        _draw_credit_wrapped(pdf, member['project_role'], text_x, y, text_width, font='Helvetica-Bold', size=6.6, leading=8, color=HexColor('#334c60'))
-        y -= 2
-        _draw_credit_wrapped(pdf, member['area'], text_x, y, text_width, size=6.6, leading=8, color=HexColor('#4d6274'))
+        y = _draw_credit_wrapped(pdf, member['role'], text_x, y, text_width, font='Helvetica-Bold', size=7.4, leading=9.5, color=accent) - 4
+        y = _draw_credit_wrapped(pdf, member['project_role'], text_x, y, text_width, font='Helvetica-Bold', size=7.2, leading=9.5, color=HexColor('#334c60')) - 3
+        _draw_credit_wrapped(pdf, member['area'], text_x, y, text_width, size=7, leading=9, color=HexColor('#4d6274'))
 
         y = image_y - 13
-        y = _draw_credit_wrapped(pdf, member['description'], x + 12, y, card_width - 24, size=7.2, leading=9.2, color=HexColor('#273c4f')) - 7
+        y = _draw_credit_wrapped(pdf, member['description'], x + 12, y, card_width - 24, size=8, leading=10.5, color=HexColor('#273c4f')) - 9
         pdf.setFillColor(navy)
         pdf.setFont('Helvetica-Bold', 7.4)
         pdf.drawString(x + 12, y, 'APORTES AL SISTEMA')
@@ -854,18 +853,18 @@ def _draw_credit_group_report(pdf, photos):
         for contribution in member['contributions']:
             pdf.setFillColor(accent)
             pdf.circle(x + 15, y + 2, 2, stroke=0, fill=1)
-            y = _draw_credit_wrapped(pdf, contribution, x + 22, y, card_width - 34, size=6.7, leading=8.2, color=HexColor('#273c4f')) - 3
+            y = _draw_credit_wrapped(pdf, contribution, x + 22, y, card_width - 34, size=7.2, leading=9.3, color=HexColor('#273c4f')) - 5
 
         pdf.setFillColor(navy)
         pdf.setFont('Helvetica-Bold', 7.4)
         pdf.drawString(x + 12, y, 'HERRAMIENTAS Y AREAS TECNICAS')
         y -= 4
-        y = _draw_credit_skill_cards(pdf, member['stack'], x + 12, y, card_width - 24, columns=2, card_height=25, font_size=6.8) - 7
+        y = _draw_credit_skill_cards(pdf, member['stack'], x + 12, y, card_width - 24, columns=2, card_height=32, font_size=7.1) - 9
         pdf.setFillColor(navy)
         pdf.setFont('Helvetica-Bold', 7.4)
         pdf.drawString(x + 12, y, 'IMPACTO')
         y -= 11
-        _draw_credit_wrapped(pdf, member['impact'], x + 12, y, card_width - 24, size=6.8, leading=8.3, color=HexColor('#273c4f'))
+        _draw_credit_wrapped(pdf, member['impact'], x + 12, y, card_width - 24, size=7.2, leading=9.5, color=HexColor('#273c4f'))
 
     pdf.setStrokeColor(HexColor('#d6e0e8'))
     pdf.line(36, 38, page_width - 36, 38)
