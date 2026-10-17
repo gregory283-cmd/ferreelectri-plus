@@ -32,6 +32,27 @@
     #catalog-sidebar.visible {
       opacity: 1;
     }
+    @media (max-width: 640px) {
+      #productos-grid {
+        display: flex;
+        gap: 12px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        overscroll-behavior-inline: contain;
+        padding: 0 0 14px;
+        scroll-padding-inline: 1px;
+        scroll-snap-type: x mandatory;
+        scrollbar-width: thin;
+      }
+      #productos-grid > .anim-card {
+        flex: 0 0 min(74vw, 270px);
+        scroll-snap-align: start;
+      }
+      #productos-grid .product-card > .relative {
+        aspect-ratio: 4 / 3;
+        padding: 12px;
+      }
+    }
     @media (prefers-reduced-motion: reduce) {
       .anim-sidebar-first-load,
       .anim-card {

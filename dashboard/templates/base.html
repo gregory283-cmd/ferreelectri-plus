@@ -423,7 +423,7 @@
         </div>
         <div class="footer-col">
           <h3>Enlaces Rápidos</h3>
-          <a href="#inicio">Inicio</a>
+          <a href="{% url 'index' %}#inicio">Inicio</a>
           <a href="{% url 'productos' %}?vista=catalogo#productos-grid">Productos</a>
           <a href="{% url 'productos' %}?oferta=true">Ofertas</a>
           <a href="#ubicacion" id="locationLink">Ubicación</a>
@@ -434,15 +434,6 @@
           <a href="mailto:ferreeelectriplus@gmail.com">ferreeelectriplus@gmail.com</a>
           <a href="{% url 'condiciones_servicio' %}">Términos y condiciones</a>
           <a href="{% url 'politica_privacidad' %}">Política de privacidad</a>
-          <a href="#faq">Preguntas frecuentes</a>
-        </div>
-        <div class="footer-col footer-newsletter">
-          <h3>Boletín de Suscripción</h3>
-          <p>Recibe avisos de ofertas, lanzamientos y envío exprés.</p>
-          <form action="#" method="post" class="newsletter-form">
-            <input type="email" name="email" placeholder="Tu correo electrónico" aria-label="Email" required>
-            <button type="submit" class="btn-primary">Suscribirme</button>
-          </form>
         </div>
       </div>
       <div class="footer-bottom">
@@ -476,13 +467,14 @@
         <span class="section-eyebrow">FerreElectri PLUS</span>
         <h2 id="locationTitle">Visítanos</h2>
         <p>Estamos listos para ayudarte con tus materiales eléctricos y herramientas.</p>
-        <div class="location-detail"><i class="fa-solid fa-location-dot"></i><span>Barquisimeto, Lara, Venezuela</span></div>
+        <div class="location-detail"><i class="fa-solid fa-location-dot"></i><span>Calle 7, Coloncito, Municipio Panamericano, Táchira, Venezuela</span></div>
+        <a class="location-map-link inline-flex w-fit items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-800 transition hover:border-orange-500 dark:border-slate-700 dark:text-white" href="https://www.google.com/maps/search/?api=1&amp;query=FerreElectri%20Plus%2C%20Calle%207%2C%20Coloncito%2C%20Municipio%20Panamericano%2C%20T%C3%A1chira%2C%20Venezuela" target="_blank" rel="noopener noreferrer"><i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i> Abrir en Google Maps</a>
         <div class="location-detail"><i class="fa-solid fa-phone"></i><a href="tel:+584247362445">+58 424-7362445</a></div>
         <div class="location-detail"><i class="fa-brands fa-whatsapp"></i><a href="https://wa.me/584247362445" target="_blank" rel="noopener">WhatsApp</a></div>
         <div class="location-detail"><i class="fa-solid fa-envelope"></i><a href="mailto:ferreelectriplus@gmail.com">ferreelectriplus@gmail.com</a></div>
       </div>
       <div class="location-map">
-        <iframe title="Ubicación de FerreElectri PLUS" src="https://www.google.com/maps?q=Barquisimeto%2C%20Lara%2C%20Venezuela&output=embed" loading="lazy" allowfullscreen></iframe>
+        <iframe title="Ubicación de FerreElectri PLUS en Coloncito, Táchira" src="https://www.google.com/maps?q=FerreElectri%20Plus%2C%20Calle%207%2C%20Coloncito%2C%20Municipio%20Panamericano%2C%20T%C3%A1chira%2C%20Venezuela&output=embed" loading="lazy" allowfullscreen></iframe>
       </div>
     </div>
   </div>

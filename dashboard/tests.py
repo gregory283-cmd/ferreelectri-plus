@@ -1285,6 +1285,20 @@ class HomeCatalogPresentationTest(TestCase):
         self.assertContains(catalog, producto.Descripcion)
         self.assertContains(catalog, 'filtered-products-title')
 
+    def test_mobile_catalog_carousel_and_footer_controls(self):
+        catalog = self.client.get(reverse('productos'), {'vista': 'catalogo'})
+        home = self.client.get(reverse('index'))
+
+        self.assertEqual(catalog.status_code, 200)
+        self.assertContains(catalog, 'scroll-snap-type: x mandatory')
+        self.assertContains(catalog, 'flex: 0 0 min(74vw, 270px)')
+        self.assertEqual(home.status_code, 200)
+        self.assertContains(home, 'Calle 7, Coloncito, Municipio Panamericano, Táchira, Venezuela')
+        self.assertContains(home, 'Abrir en Google Maps')
+        self.assertContains(home, reverse('index') + '#inicio')
+        self.assertNotContains(home, 'Boletín de Suscripción')
+        self.assertNotContains(home, 'Preguntas frecuentes')
+
     def test_mobile_catalog_filters_and_assistant_navigation_render(self):
         response = self.client.get(reverse('productos'), {'vista': 'catalogo'})
 
@@ -2112,6 +2126,16 @@ class LegalPagesTest(TestCase):
         self.assertContains(privacy, 'Los comprobantes manuales son revisados')
 
 
+class AdminLoginResponsivePresentationTest(TestCase):
+    def test_mobile_login_promotes_typewriter_and_removes_duplicate_badge(self):
+        response = self.client.get(reverse('login_admin_custom'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, '.hero-badge, .hero-logo, .hero-features, .hero-footer { display: none; }')
+        self.assertContains(response, 'html, body { height: auto; min-height: 100%; overflow-x: hidden; overflow-y: auto; }')
+        self.assertContains(response, 'class="hero-title-line full rotating-line"')
+
+
 class CreditsGalleryTest(TestCase):
     def test_credits_page_renders_full_gallery_and_profile_dialog(self):
         staff = User.objects.create_user(
@@ -2131,6 +2155,10 @@ class CreditsGalleryTest(TestCase):
         self.assertContains(response, 'class="credits-card-open"', count=3)
         self.assertContains(response, 'Presiona aquí para ver la ficha', count=3)
         self.assertContains(response, 'class="credits-photo-control"', count=3)
+        self.assertContains(response, 'class="credits-report-control"', count=3)
+        self.assertContains(response, reverse('creditos_reporte_pdf'))
+        self.assertContains(response, 'id="creditDetailReport"')
+        self.assertContains(response, 'id="creditDetailContributions"')
         self.assertContains(response, 'credit-dialog-visual')
         self.assertContains(response, 'credit-dialog-content')
         self.assertContains(response, 'transform: translate(-50%, -50%)')
@@ -2138,6 +2166,28 @@ class CreditsGalleryTest(TestCase):
         self.assertContains(response, 'Yulimar Cabeza')
         self.assertContains(response, 'Gregory Gómez')
         self.assertContains(response, 'Yeferson Ramírez')
+
+    def test_credit_reports_are_pdf_files_and_require_staff_access(self):
+        staff = User.objects.create_user(username='credit-report-staff', password='StrongTestPass123!', is_staff=True)
+        self.client.force_login(staff)
+
+        group_report = self.client.get(reverse('creditos_reporte_pdf'))
+        individual_report = self.client.get(reverse('credito_individual_pdf', args=['gregory-gomez']))
+        missing_report = self.client.get(reverse('credito_individual_pdf', args=['unknown-person']))
+
+        self.assertEqual(group_report.status_code, 200)
+        self.assertEqual(group_report['Content-Type'], 'application/pdf')
+        self.assertIn(b'%PDF-', group_report.content[:10])
+        self.assertIn('informe-grupal', group_report['Content-Disposition'])
+        self.assertEqual(individual_report.status_code, 200)
+        self.assertEqual(individual_report['Content-Type'], 'application/pdf')
+        self.assertIn(b'%PDF-', individual_report.content[:10])
+        self.assertIn('gregory-gomez', individual_report['Content-Disposition'])
+        self.assertEqual(missing_report.status_code, 404)
+
+        self.client.logout()
+        anonymous_report = self.client.get(reverse('creditos_reporte_pdf'))
+        self.assertEqual(anonymous_report.status_code, 302)
 
 
 class SeguridadTest(TestCase):

@@ -196,9 +196,6 @@
   .credits-description { display: none; }
   .credits-photo-control {
     position: absolute;
-    top: 18px;
-    right: 10%;
-    z-index: 4;
     display: grid;
     width: 42px;
     height: 42px;
@@ -212,6 +209,9 @@
     cursor: pointer;
     transition: background .2s ease, transform .2s ease;
   }
+  .credits-card-controls { position: absolute; top: 18px; right: 10%; z-index: 4; display: flex; gap: 8px; }
+  .credits-report-control { display: grid; width: 42px; height: 42px; place-items: center; border: 1px solid rgba(255,255,255,.5); border-radius: 50%; background: rgba(5,15,29,.78); color: #fff; text-decoration: none; transition: background .2s ease, transform .2s ease; }
+  .credits-report-control:hover { transform: scale(1.08); background: #087d9b; color: #fff; }
   .credits-photo-control:hover { transform: scale(1.08); background: var(--credit-accent); }
   .credits-photo-input { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; clip-path: inset(50%); }
   .credits-photo-status { min-height: 1.2em; color: var(--credits-muted); font-size: .75rem; }
@@ -227,6 +227,9 @@
   .credit-dialog-top h2 { margin: 10px 0 6px; font-size: clamp(1.5rem, 3vw, 2rem); }
   .credit-detail-dialog p { margin: 24px 0 0; }
   .credit-dialog-stack { margin-top: 26px; }
+  .credit-dialog-contributions { margin-top: 22px; }
+  .credit-dialog-contributions ul { display: grid; gap: 8px; margin: 9px 0 0; padding-left: 18px; color: var(--credits-muted); font-size: .86rem; line-height: 1.5; }
+  .credit-dialog-actions { display: flex; justify-content: flex-end; margin-top: auto; padding-top: 22px; }
   .credit-dialog-close { position: absolute; top: 18px; right: 18px; z-index: 2; }
   @media (max-width: 720px) {
     .credits-gallery { height: min(68vh, 530px); min-height: 360px; overflow-x: auto; overflow-y: hidden; }
@@ -296,6 +299,7 @@
   .credits-card-open { background: linear-gradient(180deg, transparent 46%, rgba(3, 10, 20, .9) 100%); }
   .credits-portrait { background: radial-gradient(ellipse at 50% 32%, color-mix(in srgb, var(--credit-accent) 24%, #dce7ed), #aebfca 100%); }
   .credits-photo-control { right: 10%; }
+  .credits-card-controls { right: 10%; }
   .credits-manual {
     min-height: 40px;
     border-color: var(--credits-line);
@@ -389,33 +393,23 @@
       <span class="credits-photo-status" id="creditsPhotoStatus" role="status" aria-live="polite"></span>
       <span class="credits-count">03 integrantes</span>
       <a href="{% url 'manual_usuario' %}" target="_blank" rel="noopener noreferrer" class="credits-manual"><i class="fa-solid fa-file-lines" aria-hidden="true"></i> Manual de usuario</a>
+      <a href="{% url 'creditos_reporte_pdf' %}" class="credits-manual"><i class="fa-solid fa-file-pdf" aria-hidden="true"></i> Informe del equipo</a>
     </div>
   </div>
 
   <div class="credits-gallery" aria-label="Integrantes del equipo">
-    <article class="credits-shard" data-tone="amber">
-      <button type="button" class="credits-card-open" data-credit-card data-name="Yulimar Cabeza" data-initials="YC" data-role="Ingeniería en Informática" data-area="Arquitectura y operación" data-description="Participó en la estructuración del sistema, la lógica operativa y la optimización funcional del flujo administrativo." data-stack="Python|Lógica Core|MariaDB" aria-label="Abrir ficha de Yulimar Cabeza">
-        <span class="credits-portrait"><img class="credits-photo" alt="" data-photo-image="yulimar"><span class="credits-monogram">YC</span><span class="credits-index">01 / 03</span><span class="credits-open-label">Presiona aquí para ver la ficha</span><span class="credits-copy"><span class="credits-name-row"><span class="credits-name">Yulimar Cabeza</span><span class="credits-role">Arquitectura</span></span></span></span>
+    {% for member in team_members %}
+    <article class="credits-shard" data-tone="{{ member.tone }}">
+      <button type="button" class="credits-card-open" data-credit-card data-name="{{ member.name }}" data-initials="{{ member.initials }}" data-role="{{ member.role }}" data-area="{{ member.area }}" data-description="{{ member.description }}" data-contributions="{{ member.contributions|join:'||' }}" data-stack="{{ member.stack|join:'|' }}" data-report-url="{% url 'credito_individual_pdf' member.slug %}" aria-label="Abrir ficha de {{ member.name }}">
+        <span class="credits-portrait"><img class="credits-photo" alt="" data-photo-image="{{ member.slug }}"><span class="credits-monogram">{{ member.initials }}</span><span class="credits-index">0{{ forloop.counter }} / 03</span><span class="credits-open-label">Presiona aquí para ver la ficha</span><span class="credits-copy"><span class="credits-name-row"><span class="credits-name">{{ member.name }}</span><span class="credits-role">{{ member.area }}</span></span></span></span>
       </button>
-      <label class="credits-photo-control" for="photoYulimar" title="Agregar foto de Yulimar Cabeza" aria-label="Agregar foto de Yulimar Cabeza">+</label>
-      <input class="credits-photo-input" id="photoYulimar" type="file" accept="image/*" data-photo-input="yulimar">
+      <div class="credits-card-controls">
+        <label class="credits-photo-control" for="photo-{{ member.slug }}" title="Agregar foto de {{ member.name }}" aria-label="Agregar foto de {{ member.name }}">+</label>
+        <a class="credits-report-control" href="{% url 'credito_individual_pdf' member.slug %}" title="Descargar informe de {{ member.name }}" aria-label="Descargar informe de {{ member.name }}"><i class="fa-solid fa-file-pdf" aria-hidden="true"></i></a>
+      </div>
+      <input class="credits-photo-input" id="photo-{{ member.slug }}" type="file" accept="image/*" data-photo-input="{{ member.slug }}">
     </article>
-
-    <article class="credits-shard" data-tone="cyan">
-      <button type="button" class="credits-card-open" data-credit-card data-name="Gregory Gómez" data-initials="GG" data-role="Ingeniería en Informática" data-area="Interfaz y experiencia" data-description="Contribuyó al diseño de interfaces, la experiencia de usuario y la implementación visual del sistema." data-stack="Tailwind CSS|Django Templates|UI/UX" aria-label="Abrir ficha de Gregory Gómez">
-        <span class="credits-portrait"><img class="credits-photo" alt="" data-photo-image="gregory"><span class="credits-monogram">GG</span><span class="credits-index">02 / 03</span><span class="credits-open-label">Presiona aquí para ver la ficha</span><span class="credits-copy"><span class="credits-name-row"><span class="credits-name">Gregory Gómez</span><span class="credits-role">UI / UX</span></span></span></span>
-      </button>
-      <label class="credits-photo-control" for="photoGregory" title="Agregar foto de Gregory Gómez" aria-label="Agregar foto de Gregory Gómez">+</label>
-      <input class="credits-photo-input" id="photoGregory" type="file" accept="image/*" data-photo-input="gregory">
-    </article>
-
-    <article class="credits-shard" data-tone="mint">
-      <button type="button" class="credits-card-open" data-credit-card data-name="Yeferson Ramírez" data-initials="YR" data-role="Ingeniería en Informática" data-area="Calidad y seguridad" data-description="Aportó a la ingeniería del producto, la calidad funcional y el desarrollo del entorno operativo." data-stack="Arquitectura Backend|Seguridad|Testing" aria-label="Abrir ficha de Yeferson Ramírez">
-        <span class="credits-portrait"><img class="credits-photo" alt="" data-photo-image="yeferson"><span class="credits-monogram">YR</span><span class="credits-index">03 / 03</span><span class="credits-open-label">Presiona aquí para ver la ficha</span><span class="credits-copy"><span class="credits-name-row"><span class="credits-name">Yeferson Ramírez</span><span class="credits-role">Calidad</span></span></span></span>
-      </button>
-      <label class="credits-photo-control" for="photoYeferson" title="Agregar foto de Yeferson Ramírez" aria-label="Agregar foto de Yeferson Ramírez">+</label>
-      <input class="credits-photo-input" id="photoYeferson" type="file" accept="image/*" data-photo-input="yeferson">
-    </article>
+    {% endfor %}
   </div>
 </section>
 
@@ -428,7 +422,9 @@
         <button class="credit-dialog-close" type="button" data-close-credit aria-label="Cerrar ficha"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
       </div>
       <p id="creditDetailDescription"></p>
+      <div class="credit-dialog-contributions"><span class="credits-stack-title">Aportes al sistema</span><ul id="creditDetailContributions"></ul></div>
       <div class="credit-dialog-stack"><span class="credits-stack-title">Stack principal</span><div class="credits-stack" id="creditDetailStack"></div></div>
+      <div class="credit-dialog-actions"><a class="credits-manual" id="creditDetailReport" href="#"><i class="fa-solid fa-file-pdf" aria-hidden="true"></i> Descargar informe</a></div>
     </div>
   </div>
 </dialog>
@@ -442,6 +438,8 @@
     var area = document.getElementById('creditDetailArea');
     var description = document.getElementById('creditDetailDescription');
     var stack = document.getElementById('creditDetailStack');
+    var contributions = document.getElementById('creditDetailContributions');
+    var reportLink = document.getElementById('creditDetailReport');
     var photo = document.getElementById('creditDetailPhoto');
     var initials = document.getElementById('creditDetailInitials');
     var photoStatus = document.getElementById('creditsPhotoStatus');
@@ -498,6 +496,13 @@
         role.textContent = card.dataset.role || '';
         area.textContent = card.dataset.area || '';
         description.textContent = card.dataset.description || '';
+        contributions.textContent = '';
+        (card.dataset.contributions || '').split('||').filter(Boolean).forEach(function (item) {
+          var point = document.createElement('li');
+          point.textContent = item;
+          contributions.appendChild(point);
+        });
+        reportLink.href = card.dataset.reportUrl || '#';
         stack.textContent = '';
         (card.dataset.stack || '').split('|').filter(Boolean).forEach(function (item) {
           var tag = document.createElement('span');

@@ -71,6 +71,8 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django_ratelimit.decorators import ratelimit
 from django_ratelimit.exceptions import Ratelimited
 from reportlab.lib.pagesizes import A4
+from reportlab.lib.colors import HexColor
+from reportlab.lib.utils import simpleSplit
 from reportlab.pdfgen import canvas
 from reportlab.lib.units import mm
 from django.http import FileResponse, HttpResponse
@@ -547,7 +549,222 @@ def rate_limit_403(request, exception=None):
 
 @user_passes_test(lambda u: u.is_staff, login_url='login_admin_custom')
 def admin_creditos(request):
-    return render(request, 'admin_creditos.html')
+    return render(request, 'admin_creditos.html', {'team_members': CREDIT_TEAM})
+
+
+CREDIT_TEAM = (
+    {
+        'slug': 'yulimar-cabeza',
+        'name': 'Yulimar Cabeza',
+        'initials': 'YC',
+        'role': 'Ingeniería en Informática',
+        'area': 'Arquitectura y operación',
+        'tone': 'amber',
+        'description': 'Participó en la estructuración del sistema, la lógica operativa y la optimización funcional de los flujos administrativos.',
+        'contributions': (
+            'Organización de componentes y responsabilidades para mantener una base de software clara y extensible.',
+            'Diseño de lógica de negocio que conecta las operaciones diarias con los datos del sistema.',
+            'Revisión de flujos administrativos para reducir pasos innecesarios y mejorar la continuidad del trabajo.',
+        ),
+        'stack': ('Python', 'Django', 'Lógica de negocio', 'MariaDB'),
+        'impact': 'Su enfoque aporta estructura, consistencia y continuidad a los procesos que sostienen la operación de FerreElectri PLUS.',
+    },
+    {
+        'slug': 'gregory-gomez',
+        'name': 'Gregory Gómez',
+        'initials': 'GG',
+        'role': 'Ingeniería en Informática',
+        'area': 'Interfaz y experiencia',
+        'tone': 'cyan',
+        'description': 'Contribuyó al diseño de interfaces, la experiencia de usuario y la implementación visual del sistema.',
+        'contributions': (
+            'Diseño de jerarquías visuales que facilitan localizar información y completar tareas frecuentes.',
+            'Implementación de componentes de interfaz reutilizables con plantillas Django y estilos responsivos.',
+            'Revisión de estados, mensajes y controles para que las acciones del sistema sean comprensibles.',
+        ),
+        'stack': ('UI / UX', 'Tailwind CSS', 'Django Templates', 'Diseño responsivo'),
+        'impact': 'Su trabajo convierte procesos del negocio en experiencias claras para clientes y personal administrativo.',
+    },
+    {
+        'slug': 'yeferson-ramirez',
+        'name': 'Yeferson Ramírez',
+        'initials': 'YR',
+        'role': 'Ingeniería en Informática',
+        'area': 'Calidad y seguridad',
+        'tone': 'mint',
+        'description': 'Aportó a la ingeniería del producto, la calidad funcional y el desarrollo del entorno operativo.',
+        'contributions': (
+            'Revisión de permisos y controles para separar las funciones administrativas de las de clientes.',
+            'Validación de comportamientos mediante pruebas y comprobaciones de los flujos principales.',
+            'Atención a la estabilidad del backend y a la protección de operaciones sensibles del sistema.',
+        ),
+        'stack': ('Arquitectura backend', 'Seguridad', 'Testing', 'Django'),
+        'impact': 'Su enfoque ayuda a que los procesos sean verificables, seguros y confiables para el funcionamiento diario.',
+    },
+)
+
+
+def _draw_credit_wrapped(pdf, text, x, y, width, *, font='Helvetica', size=10, leading=15, color=None):
+    pdf.setFont(font, size)
+    pdf.setFillColor(color or HexColor('#26384a'))
+    for line in simpleSplit(str(text), font, size, width):
+        pdf.drawString(x, y, line)
+        y -= leading
+    return y
+
+
+def _draw_credit_pdf_header(pdf, label, page_number, page_count):
+    page_width, page_height = A4
+    navy = HexColor('#102a43')
+    pdf.setFillColor(navy)
+    pdf.rect(0, page_height - 104, page_width, 104, stroke=0, fill=1)
+    pdf.setFillColor(HexColor('#f97316'))
+    pdf.rect(0, page_height - 108, page_width, 4, stroke=0, fill=1)
+    pdf.setFillColor(HexColor('#ffffff'))
+    pdf.setFont('Helvetica-Bold', 9)
+    pdf.drawString(42, page_height - 38, 'FERREELECTRI PLUS  /  INGENIERIA')
+    pdf.setFont('Helvetica-Bold', 22)
+    pdf.drawString(42, page_height - 68, label)
+    pdf.setFillColor(HexColor('#d6e3ee'))
+    pdf.setFont('Helvetica', 9)
+    pdf.drawRightString(page_width - 42, page_height - 38, timezone.localdate().strftime('%d/%m/%Y'))
+    pdf.setStrokeColor(HexColor('#d6e0e8'))
+    pdf.line(42, 42, page_width - 42, 42)
+    pdf.setFillColor(HexColor('#647789'))
+    pdf.setFont('Helvetica', 8)
+    pdf.drawString(42, 27, 'Documento institucional  |  FerreElectri PLUS')
+    pdf.drawRightString(page_width - 42, 27, f'{page_number} / {page_count}')
+    return page_width, page_height
+
+
+def _draw_credit_profile_page(pdf, member, page_number, page_count):
+    page_width, page_height = _draw_credit_pdf_header(pdf, 'Perfil de contribucion', page_number, page_count)
+    accent = HexColor({'amber': '#b76a12', 'cyan': '#087d9b', 'mint': '#17845e'}.get(member['tone'], '#176a91'))
+    x = 42
+    content_width = page_width - 84
+    y = page_height - 148
+    pdf.setFillColor(accent)
+    pdf.roundRect(x, y - 6, 5, 55, 2, stroke=0, fill=1)
+    _draw_credit_wrapped(pdf, member['name'], x + 18, y + 28, content_width - 18, font='Helvetica-Bold', size=21, leading=25, color=HexColor('#102a43'))
+    _draw_credit_wrapped(pdf, member['role'], x + 18, y + 4, content_width - 18, font='Helvetica-Bold', size=10, leading=14, color=accent)
+    y -= 55
+
+    for heading, body in (
+        ('AREA DE CONTRIBUCION', member['area']),
+        ('PERFIL PROFESIONAL', member['description']),
+    ):
+        pdf.setFillColor(HexColor('#102a43'))
+        pdf.setFont('Helvetica-Bold', 10)
+        pdf.drawString(x, y, heading)
+        y -= 18
+        y = _draw_credit_wrapped(pdf, body, x, y, content_width, size=10, leading=15)
+        y -= 17
+
+    pdf.setFillColor(HexColor('#102a43'))
+    pdf.setFont('Helvetica-Bold', 10)
+    pdf.drawString(x, y, 'APORTES AL SISTEMA')
+    y -= 21
+    for contribution in member['contributions']:
+        pdf.setFillColor(accent)
+        pdf.circle(x + 4, y + 3, 3, stroke=0, fill=1)
+        y = _draw_credit_wrapped(pdf, contribution, x + 16, y, content_width - 16, size=9.5, leading=14)
+        y -= 9
+
+    pdf.setFillColor(HexColor('#102a43'))
+    pdf.setFont('Helvetica-Bold', 10)
+    pdf.drawString(x, y, 'HERRAMIENTAS Y AREAS TECNICAS')
+    y -= 21
+    chip_x = x
+    for item in member['stack']:
+        chip_width = pdf.stringWidth(item, 'Helvetica-Bold', 8) + 20
+        if chip_x + chip_width > page_width - 42:
+            chip_x = x
+            y -= 32
+        pdf.setFillColor(HexColor('#edf3f7'))
+        pdf.roundRect(chip_x, y - 7, chip_width, 23, 6, stroke=0, fill=1)
+        pdf.setFillColor(HexColor('#203b52'))
+        pdf.setFont('Helvetica-Bold', 8)
+        pdf.drawString(chip_x + 10, y + 1, item)
+        chip_x += chip_width + 8
+    y -= 43
+
+    pdf.setFillColor(HexColor('#102a43'))
+    pdf.setFont('Helvetica-Bold', 10)
+    pdf.drawString(x, y, 'IMPACTO EN EL PROYECTO')
+    y -= 18
+    _draw_credit_wrapped(pdf, member['impact'], x, y, content_width, size=10, leading=15)
+
+
+def _draw_credit_group_cover(pdf, page_count):
+    page_width, page_height = _draw_credit_pdf_header(pdf, 'Informe del equipo', 1, page_count)
+    x = 42
+    content_width = page_width - 84
+    y = page_height - 145
+    y = _draw_credit_wrapped(
+        pdf,
+        'Este informe resume las responsabilidades, aportes y areas tecnicas del equipo que participa en la ingenieria de FerreElectri PLUS.',
+        x, y, content_width, size=11, leading=17, color=HexColor('#26384a'),
+    ) - 20
+    pdf.setFillColor(HexColor('#102a43'))
+    pdf.setFont('Helvetica-Bold', 11)
+    pdf.drawString(x, y, 'EQUIPO DEL PROYECTO')
+    y -= 22
+    card_height = 112
+    for member in CREDIT_TEAM:
+        pdf.setFillColor(HexColor('#f1f5f8'))
+        pdf.roundRect(x, y - card_height + 10, content_width, card_height, 9, stroke=0, fill=1)
+        accent = HexColor({'amber': '#b76a12', 'cyan': '#087d9b', 'mint': '#17845e'}[member['tone']])
+        pdf.setFillColor(accent)
+        pdf.roundRect(x, y - card_height + 10, 5, card_height, 2, stroke=0, fill=1)
+        _draw_credit_wrapped(pdf, member['name'], x + 18, y - 12, content_width - 36, font='Helvetica-Bold', size=13, leading=17, color=HexColor('#102a43'))
+        _draw_credit_wrapped(pdf, f"{member['area']}  |  {member['role']}", x + 18, y - 32, content_width - 36, font='Helvetica-Bold', size=8.5, leading=12, color=accent)
+        _draw_credit_wrapped(pdf, member['description'], x + 18, y - 50, content_width - 36, size=8.5, leading=12, color=HexColor('#43566a'))
+        y -= card_height + 8
+    y -= 2
+    pdf.setFillColor(HexColor('#102a43'))
+    pdf.setFont('Helvetica-Bold', 10)
+    pdf.drawString(x, y, 'COLABORACION TRANSVERSAL')
+    y -= 18
+    _draw_credit_wrapped(
+        pdf,
+        'Arquitectura, experiencia de uso y calidad se complementan para sostener procesos comprensibles, mantenibles y confiables. Cada perfil desarrolla una perspectiva distinta del mismo producto y contribuye a su operacion integral.',
+        x, y, content_width, size=9.5, leading=14,
+    )
+
+
+@user_passes_test(lambda u: u.is_staff, login_url='login_admin_custom')
+def creditos_reporte_pdf(request):
+    output = BytesIO()
+    pdf = canvas.Canvas(output, pagesize=A4, pageCompression=1)
+    page_count = len(CREDIT_TEAM) + 1
+    pdf.setTitle('Informe del equipo de ingenieria - FerreElectri PLUS')
+    pdf.setAuthor('FerreElectri PLUS')
+    _draw_credit_group_cover(pdf, page_count)
+    pdf.showPage()
+    for index, member in enumerate(CREDIT_TEAM, start=2):
+        _draw_credit_profile_page(pdf, member, index, page_count)
+        if index < page_count:
+            pdf.showPage()
+    pdf.save()
+    response = HttpResponse(output.getvalue(), content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="informe-grupal-ferreelectri-plus.pdf"'
+    return response
+
+
+@user_passes_test(lambda u: u.is_staff, login_url='login_admin_custom')
+def credito_individual_pdf(request, slug):
+    member = next((item for item in CREDIT_TEAM if item['slug'] == slug), None)
+    if not member:
+        return HttpResponse('No existe el perfil solicitado.', status=404)
+    output = BytesIO()
+    pdf = canvas.Canvas(output, pagesize=A4, pageCompression=1)
+    pdf.setTitle(f"Perfil profesional - {member['name']}")
+    pdf.setAuthor('FerreElectri PLUS')
+    _draw_credit_profile_page(pdf, member, 1, 1)
+    pdf.save()
+    response = HttpResponse(output.getvalue(), content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="informe-{slug}-ferreelectri-plus.pdf"'
+    return response
 
 
 def condiciones_servicio(request):

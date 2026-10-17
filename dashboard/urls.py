@@ -87,6 +87,8 @@ urlpatterns = [
     path('cliente/registro/', views.cliente_registro, name='cliente_registro'),
     path('admin-panel/manual-backup/', views.manual_backup, name='manual_backup'),
     path('admin-panel/respaldo/ultimo/', views.download_latest_backup, name='download_latest_backup'),
+    path('admin-panel/creditos/reporte/', views.creditos_reporte_pdf, name='creditos_reporte_pdf'),
+    path('admin-panel/creditos/reporte/<slug:slug>/', views.credito_individual_pdf, name='credito_individual_pdf'),
     path('cliente/manual-usuario/', views.manual_usuario_pdf, name='manual_usuario'),
     path('admin-panel/creditos/', views.admin_creditos, name='admin_creditos'),
 ]
