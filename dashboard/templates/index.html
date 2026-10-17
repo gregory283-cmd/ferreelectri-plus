@@ -117,6 +117,11 @@
                data-cancel_on_tap_outside="true">
           </div>
           <p id="google-login-feedback" class="max-w-md text-sm font-semibold text-red-600 dark:text-red-300" role="status" aria-live="polite" hidden></p>
+          <form method="post" action="{% url 'social:begin' 'google-oauth2' %}" class="landing-google-fallback">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ next|default:'/carrito/' }}">
+            <button type="submit" class="landing-google-button"><i class="fa-brands fa-google" aria-hidden="true"></i> Continuar con Google</button>
+          </form>
         </div>
         <script>
           const googleLoginNext = "{{ next|default:'/carrito/'|escapejs }}";
@@ -127,29 +132,47 @@
             aud_mismatch: 'El Client ID de Google no coincide con la configuración de esta tienda.',
             issuer_mismatch: 'Google no pudo confirmar el origen de esta cuenta.',
             email_not_verified: 'Verifica el correo de tu cuenta de Google antes de continuar.',
-            rate_limited: 'Hubo demasiados intentos. Espera un minuto y vuelve a probar.'
+            rate_limited: 'Hubo demasiados intentos. Espera un minuto y vuelve a probar.',
+            google_auth_dependency_missing: 'El servidor no tiene disponible la verificación de Google. Usa el botón de acceso alternativo.',
+            no_email: 'Google no compartió un correo verificado para esta cuenta.',
+            invalid_server_response: 'El servidor no respondió correctamente. Usa el botón de acceso alternativo.',
+            request_timeout: 'La verificación tardó demasiado. Usa el botón de acceso alternativo.'
           };
           function handleCustomerGoogleCredential(response) {
-            if (!response || !response.credential) return;
+            if (!response || !response.credential) {
+              googleLoginFeedback.textContent = 'Google no entregó una credencial. Usa el botón de acceso alternativo.';
+              googleLoginFeedback.hidden = false;
+              return;
+            }
             googleLoginFeedback.hidden = true;
-            googleLoginFeedback.textContent = '';
+            googleLoginFeedback.textContent = 'Verificando tu cuenta de Google…';
+            googleLoginFeedback.hidden = false;
+            const controller = new AbortController();
+            const timeoutId = window.setTimeout(function () { controller.abort(); }, 15000);
             fetch("{% url 'google_auth_api' %}", {
               method: 'POST',
               credentials: 'same-origin',
               headers: {'Content-Type': 'application/json'},
-              body: JSON.stringify({credential: response.credential, next: googleLoginNext})
-            }).then(function (result) {
-              return result.json().then(function (data) {
-                if (!result.ok || data.status !== 'success') {
-                  throw new Error(data.error || 'google_auth_failed');
-                }
-                window.location.assign(data.next || data.redirect || '/');
-              });
+              body: JSON.stringify({credential: response.credential, next: googleLoginNext}),
+              signal: controller.signal
+            }).then(async function (result) {
+              let data;
+              try {
+                data = await result.json();
+              } catch (error) {
+                throw new Error('invalid_server_response');
+              }
+              if (!result.ok || data.status !== 'success') {
+                throw new Error(data.error || 'google_auth_failed');
+              }
+              window.location.assign(data.next || data.redirect || '/');
             }).catch(function (error) {
               console.error('Google One Tap:', error);
-              googleLoginFeedback.textContent = googleLoginErrors[error.message]
-                || 'No se pudo iniciar sesión con Google. Usa el botón de ingreso o inténtalo de nuevo.';
-              googleLoginFeedback.hidden = false;
+              const errorKey = error.name === 'AbortError' ? 'request_timeout' : error.message;
+              googleLoginFeedback.textContent = googleLoginErrors[errorKey]
+                || 'No se pudo completar Google One Tap. Usa el botón de acceso alternativo o inténtalo de nuevo.';
+            }).finally(function () {
+              window.clearTimeout(timeoutId);
             });
           }
         </script>

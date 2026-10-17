@@ -90,7 +90,9 @@
 
     const heroStage = document.querySelector("#inicio .hero-mascot-stage");
     const heroBounds = heroStage?.getBoundingClientRect();
-    const showInHero = heroBounds
+    const compactViewport = window.matchMedia("(max-width: 640px)").matches;
+    const showInHero = !compactViewport
+      && heroBounds
       && window.scrollY < 180
       && heroBounds.bottom > 140
       && heroBounds.top < window.innerHeight * 0.85;

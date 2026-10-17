@@ -3086,6 +3086,98 @@ body.theme-light .product-card {
   }
 }
 
+.landing-google-fallback {
+  width: min(100%, 320px);
+}
+
+.landing-google-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid rgba(148, 163, 184, .4);
+  border-radius: 10px;
+  color: #f8fafc;
+  background: rgba(15, 23, 42, .62);
+  font-size: .9rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.landing-google-button i {
+  color: #ea4335;
+}
+
+body.theme-light .landing-google-button {
+  color: #172033;
+  background: #fff;
+}
+
+@media (max-width: 400px) {
+  #inicio {
+    min-height: auto;
+    align-items: flex-start;
+    padding-top: 32px;
+    padding-bottom: 24px;
+  }
+
+  #inicio > div {
+    gap: 24px;
+    padding-right: 16px;
+    padding-left: 16px;
+  }
+
+  #inicio h1 {
+    margin-bottom: 16px;
+    font-size: clamp(2.15rem, 10.5vw, 2.6rem);
+    line-height: 1.06;
+  }
+
+  #inicio p {
+    margin-top: 14px;
+    font-size: .95rem;
+    line-height: 1.55;
+  }
+
+  #inicio .hero-mascot-stage {
+    min-height: 300px;
+  }
+
+  #categorias > div:last-child {
+    gap: 12px;
+    padding: 24px 0;
+  }
+
+  #categorias .category-card {
+    height: 210px;
+  }
+
+  #categorias .category-card h3 {
+    font-size: .84rem;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+  }
+}
+
+@media (max-width: 359px) {
+  #inicio .mt-8.flex.flex-wrap {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  #inicio .mt-8.flex.flex-wrap > * {
+    justify-content: center;
+    width: 100%;
+  }
+
+  #categorias > div:last-child {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .scroll-indicator {
   position: absolute;
   left: 50%;
@@ -3756,12 +3848,18 @@ body.theme-light .product-card {
   }
 
   .footer-columns {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 30px 20px;
+  }
+
+  .footer-col {
+    min-width: 0;
+    overflow-wrap: anywhere;
   }
 
   .footer-newsletter {
     grid-column: 1 / -1;
+    min-width: 0;
   }
 
   .newsletter-form {
@@ -3776,6 +3874,17 @@ body.theme-light .product-card {
     padding: 20px 18px;
   }
 
+
+@media (max-width: 359px) {
+  .footer-columns {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 22px;
+  }
+
+  .footer-newsletter {
+    grid-column: auto;
+  }
+}
   .hero-title {
     font-size: clamp(2rem, 11vw, 3.1rem);
   }
@@ -5587,6 +5696,94 @@ body.auth-page #ferrebot-global {
   border-color: #8ac9ac;
   background: #eaf8f0;
   color: #155d41;
+}
+
+@media (max-width: 640px) {
+  #inicio {
+    min-height: auto;
+    align-items: flex-start;
+    padding-top: 24px;
+    padding-bottom: 16px;
+  }
+
+  #inicio > div {
+    gap: 18px;
+  }
+
+  #inicio .hero-mascot-stage {
+    display: none;
+    min-height: 0;
+  }
+
+  .nav-bar {
+    box-sizing: border-box;
+    flex-wrap: nowrap;
+    gap: 6px;
+    width: calc(100% - 20px);
+    padding: 8px;
+  }
+
+  .nav-bar .brand {
+    flex: 0 0 36px;
+    width: 36px;
+    min-width: 36px;
+  }
+
+  .nav-bar .brand-logo {
+    display: block;
+    width: 36px;
+    height: 36px;
+  }
+
+  .nav-actions {
+    flex: 0 0 auto;
+    flex-wrap: nowrap;
+    gap: 4px;
+  }
+
+  .nav-actions .icon-btn,
+  .nav-actions #nav-cart-icon,
+  .nav-actions .menu-toggle {
+    box-sizing: border-box;
+    flex: 0 0 36px;
+    width: 36px;
+    min-width: 36px;
+    height: 36px;
+    min-height: 36px;
+    margin: 0;
+    padding: 0;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 359px) {
+  .nav-bar {
+    gap: 4px;
+    width: calc(100% - 12px);
+    padding: 6px;
+  }
+
+  .nav-bar .brand,
+  .nav-bar .brand-logo {
+    flex-basis: 34px;
+    width: 34px;
+    min-width: 34px;
+    height: 34px;
+  }
+
+  .nav-actions {
+    gap: 2px;
+  }
+
+  .nav-actions .icon-btn,
+  .nav-actions #nav-cart-icon,
+  .nav-actions .menu-toggle {
+    flex-basis: 34px;
+    width: 34px;
+    min-width: 34px;
+    height: 34px;
+    min-height: 34px;
+  }
 }
 
 .checkout-notice-info {

@@ -18,6 +18,7 @@ from django.utils import timezone
 from unittest.mock import patch
 from decimal import Decimal
 from PIL import Image
+from django.conf import settings
 
 from Inventario.models import Categoria, Productos, MovimientoInventario
 from Usuario.models import Clientes as UsuarioClientes
@@ -2165,6 +2166,7 @@ class SeguridadTest(TestCase):
         self.assertContains(home, 'data-callback="handleCustomerGoogleCredential"')
         self.assertNotContains(home, 'class="g_id_signin"')
         self.assertContains(home, 'google-login-feedback')
+        self.assertContains(home, 'Continuar con Google')
         self.assertContains(home, 'Esta cuenta tiene acceso administrativo.')
         self.assertContains(home, reverse('google_auth_api'))
         self.assertEqual(catalog.status_code, 200)
@@ -2180,6 +2182,41 @@ class SeguridadTest(TestCase):
 
         self.assertEqual(response.status_code, 429)
         self.assertEqual(response.json()['error'], 'rate_limited')
+
+    def test_google_one_tap_autentica_cliente_no_administrador(self):
+        customer = Customer.objects.create(
+            nombre='Cliente Google',
+            email='google-regular-client@example.com',
+            password='GoogleClientTest123!',
+        )
+        cliente = customer.ensure_cliente_profile()
+        verified_payload = {
+            'aud': settings.GOOGLE_CLIENT_ID,
+            'iss': 'https://accounts.google.com',
+            'email_verified': True,
+            'email': customer.email,
+            'given_name': 'Google Client',
+            'family_name': 'Google',
+        }
+
+        with patch('dashboard.views.id_token.verify_oauth2_token', return_value=verified_payload):
+            response = self.client.post(
+                reverse('google_auth_api'),
+                data=json.dumps({'credential': 'verified-test-token', 'next': '/carrito/'}),
+                content_type='application/json',
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['status'], 'success')
+        user = User.objects.get(email__iexact=customer.email)
+        self.assertFalse(user.is_staff)
+        self.assertFalse(user.is_superuser)
+        self.assertEqual(self.client.session['_auth_user_id'], str(user.pk))
+        self.assertEqual(self.client.session['cliente_id'], cliente.pk)
+        cliente.refresh_from_db()
+        self.assertEqual(cliente.user_id, user.pk)
+        customer.refresh_from_db()
+        self.assertEqual(customer.cliente_id, cliente.pk)
 
     @override_settings(DEBUG=False)
     def test_login_admin_directo_en_produccion(self):

@@ -54,6 +54,24 @@
         min-width: 120px;
         flex: 1 1 120px;
     }
+    .invoice-lookup-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        width: 100%;
+        min-height: 42px;
+        margin: 0 0 8px;
+        border: 1px solid #a9dff5;
+        border-radius: 8px;
+        background: #edf8ff;
+        color: #075985;
+        font-weight: 700;
+        cursor: pointer;
+    }
+    .invoice-lookup-button .material-symbols-outlined {
+        font-size: 19px;
+    }
     label {
         font-weight: 600;
         color: #00b2ff;
@@ -161,6 +179,19 @@
     }
     .btn-editar:hover {
         background: #ffe066;
+    }
+    .btn-buscar-producto-fila {
+        background: #00b2ff;
+        color: #fff;
+        border: none;
+        border-radius: 50%;
+        width: 38px;
+        height: 38px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        margin-right: 6px;
     }
     .acciones-articulo {
         display: flex;
@@ -321,6 +352,7 @@
             <div>
                 <label><span class="material-symbols-outlined" style="font-size:1.1em;">badge</span> Cédula cliente:</label>
                 <input type="text" id="cedula_cliente" value="{{ factura.cliente.cedula }}" list="lista-clientes" autocomplete="off">
+                <button type="button" id="btn-buscar-cliente" class="invoice-lookup-button"><span class="material-symbols-outlined" aria-hidden="true">search</span>Buscar cliente</button>
                 <datalist id="lista-clientes"></datalist>
             </div>
             <div>
@@ -345,6 +377,7 @@
             <div>
                 <label><span class="material-symbols-outlined" style="font-size:1.1em;">barcode</span> Código:</label>
                 <input type="text" id="codigo" list="lista-codigos" autocomplete="off">
+                <button type="button" id="btn-buscar-producto" class="invoice-lookup-button"><span class="material-symbols-outlined" aria-hidden="true">search</span>Buscar producto</button>
                 <datalist id="lista-codigos"></datalist>
             </div>
             <div>
@@ -478,6 +511,9 @@ window.addEventListener('DOMContentLoaded', function() {
                     <button type="button" class="btn-editar" title="Editar artículo" onclick="editarFila(this)">
                         <span class="material-symbols-outlined">edit</span>
                     </button>
+                    <button type="button" class="btn-buscar-producto-fila" title="Buscar y sustituir producto" aria-label="Buscar y sustituir producto">
+                        <span class="material-symbols-outlined" aria-hidden="true">search</span>
+                    </button>
                     <button type="button" class="btn-eliminar" title="Eliminar artículo" onclick="this.closest('tr').remove(); actualizarTotales();">
                         <span class="material-symbols-outlined">delete</span>
                     </button>
@@ -610,6 +646,33 @@ document.getElementById('codigo').addEventListener('keydown', function(e) {
             p => `${p.Codigo} - ${p.Descripcion}`
         );
     }
+});
+
+document.getElementById('btn-buscar-cliente').addEventListener('click', function() {
+    document.getElementById('cedula_cliente').dispatchEvent(new KeyboardEvent('keydown', {key: 'F2', bubbles: true}));
+});
+document.getElementById('btn-buscar-producto').addEventListener('click', function() {
+    document.getElementById('codigo').dispatchEvent(new KeyboardEvent('keydown', {key: 'F2', bubbles: true}));
+});
+
+document.querySelector('#tabla-productos tbody').addEventListener('click', function(event) {
+    const button = event.target.closest('.btn-buscar-producto-fila');
+    if (!button) return;
+    const row = button.closest('tr');
+    mostrarBusquedaModal('Buscar producto', productosData, function(producto) {
+        if (!producto) return;
+        const [codeCell, nameCell, priceCell, quantityCell, taxCell, discountCell, subtotalCell] = row.cells;
+        const price = Number(producto.precio) || 0;
+        const quantity = Number.parseInt(quantityCell.textContent, 10) || 1;
+        const taxRate = Number(producto.iva) || 0;
+        const discountRate = Number.parseFloat(discountCell.textContent) || 0;
+        codeCell.textContent = producto.Codigo;
+        nameCell.textContent = producto.Descripcion;
+        priceCell.textContent = price.toFixed(2);
+        taxCell.textContent = `${taxRate}%`;
+        subtotalCell.textContent = (price * quantity * (1 - discountRate / 100) * (1 + taxRate / 100)).toFixed(2);
+        actualizarTotales();
+    }, producto => `${producto.Codigo} - ${producto.Descripcion}`);
 });
 
 // F2 en edición de código en la tabla
@@ -751,6 +814,9 @@ function agregarProducto() {
         <td>${subtotalFinal.toFixed(2)}</td>
         <td>
             <div class="acciones-articulo">
+                    <button type="button" class="btn-buscar-producto-fila" title="Buscar y sustituir producto" aria-label="Buscar y sustituir producto">
+                        <span class="material-symbols-outlined" aria-hidden="true">search</span>
+                    </button>
                 <button type="button" class="btn-editar" title="Editar artículo" onclick="editarFila(this)">
                     <span class="material-symbols-outlined">edit</span>
                 </button>
@@ -927,7 +993,7 @@ function getCookie(name) {
     <p>En esta pantalla puedes modificar una factura existente.</p>
     <ul>
         <li><strong>Editar líneas:</strong> Usa el botón de editar en cada fila para cambiar cantidad, precio o descuentos.</li>
-        <li><strong>F2:</strong> Presiona F2 en el campo de código para buscar productos sin perder el foco.</li>
+        <li><strong>Buscar productos:</strong> Usa el botón de búsqueda junto al código o presiona F2; también puedes sustituir artículos desde el botón de búsqueda de cada renglón.</li>
         <li><strong>Guardar:</strong> Guarda los cambios con el botón <em>Guardar Cambios</em>. El sistema validará duplicados y totales.</li>
     </ul>
 </div>

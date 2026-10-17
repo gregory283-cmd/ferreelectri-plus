@@ -4241,7 +4241,7 @@ def google_identity_login(request):
         user = User.objects.create_user(
             username=username,
             email=email,
-            password=User.objects.make_random_password(),
+            password=get_random_string(32),
         )
         user.set_unusable_password()
         user.is_active = True

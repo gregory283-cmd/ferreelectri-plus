@@ -84,6 +84,24 @@
     input[type="text"]:focus, input[type="number"]:focus {
         border: 2px solid #0090cc;
     }
+    .invoice-lookup-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        width: 100%;
+        min-height: 42px;
+        margin: 0 0 0.75rem;
+        border: 1px solid #a9dff5;
+        border-radius: 8px;
+        background: #edf8ff;
+        color: #075985;
+        font-weight: 700;
+        cursor: pointer;
+    }
+    .invoice-lookup-button .material-symbols-outlined {
+        font-size: 19px;
+    }
     .btn-agregar, .btn-guardar {
         position: relative;
         overflow: hidden;
@@ -525,7 +543,7 @@ function imprimirDocumento() {
     const clientName = document.getElementById('nombre_cliente').value.trim();
     const rows = document.querySelectorAll('#tabla-productos tbody tr');
     if (!clientId || !clientName) {
-        Swal.fire({ icon: 'info', title: 'Selecciona un cliente', text: 'Busca un cliente registrado con F2 o escribe una cédula/RIF existente.' });
+        Swal.fire({ icon: 'info', title: 'Selecciona un cliente', text: 'Usa Buscar cliente o escribe una cédula/RIF existente.' });
         return;
     }
     if (!rows.length) {
@@ -708,7 +726,7 @@ input:focus, textarea:focus, select:focus {
             <section class="invoice-section client-section" aria-labelledby="client-section-title">
                 <header class="invoice-section-heading"><span class="invoice-section-icon material-symbols-outlined" aria-hidden="true">person</span><div><span>01 · ADQUIRENTE</span><h2 id="client-section-title">Datos del cliente</h2></div><kbd>F2</kbd></header>
                 <div class="facturacion-flex client-data">
-                    <div class="invoice-field"><label for="cedula_cliente">Cédula o RIF</label><input type="text" id="cedula_cliente" list="lista-clientes" autocomplete="off" placeholder="Buscar identificación"><datalist id="lista-clientes"></datalist></div>
+                    <div class="invoice-field"><label for="cedula_cliente">Cédula o RIF</label><input type="text" id="cedula_cliente" list="lista-clientes" autocomplete="off" placeholder="Buscar identificación"><datalist id="lista-clientes"></datalist><button type="button" id="btn-buscar-cliente" class="invoice-lookup-button"><span class="material-symbols-outlined" aria-hidden="true">search</span>Buscar cliente</button></div>
                     <div class="invoice-field"><label for="nombre_cliente">Nombre</label><input type="text" id="nombre_cliente" readonly></div>
                     <div class="invoice-field"><label for="apellido_cliente">Apellido</label><input type="text" id="apellido_cliente" readonly></div>
                     <div class="invoice-field"><label for="email_cliente">Correo</label><input type="email" id="email_cliente" readonly></div>
@@ -720,7 +738,7 @@ input:focus, textarea:focus, select:focus {
             <section class="invoice-section product-section" aria-labelledby="product-section-title">
                 <header class="invoice-section-heading"><span class="invoice-section-icon material-symbols-outlined" aria-hidden="true">inventory_2</span><div><span>02 · ARTÍCULOS</span><h2 id="product-section-title">Agregar productos</h2></div><small>Impuesto según ficha del producto</small></header>
                 <div class="facturacion-flex invoice-product-fields">
-                    <div class="invoice-field field-code"><label for="codigo">Código o descripción</label><input type="text" id="codigo" autocomplete="off" placeholder="Buscar producto"><datalist id="lista-codigos" style="display:none"></datalist></div>
+                    <div class="invoice-field field-code"><label for="codigo">Código o descripción</label><input type="text" id="codigo" autocomplete="off" placeholder="Buscar producto"><datalist id="lista-codigos" style="display:none"></datalist><button type="button" id="btn-buscar-producto" class="invoice-lookup-button"><span class="material-symbols-outlined" aria-hidden="true">search</span>Buscar producto</button></div>
                     <div class="invoice-field field-name"><label for="nombre">Producto</label><input type="text" id="nombre" readonly></div>
                     <div class="invoice-field"><label for="precio">Precio unitario ($)</label><input type="number" id="precio" readonly></div>
                     <div class="invoice-field"><label for="cantidad">Cantidad</label><input type="number" id="cantidad" min="1" value="1"></div>
@@ -1066,6 +1084,9 @@ function populateListaClientes() {
 
 // --- F2 para buscar cliente ---
 const cedulaClienteInput = document.getElementById('cedula_cliente');
+document.getElementById('btn-buscar-cliente').addEventListener('click', function() {
+    cedulaClienteInput.dispatchEvent(new KeyboardEvent('keydown', {key: 'F2', bubbles: true}));
+});
 cedulaClienteInput.addEventListener('input', function() {
     const value = this.value.trim().toLowerCase();
     const cliente = clientesData.find(item => String(item.cedula || '').trim().toLowerCase() === value);
@@ -1091,7 +1112,11 @@ cedulaClienteInput.addEventListener('keydown', function(e) {
 });
 
 // --- F2 para buscar producto ---
-document.getElementById('codigo').addEventListener('keydown', function(e) {
+const codigoProductoInput = document.getElementById('codigo');
+document.getElementById('btn-buscar-producto').addEventListener('click', function() {
+    codigoProductoInput.dispatchEvent(new KeyboardEvent('keydown', {key: 'F2', bubbles: true}));
+});
+codigoProductoInput.addEventListener('keydown', function(e) {
     if (e.key === 'F2') {
         e.preventDefault();
         mostrarBusquedaModal(
@@ -1282,7 +1307,7 @@ function showAddBlockedModal() {
     if (!productosLoaded) {
         reason = 'La lista de productos aún no ha terminado de cargarse. Espera unos segundos o recarga la página.';
     } else if (!isCurrentProductRecognized()) {
-        reason = 'El código o nombre ingresado no coincide con ningún producto. Verifica que esté escrito correctamente o presiona F2 para buscar.';
+        reason = 'El código o nombre ingresado no coincide con ningún producto. Verifica que esté escrito correctamente o usa Buscar producto o F2.';
     } else if (cantidadVal <= 0) {
         reason = 'La cantidad debe ser mayor a cero.';
     } else {
@@ -1294,7 +1319,7 @@ function showAddBlockedModal() {
         icon: 'info',
         html: `<div style="text-align:left">${reason}</div>`,
         showCancelButton: true,
-        confirmButtonText: 'Buscar (F2)',
+        confirmButtonText: 'Buscar producto',
         cancelButtonText: 'Entendido',
         confirmButtonColor: '#00b2ff'
     }).then(result => {
@@ -1849,7 +1874,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <ul>
         <li><strong>Guardar factura:</strong> Usa <em>Guardar Factura</em> para enviar la factura al servidor.</li>
         <li><strong>Imprimir:</strong> Usa el botón <em>Imprimir</em> en la UI o la función de tu navegador. Antes de imprimir, el sistema genera la maqueta en el bloque <code>#print-invoice</code>.</li>
-        <li><strong>Autocompletar:</strong> Escribe el código del producto en el campo <em>Código</em> y usa Enter/Tab o F2 para elegir. El sistema completa nombre, precio e IVA automáticamente.</li>
+        <li><strong>Autocompletar:</strong> Escribe el código del producto en el campo <em>Código</em> y usa Enter/Tab, el botón Buscar producto o F2 para elegir. El sistema completa nombre, precio e IVA automáticamente.</li>
         <li><strong>Borrador:</strong> Si gestionas precios temporales, la factura en curso se guarda en localStorage y se restaura al volver.</li>
     </ul>
     <p>Consejos:</p>

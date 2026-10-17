@@ -72,6 +72,8 @@ class ComprasCostIntegrationTests(TestCase):
 		self.assertEqual(page.status_code, 200)
 		self.assertContains(page, 'X-CSRFToken')
 		self.assertContains(page, 'name="csrfmiddlewaretoken"')
+		self.assertContains(page, 'btn-buscar-proveedor')
+		self.assertContains(page, 'btn-buscar-articulo')
 
 		response = csrf_client.post(
 			reverse('guardar_compra'),
@@ -163,6 +165,10 @@ class ComprasCostIntegrationTests(TestCase):
 		)
 		compra = Compra.objects.create(proveedor=proveedor, fecha_emision=date.today())
 		detalle = DetalleCompra.objects.create(compra=compra, producto=p, precio=4.00, cantidad=1, subtotal=4.00)
+		page = self.client.get(reverse('modificar_compra', kwargs={'compra_id': compra.id}))
+		self.assertEqual(page.status_code, 200)
+		self.assertContains(page, 'btn-buscar-articulo')
+		self.assertContains(page, 'buscar-producto-compra')
 		# post modificación cambiando el precio (costo)
 		post_data = {
 			'precio_0': '7.00',

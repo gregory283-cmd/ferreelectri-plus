@@ -58,6 +58,8 @@ class VentasCSRFTest(TestCase):
 		self.assertNotContains(print_response, 'no fiscal')
 		self.assertContains(print_response, 'formato-facturacion.css')
 		self.assertContains(print_response, 'onclick="imprimirDocumento()"')
+		self.assertContains(print_response, 'id="btn-buscar-cliente"')
+		self.assertContains(print_response, 'id="btn-buscar-producto"')
 
 	def test_gestionar_precios_renderiza_precio_y_existencia(self):
 		from decimal import Decimal
@@ -138,6 +140,11 @@ class FacturaStockLifecycleTest(TestCase):
 		client = Client()
 		client.force_login(user)
 		url = reverse('editar_factura', args=[factura.numero])
+		page = client.get(url)
+		self.assertEqual(page.status_code, 200)
+		self.assertContains(page, 'id="btn-buscar-cliente"')
+		self.assertContains(page, 'id="btn-buscar-producto"')
+		self.assertContains(page, 'btn-buscar-producto-fila')
 		payload = {'cliente': {'cedula': cliente.cedula}, 'productos': [{'codigo': producto.Codigo, 'cantidad': 20, 'precio': 20, 'descuento': 0}]}
 
 		fallida = client.post(url, data=json.dumps(payload), content_type='application/json')
