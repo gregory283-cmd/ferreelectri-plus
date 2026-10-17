@@ -112,7 +112,7 @@
     [class*="container"],
     [class*="wrapper"],
     [class*="content-box"]
-  ):not([class*="badge"]):not([class*="alert"]):not([class*="button"]) {
+  ):not([class*="badge"]):not([class*="alert"]):not([class*="button"]):not(.credits-card-controls):not(.credits-card-open) {
     background: var(--admin-surface) !important;
     border-color: var(--admin-line) !important;
     box-shadow: var(--admin-shadow);
