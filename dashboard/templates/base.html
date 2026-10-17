@@ -143,6 +143,7 @@
         <div class="mobile-menu-inner">
           <a href="{% url 'index' %}#inicio" class="mobile-link">Inicio</a>
           <a href="{% url 'productos' %}?vista=catalogo#productos-grid" class="mobile-link">Productos</a>
+          <button type="button" class="mobile-link" data-mobile-assistant-trigger>Asistente FerreBot</button>
           <button type="button" class="mobile-link mobile-cart-trigger" data-cart-trigger>Carrito</button>
           {% if request.user.is_authenticated %}
             {% if request.user.is_staff %}
@@ -650,6 +651,7 @@
     if (!activeView) return;
     var fab = document.getElementById('aiAssistantFab');
     var fabElement = document.getElementById('aiAssistantFabContainer');
+    var mobileAssistantTrigger = document.querySelector('[data-mobile-assistant-trigger]');
     var heroGuide = document.getElementById('ferrebotHeroGuide');
     var drawer = document.getElementById('aiAssistantDrawer');
     var overlay = document.getElementById('aiAssistantOverlay');
@@ -862,7 +864,7 @@
         sendMessage('Seleccioné ' + (paymentLabels[paymentMethod] || 'este método de pago') + '. ¿Qué campos debo completar ahora?');
       }, 0);
     });
-    fab.addEventListener('click', function () { toggleDrawer(true); }); closeButton.addEventListener('click', function () { toggleDrawer(false); }); overlay.addEventListener('click', function () { toggleDrawer(false); }); historyToggle.addEventListener('click', showHistory); newFromHistory.addEventListener('click', function () { sessionId = null; messages.textContent = ''; updateChatTitle('Nueva Consulta'); showConversation(); }); newConversation.addEventListener('click', function () { sessionId = null; messages.textContent = ''; updateChatTitle('Nueva Consulta'); showConversation(); }); form.addEventListener('submit', function (event) { event.preventDefault(); sendMessage(input.value); }); input.addEventListener('keydown', function (event) { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); form.requestSubmit(); } }); quickActions.forEach(function (button) { button.addEventListener('click', function () { showConversation(); sendMessage(button.dataset.aiQuestion); }); });
+    fab.addEventListener('click', function () { toggleDrawer(true); }); mobileAssistantTrigger?.addEventListener('click', function () { toggleDrawer(true); }); closeButton.addEventListener('click', function () { toggleDrawer(false); }); overlay.addEventListener('click', function () { toggleDrawer(false); }); historyToggle.addEventListener('click', showHistory); newFromHistory.addEventListener('click', function () { sessionId = null; messages.textContent = ''; updateChatTitle('Nueva Consulta'); showConversation(); }); newConversation.addEventListener('click', function () { sessionId = null; messages.textContent = ''; updateChatTitle('Nueva Consulta'); showConversation(); }); form.addEventListener('submit', function (event) { event.preventDefault(); sendMessage(input.value); }); input.addEventListener('keydown', function (event) { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); form.requestSubmit(); } }); quickActions.forEach(function (button) { button.addEventListener('click', function () { showConversation(); sendMessage(button.dataset.aiQuestion); }); });
   });
   </script>
 

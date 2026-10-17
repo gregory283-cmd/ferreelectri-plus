@@ -1285,6 +1285,14 @@ class HomeCatalogPresentationTest(TestCase):
         self.assertContains(catalog, producto.Descripcion)
         self.assertContains(catalog, 'filtered-products-title')
 
+    def test_mobile_catalog_filters_and_assistant_navigation_render(self):
+        response = self.client.get(reverse('productos'), {'vista': 'catalogo'})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'lg:sticky lg:top-24')
+        self.assertContains(response, 'overflow-x-auto pb-2 lg:flex-col')
+        self.assertContains(response, 'data-mobile-assistant-trigger')
+
     def test_home_keeps_promotions_and_confirmed_best_sellers_in_separate_panels(self):
         from datetime import date
 

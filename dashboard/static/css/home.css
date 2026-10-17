@@ -602,6 +602,8 @@ body.theme-light .menu-toggle:hover {
   height: 100vh;
   height: 100dvh;
   box-sizing: border-box;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   z-index: 45;
   display: block;
   background: rgba(5,7,12,.94);
@@ -4554,6 +4556,10 @@ body.ferrebot-open #aiAssistantFabContainer {
 }
 
 @media (max-width: 767px) {
+  #aiAssistantFabContainer:not(.ferrebot-is-hero) {
+    display: none !important;
+  }
+
   body.ferrebot-open #aiAssistantDrawer {
     right: 0 !important;
     width: auto !important;

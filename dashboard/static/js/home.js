@@ -10,6 +10,7 @@
   const ferrebotHeroGuide = ferrebotLauncher?.querySelector("#ferrebotHeroGuide");
   const menuToggle = document.getElementById("menuToggle");
   const mobileMenu = document.getElementById("mobileMenu");
+  const mobileAssistantTrigger = document.querySelector("[data-mobile-assistant-trigger]");
   const searchToggles = document.querySelectorAll("[data-search-toggle]");
   const searchModal = document.getElementById("searchModal");
   const searchInput = document.getElementById("searchInput");
@@ -180,6 +181,12 @@
     const isOpen = mobileMenu?.classList.toggle("is-open");
     mobileMenu?.setAttribute("aria-hidden", isOpen ? "false" : "true");
     menuToggle?.setAttribute("aria-expanded", String(Boolean(isOpen)));
+  });
+
+  mobileAssistantTrigger?.addEventListener("click", () => {
+    mobileMenu?.classList.remove("is-open");
+    mobileMenu?.setAttribute("aria-hidden", "true");
+    menuToggle?.setAttribute("aria-expanded", "false");
   });
 
   mobileMenu?.querySelectorAll("a").forEach((link) => {
