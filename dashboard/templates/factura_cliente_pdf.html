@@ -4,10 +4,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Comprobante interno {{ factura.numero }}</title>
+  <title>{% if factura.tipo_documento == 'nota_entrega' %}Nota de entrega{% else %}Documento histórico{% endif %} {{ factura.numero }}</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
     @page {
       size: letter portrait;
       margin: 12mm;
@@ -18,7 +16,7 @@
 
     body {
       margin: 0;
-      font-family: 'Inter', sans-serif;
+      font-family: 'Inter', 'Segoe UI', sans-serif;
       font-size: 12px;
       line-height: 1.5;
       color: #182a2e;
@@ -85,7 +83,7 @@
     .invoice-label {
       display: block;
       color: #007f86;
-      font-size: 20px;
+      font-size: 19px;
       font-weight: 800;
       letter-spacing: 0;
       margin-bottom: 12px;
@@ -129,6 +127,19 @@
       padding: 18px;
       margin-bottom: 24px;
     }
+
+    .delivery-box {
+      margin: 0 0 20px;
+      padding: 13px 16px;
+      border: 1px solid #b8d9df;
+      border-left: 4px solid #087e8b;
+      border-radius: 7px;
+      background: #f0f9fa;
+      color: #24434a;
+      font-size: 10px;
+    }
+
+    .delivery-box strong { color: #075b68; }
 
     .notice {
       margin: 0 0 16px;
@@ -293,7 +304,7 @@
     <div class="header">
       <div class="header-left">
         <div class="brand">
-              <img src="{{ request.scheme }}://{{ request.get_host }}{% static 'img/logo.png' %}" alt="FerreElectri Plus" class="brand-logo" style="max-height:60px;">
+              {% if logo_data_uri %}<img src="{{ logo_data_uri }}" alt="FerreElectri Plus" class="brand-logo" style="max-height:60px;">{% endif %}
               <div>
                 <div class="brand-name">FERREELECTRI PLUS</div>
                   <div class="brand-meta">RIF: V-12847449-4</div>
@@ -303,23 +314,15 @@
             </div>
       </div>
       <div class="header-right">
-        <span class="invoice-label">COMPROBANTE INTERNO</span>
+        <span class="invoice-label">{% if factura.tipo_documento == 'nota_entrega' %}NOTA DE ENTREGA{% else %}DOCUMENTO HISTÓRICO{% endif %}</span>
         <table class="control-table">
           <tr>
-            <td class="label">Registro interno:</td>
+            <td class="label">Registro:</td>
             <td>{{ factura.numero }}</td>
           </tr>
           <tr>
-            <td class="label">Número de control:</td>
-            <td>Pendiente de imprenta digital autorizada</td>
-          </tr>
-          <tr>
-            <td class="label">Rango asignado:</td>
-            <td>No informado</td>
-          </tr>
-          <tr>
-            <td class="label">Imprenta digital:</td>
-            <td>No configurada</td>
+            <td class="label">Pedido:</td>
+            <td>{% if pedido %}#{{ pedido.pk }}{% else %}Venta directa{% endif %}</td>
           </tr>
           <tr>
             <td class="label">Fecha y hora:</td>
@@ -329,12 +332,12 @@
       </div>
     </div>
 
-    <p class="notice"><strong>Documento informativo, no fiscal.</strong> No sustituye la factura emitida mediante el medio autorizado por el SENIAT. El número de control y el rango deben ser asignados por una imprenta digital autorizada.</p>
+    <p class="notice"><strong>{% if factura.tipo_documento == 'nota_entrega' %}Nota de entrega interna, no fiscal.{% else %}Documento histórico conservado.{% endif %}</strong> Resume los productos registrados y, cuando aplica, el pago verificado. No acredita una emisión fiscal.</p>
 
     <div class="client-box">
       <div class="client-row">
         <div class="client-column">
-          <div class="section-title">Adquirente del bien:</div>
+          <div class="section-title">Datos del cliente</div>
           <div class="detail">Nombre / razón social: <strong>{{ razon_social_cliente|default:'No suministrado' }}</strong></div>
           <div class="detail">Cédula / RIF: <strong>{{ documento_cliente|default:'No suministrado' }}</strong></div>
           <div class="detail">Domicilio fiscal: <strong>{{ domicilio_cliente|default:'No suministrado' }}</strong></div>
@@ -346,6 +349,16 @@
           <div class="detail">Moneda registrada: <strong>{{ factura.moneda }}</strong></div>
         </div>
       </div>
+    </div>
+
+    <div class="delivery-box">
+      {% if pago %}
+        <strong>Pago verificado</strong> · {{ pago.get_metodo_display }} · {{ pago.monto|floatformat:2 }} {{ factura.moneda }}
+        {% if pago.numero_referencia or pago.referencia %}<br>Referencia: {{ pago.numero_referencia|default:pago.referencia }}{% endif %}
+      {% else %}
+        <strong>Venta registrada</strong> · El sistema no tiene un pago verificado asociado a este documento.
+      {% endif %}
+      <br><strong>Entrega:</strong> {% if envio and envio.direccion %}{{ envio.direccion }}{% else %}Por coordinar con el cliente{% endif %}
     </div>
 
     <table class="items">
@@ -387,17 +400,17 @@
       <thead><tr><th>Resumen por alícuota</th><th>Base imponible</th><th>IVA</th></tr></thead>
       <tbody>{% for grupo in resumen_impuestos %}<tr><td>{{ grupo.alicuota|floatformat:2 }}%</td><td>{{ grupo.base_imponible|floatformat:2 }}</td><td>{{ grupo.monto_iva|floatformat:2 }}</td></tr>{% empty %}<tr><td colspan="3">Sin líneas gravadas registradas</td></tr>{% endfor %}</tbody>
     </table>
-    {% if total_no_concilia %}<p class="reconciliation">El total registrado no coincide con la suma de las líneas ({{ factura.moneda }} {{ total_calculado|floatformat:2 }}). Revisar antes de emitir el documento fiscal.</p>{% endif %}
+    {% if total_no_concilia %}<p class="reconciliation">El total del documento no coincide con la suma de las líneas ({{ factura.moneda }} {{ total_calculado|floatformat:2 }}). Revisar antes de enviar esta nota.</p>{% endif %}
     <table class="totals">
       <tr><td class="label">Descuentos:</td><td class="value">{{ factura.moneda }} {{ descuento_total|floatformat:2 }}</td></tr>
       <tr><td class="label">Base imponible:</td><td class="value">{{ factura.moneda }} {{ base_imponible|floatformat:2 }}</td></tr>
       <tr><td class="label">IVA total:</td><td class="value">{{ factura.moneda }} {{ monto_iva|floatformat:2 }}</td></tr>
-      <tr><td class="label total-label">TOTAL REGISTRADO:</td><td class="value grand-total">{{ factura.moneda }} {{ factura.total|floatformat:2 }}</td></tr>
+      <tr><td class="label total-label">{% if pago %}TOTAL PAGADO:{% elif factura.tipo_documento == 'nota_entrega' %}TOTAL DE LA VENTA:{% else %}TOTAL REGISTRADO:{% endif %}</td><td class="value grand-total">{{ factura.moneda }} {{ factura.total|floatformat:2 }}</td></tr>
     </table>
   </div>
 
   <footer class="footer">
-    <em>Representación de consulta. No acredita emisión fiscal ni asignación de control por imprenta autorizada.</em>
+    <em>{% if factura.tipo_documento == 'nota_entrega' %}Nota de entrega para consulta del cliente. Documento interno, no fiscal.{% else %}Documento histórico conservado para consulta del cliente.{% endif %}</em>
   </footer>
 </body>
 </html>

@@ -646,6 +646,14 @@ CELERY_TASK_ALWAYS_EAGER = DEBUG
 # Conserva los errores de tareas eager para que sean visibles durante desarrollo.
 CELERY_TASK_EAGER_PROPAGATES = DEBUG
 
+# Web Push requiere que el administrador configure su suscripción desde un gesto explícito.
+ADMIN_WEBPUSH_VAPID_PUBLIC_KEY = os.environ.get('ADMIN_WEBPUSH_VAPID_PUBLIC_KEY', '').strip()
+ADMIN_WEBPUSH_VAPID_PRIVATE_KEY = os.environ.get('ADMIN_WEBPUSH_VAPID_PRIVATE_KEY', '').strip()
+ADMIN_WEBPUSH_VAPID_CONTACT = os.environ.get(
+    'ADMIN_WEBPUSH_VAPID_CONTACT', f'mailto:{DEFAULT_FROM_EMAIL}'
+).strip()
+ADMIN_WEBAUTHN_RP_ID = os.environ.get('ADMIN_WEBAUTHN_RP_ID', '').strip()
+
 SITE_ID = 1
 
 SOCIAL_AUTH_PIPELINE = (

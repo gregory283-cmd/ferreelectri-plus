@@ -162,22 +162,17 @@
             </div>
         </div>
         <div class="invoice-actions">
-            <a href="{% url 'listar_facturas' %}" aria-label="Volver al listado de facturas"><span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>Volver</a>
-            {% if nota_entrega %}
-            <a href="{% url 'ver_factura' factura.numero %}" aria-label="Ver comprobante interno"><span class="material-symbols-outlined" aria-hidden="true">description</span>Comprobante interno</a>
-            {% else %}
-            <a href="{% url 'ver_factura' factura.numero %}?tipo_documento=nota_entrega" aria-label="Ver nota de entrega"><span class="material-symbols-outlined" aria-hidden="true">local_shipping</span>Nota de entrega</a>
-            {% endif %}
-            <button type="button" class="print-button" onclick="imprimirFactura()" aria-label="Imprimir comprobante"><span class="material-symbols-outlined" aria-hidden="true">print</span>Imprimir</button>
+            <a href="{% url 'listar_facturas' %}" aria-label="Volver a ventas"><span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>Volver a ventas</a>
+            <button type="button" class="print-button" onclick="imprimirFactura()" aria-label="Imprimir documento"><span class="material-symbols-outlined" aria-hidden="true">print</span>Imprimir</button>
         </div>
     </div>
 
-    <p class="invoice-notice"><strong>{% if nota_entrega %}Nota de entrega interna, no fiscal.{% else %}Documento informativo, no fiscal.{% endif %}</strong> No sustituye la factura emitida por el medio autorizado. El formato de nota de entrega no elimina el IVA que corresponda según la clasificación tributaria de cada producto.</p>
+    <p class="invoice-notice"><strong>{% if nota_entrega %}Nota de entrega interna, no fiscal.{% else %}Documento histórico conservado.{% endif %}</strong> Los importes e impuestos se muestran como datos del registro; este documento no acredita una emisión fiscal.</p>
 
     <div class="ver-factura-container">
         <header class="invoice-document-head">
             <div>
-                <h2>{% if nota_entrega %}Nota de entrega interna{% else %}Comprobante interno de venta{% endif %}</h2>
+                <h2>{% if factura.tipo_documento == 'nota_entrega' %}Nota de entrega{% else %}Documento histórico{% endif %}</h2>
                 <p>Representación de consulta · Moneda registrada: {{ factura.moneda }}</p>
             </div>
             <div class="invoice-ref">
@@ -206,13 +201,16 @@
                 </dl>
             </div>
             <div class="info-card">
-                <h3>Control de emisión</h3>
+                {% if factura.tipo_documento == 'nota_entrega' %}<h3>Pago y entrega</h3>{% else %}<h3>Registro histórico</h3>{% endif %}
                 <dl>
-                    <dt>Número fiscal</dt><dd>No asignado</dd>
-                    <dt>Número de control</dt><dd>Pendiente de imprenta autorizada</dd>
-                    <dt>Rango de control</dt><dd>No informado</dd>
-                    <dt>Imprenta digital</dt><dd>No configurada</dd>
+                    {% if factura.tipo_documento != 'nota_entrega' %}
                     <dt>Vendedor</dt><dd>{{ request.user.get_full_name|default:request.user.username }}</dd>
+                    {% else %}
+                    {% if pedido %}<dt>Pedido</dt><dd>#{{ pedido.pk }}</dd>{% endif %}
+                    <dt>Estado del pago</dt><dd>{% if pago %}Confirmado · {{ pago.get_metodo_display }}{% else %}No verificado en este registro{% endif %}</dd>
+                    {% if pago and pago.numero_referencia %}<dt>Referencia</dt><dd>{{ pago.numero_referencia }}</dd>{% endif %}
+                    <dt>Entrega</dt><dd>{% if envio and envio.direccion %}{{ envio.direccion }}{% else %}Por coordinar{% endif %}</dd>
+                    {% endif %}
                 </dl>
             </div>
         </div>
@@ -257,10 +255,10 @@
                     <div class="invoice-total-line"><span>IVA total</span><strong>{{ factura.moneda }} {{ iva_total|floatformat:2 }}</strong></div>
                     <div class="invoice-total-line grand"><span>Total registrado</span><strong>{{ factura.moneda }} {{ factura.total|floatformat:2 }}</strong></div>
                 </div>
-                {% if total_no_concilia %}<p class="invoice-reconciliation">El total registrado no coincide con la suma de las líneas ({{ factura.moneda }} {{ total_calculado|floatformat:2 }}). Revisar antes de emitir el documento fiscal.</p>{% endif %}
+                {% if total_no_concilia %}<p class="invoice-reconciliation">El total registrado no coincide con la suma de las líneas ({{ factura.moneda }} {{ total_calculado|floatformat:2 }}). Revisar antes de entregar esta nota.</p>{% endif %}
             </div>
         </div>
-        <footer class="invoice-footer"><span>Fecha y hora de registro: {{ factura.fecha|date:"d/m/Y H:i:s" }}</span><span>Comprobante de consulta. El control y la numeración fiscal deben provenir del medio autorizado.</span></footer>
+        <footer class="invoice-footer"><span>Fecha y hora de registro: {{ factura.fecha|date:"d/m/Y H:i:s" }}</span><span>Documento interno, no fiscal.</span></footer>
     </div>
 </div>
 <script>
@@ -301,6 +299,6 @@ window.addEventListener('afterprint', restaurarFichaPantalla);
 {% block help_content %}
 <div>
     <h4>Detalle de venta</h4>
-    <p>Registro interno para revisión. El control fiscal debe asignarlo el proveedor autorizado.</p>
+    <p>Nota de entrega interna para revisión de la venta. No es un documento fiscal.</p>
 </div>
 {% endblock %}

@@ -3,6 +3,15 @@ from . import views
 from .views import reset_password
 
 urlpatterns = [
+    path('manifest.webmanifest', views.admin_pwa_manifest, name='admin_pwa_manifest'),
+    path('service-worker.js', views.admin_pwa_service_worker, name='admin_pwa_service_worker'),
+    path('admin-panel/push/subscribe/', views.admin_push_subscribe, name='admin_push_subscribe'),
+    path('admin-panel/push/unsubscribe/', views.admin_push_unsubscribe, name='admin_push_unsubscribe'),
+    path('admin-panel/passkeys/register/options/', views.admin_passkey_registration_options, name='admin_passkey_registration_options'),
+    path('admin-panel/passkeys/register/verify/', views.admin_passkey_registration_verify, name='admin_passkey_registration_verify'),
+    path('admin-panel/passkeys/login/options/', views.admin_passkey_login_options, name='admin_passkey_login_options'),
+    path('admin-panel/passkeys/login/verify/', views.admin_passkey_login_verify, name='admin_passkey_login_verify'),
+    path('admin-panel/passkeys/revoke-all/', views.admin_passkey_revoke_all, name='admin_passkey_revoke_all'),
     path('', views.index, name='index'),
     path('condiciones-de-servicio/', views.condiciones_servicio, name='condiciones_servicio'),
     path('privacidad/', views.politica_privacidad, name='politica_privacidad'),
@@ -85,6 +94,8 @@ urlpatterns = [
     path('cliente/perfil/', views.perfil_cliente, name='cliente_perfil'),
     path('cliente/completar-datos-facturacion/', views.completar_datos_facturacion, name='completar_datos_facturacion'),
     path('cliente/registro/', views.cliente_registro, name='cliente_registro'),
+    path('cliente/verificar-correo/<str:token>/', views.cliente_verificar_email, name='cliente_verificar_email'),
+    path('cliente/reenviar-verificacion/', views.cliente_reenviar_verificacion, name='cliente_reenviar_verificacion'),
     path('admin-panel/manual-backup/', views.manual_backup, name='manual_backup'),
     path('admin-panel/respaldo/ultimo/', views.download_latest_backup, name='download_latest_backup'),
     path('admin-panel/creditos/reporte/', views.creditos_reporte_pdf, name='creditos_reporte_pdf'),

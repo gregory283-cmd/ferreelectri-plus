@@ -41,7 +41,7 @@ def get_customer_from_request(request):
     if not customer_id:
         return None
 
-    return Customer.objects.filter(id=customer_id, is_active=True).first()
+    return Customer.objects.filter(id=customer_id, is_active=True, email_verified=True).first()
 
 
 def login_customer(response, customer):
@@ -67,7 +67,7 @@ class CustomerBackend:
         if not username or not password or not customer_only:
             return None
         username = username.strip()
-        lookup = Q(is_active=True) & (
+        lookup = Q(is_active=True, email_verified=True) & (
             Q(email__iexact=username) |
             Q(nombre__iexact=username) |
             Q(email__istartswith=f"{username}@")
@@ -81,4 +81,4 @@ class CustomerBackend:
         return self.get_customer(user_id)
 
     def get_customer(self, customer_id):
-        return Customer.objects.filter(id=customer_id, is_active=True).first()
+        return Customer.objects.filter(id=customer_id, is_active=True, email_verified=True).first()

@@ -1618,7 +1618,13 @@
             color: #334155 !important;
         }
     </style>
-    <link rel="stylesheet" href="{% static 'css/admin-theme.css' %}?v=20261016-credits-controls-v3">
+    <link rel="stylesheet" href="{% static 'css/admin-theme.css' %}?v=20261017-mobile-sidebar-scroll-v1">
+    {% if request.user.is_authenticated and request.user.is_staff %}
+    <link rel="manifest" href="{% url 'admin_pwa_manifest' %}">
+    <meta name="theme-color" content="#08243b">
+    <script src="{% static 'dashboard/pwa/admin-pwa.js' %}?v=20261017-pwa-v1" defer></script>
+    <script src="{% static 'dashboard/pwa/admin-passkeys.js' %}?v=20261017-passkeys-v1" defer></script>
+    {% endif %}
 </head>
 <body>
     {% if '/carrito' not in request.path and '/pedido' not in request.path and '/pagar' not in request.path and '/cliente/' not in request.path and '/checkout' not in request.path and '/mis-pedidos' not in request.path or '/admin/pedidos/' in request.path %}
@@ -1687,6 +1693,24 @@
             <span class="admin-utility-hint">Presiona para ver más</span>
         </button>
         <div class="admin-utility-panel" id="admin-utility-panel" aria-label="Herramientas del panel">
+            <button class="theme-toggle-btn" id="admin-install-app" type="button" aria-label="Instalar panel administrativo" hidden>
+                <span class="material-symbols-outlined" aria-hidden="true">install_mobile</span>
+                <span>Instalar aplicación</span>
+            </button>
+            <button class="theme-toggle-btn" id="admin-enable-push" type="button" aria-label="Activar notificaciones de pedidos" data-vapid-public-key="{{ ADMIN_WEBPUSH_PUBLIC_KEY|escape }}">
+                <span class="material-symbols-outlined" aria-hidden="true">notifications_active</span>
+                <span>Notificaciones de pedidos</span>
+            </button>
+            <p id="admin-pwa-status" role="status" aria-live="polite"></p>
+            <button class="theme-toggle-btn" id="admin-register-passkey" type="button" aria-label="Registrar llave de acceso">
+                <span class="material-symbols-outlined" aria-hidden="true">passkey</span>
+                <span>Registrar llave de acceso</span>
+            </button>
+            <button class="theme-toggle-btn" id="admin-revoke-passkeys" type="button" aria-label="Revocar llaves de acceso">
+                <span class="material-symbols-outlined" aria-hidden="true">key_off</span>
+                <span>Revocar todas las llaves</span>
+            </button>
+            <p id="admin-passkey-status" role="status" aria-live="polite"></p>
             <button class="theme-toggle-btn" type="button" aria-label="Cambiar tema">
                 <span class="material-symbols-outlined theme-icon" aria-hidden="true">dark_mode</span>
                 <span class="theme-label">Modo oscuro</span>

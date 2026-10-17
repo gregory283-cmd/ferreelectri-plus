@@ -30,10 +30,15 @@ class Ventas(models.Model):
         return self.codigo
 
 class Factura(models.Model):
+    TIPO_DOCUMENTO_CHOICES = (
+        ('historico', 'Documento histórico'),
+        ('nota_entrega', 'Nota de entrega'),
+    )
     numero = models.AutoField(primary_key=True)
     pedido = models.OneToOneField('dashboard.Pedido', on_delete=models.CASCADE, related_name='factura', null=True, blank=True)
     cliente = models.ForeignKey(Clientes, on_delete=models.CASCADE)
     fecha = models.DateTimeField(auto_now_add=True)
+    tipo_documento = models.CharField(max_length=20, choices=TIPO_DOCUMENTO_CHOICES, default='historico')
     estado = models.CharField(max_length=10, choices=(('facturada', 'Facturada'), ('anulada', 'Anulada')), default='facturada')
     total = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     subtotal = models.DecimalField(max_digits=12, decimal_places=2, default=0)

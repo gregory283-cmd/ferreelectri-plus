@@ -36,6 +36,40 @@ class AdminDashboardConfig(models.Model):
         return f'Tasa BCV: {self.bcv_rate}'
 
 
+class AdminPushSubscription(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='admin_push_subscriptions')
+    endpoint_hash = models.CharField(max_length=64, unique=True)
+    endpoint = models.TextField()
+    subscription = models.JSONField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Suscripción de notificaciones administrativas'
+        verbose_name_plural = 'Suscripciones de notificaciones administrativas'
+
+    def __str__(self):
+        return f'Notificaciones de {self.user.get_username()}'
+
+
+class AdminPasskey(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='admin_passkeys')
+    credential_id = models.CharField(max_length=1024, unique=True)
+    public_key = models.BinaryField()
+    sign_count = models.PositiveBigIntegerField(default=0)
+    name = models.CharField(max_length=80, default='Llave de acceso')
+    transports = models.JSONField(default=list, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_used_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = 'Llave de acceso administrativa'
+        verbose_name_plural = 'Llaves de acceso administrativas'
+
+    def __str__(self):
+        return f'{self.name} · {self.user.get_username()}'
+
+
 class Customer(models.Model):
     nombre = models.CharField(max_length=100)
     email = models.EmailField(unique=True)
@@ -47,6 +81,7 @@ class Customer(models.Model):
         'Cliente', on_delete=models.SET_NULL, null=True, blank=True, related_name='customer_account'
     )
     is_active = models.BooleanField(default=True)
+    email_verified = models.BooleanField(default=True)
     is_guest = models.BooleanField(default=False)
     fecha_registro = models.DateTimeField(auto_now_add=True)
     last_login = models.DateTimeField(null=True, blank=True)

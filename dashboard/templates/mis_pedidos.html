@@ -68,7 +68,7 @@
                             <div class="flex items-center justify-center gap-2">
                                 <a href="{% url 'detalle_pedido_cliente' pedido.id %}" class="inline-flex items-center rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-emerald-600">Ver detalle</a>
                                 {% if pedido.factura and pedido.factura.estado == 'facturada' %}
-                                    <a href="{% url 'descargar_factura_pdf_cliente' pedido.factura.numero %}" class="inline-flex items-center rounded-lg bg-sky-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-sky-700">Descargar factura</a>
+                                    <a href="{% url 'descargar_factura_pdf_cliente' pedido.factura.numero %}" class="inline-flex items-center rounded-lg bg-sky-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-sky-700">{% if pedido.factura.tipo_documento == 'nota_entrega' %}Descargar nota de entrega{% else %}Descargar documento histórico{% endif %}</a>
                                 {% endif %}
                             </div>
                         </td>

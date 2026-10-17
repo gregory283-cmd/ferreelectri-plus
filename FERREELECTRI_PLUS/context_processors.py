@@ -12,6 +12,8 @@ def cart_summary(request):
             return {'cantidad_carrito': 0}
 
         customer = getattr(request, 'customer', None)
+        if not customer and hasattr(user, 'ensure_cliente_profile'):
+            customer = user
         if customer:
             cliente = customer.ensure_cliente_profile()
         else:
@@ -36,6 +38,19 @@ def cart_summary(request):
 
 def security_flags(request):
     return {'ADMIN_LOGIN_GATE_ENABLED': not settings.DEBUG}
+
+
+def admin_pwa_settings(request):
+    user = getattr(request, 'user', None)
+    is_admin = bool(
+        getattr(user, 'is_authenticated', False)
+        and (getattr(user, 'is_staff', False) or getattr(user, 'is_superuser', False))
+    )
+    return {
+        'ADMIN_WEBPUSH_PUBLIC_KEY': (
+            settings.ADMIN_WEBPUSH_VAPID_PUBLIC_KEY if is_admin else ''
+        ),
+    }
 
 
 def google_client_id(request):

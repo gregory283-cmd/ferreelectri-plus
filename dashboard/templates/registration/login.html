@@ -812,7 +812,13 @@
             <button type="submit" class="primary-btn">Iniciar sesión</button>
             <button type="reset" class="secondary-btn">Limpiar</button>
           </div>
+          <button type="button" class="secondary-btn" id="admin-passkey-login">
+            <span class="material-symbols-outlined" aria-hidden="true">passkey</span>
+            Iniciar con llave de acceso
+          </button>
+          <p id="admin-passkey-status" role="status" aria-live="polite"></p>
         </form>
+        <script src="{% static 'dashboard/pwa/admin-passkeys.js' %}?v=20261017-passkeys-v1" defer></script>
         {% if admin_login_expires_at %}
         <script>
           (() => {

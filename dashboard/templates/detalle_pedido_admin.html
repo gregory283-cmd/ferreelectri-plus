@@ -80,7 +80,7 @@
     <div class="admin-order-meta-item"><span>Teléfono de entrega</span><strong>{% if pedido.envio %}{{ pedido.envio.telefono|default:'Pendiente de verificar' }}{% else %}Sin datos congelados{% endif %}</strong></div>
     <div class="admin-order-meta-item"><span>Dirección de entrega</span><strong>{% if pedido.envio %}{{ pedido.envio.direccion|default:'Pendiente de verificar' }}{% else %}Sin datos congelados{% endif %}</strong></div>
     <div class="admin-order-meta-item"><span>Fecha del pedido</span><strong>{{ pedido.fecha_creacion|date:'d/m/Y H:i' }}</strong></div>
-    <div class="admin-order-meta-item"><span>Stock</span><strong>{% if pedido.stock_descontado %}Descontado al facturar{% else %}Reservado; pendiente de aprobación{% endif %}</strong></div>
+    <div class="admin-order-meta-item"><span>Stock</span><strong>{% if pedido.stock_descontado %}Descontado al confirmar el pago{% else %}Reservado; pendiente de aprobación{% endif %}</strong></div>
   </section>
 
   <section class="admin-order-section">
@@ -114,7 +114,7 @@
         <div class="admin-order-actions">
           {% if pago.comprobante and perms.dashboard.view_payment_evidence %}<a href="{% url 'admin_comprobante_pago' pago.id %}"><i class="fa-solid fa-download" aria-hidden="true"></i> Descargar comprobante</a>{% elif not pago.comprobante %}<span class="admin-order-muted">No hay comprobante adjunto.</span>{% endif %}
           {% if pedido.estado == 'pendiente' and perms.dashboard.verify_order_payments %}
-          <form method="post" action="{% url 'confirmar_pago_admin' pago.id %}">{% csrf_token %}<button class="approve" type="submit"><i class="fa-solid fa-check" aria-hidden="true"></i> Aprobar y facturar</button></form>
+          <form method="post" action="{% url 'confirmar_pago_admin' pago.id %}">{% csrf_token %}<button class="approve" type="submit"><i class="fa-solid fa-check" aria-hidden="true"></i> Confirmar pago y generar nota</button></form>
           {% endif %}
         </div>
       </article>

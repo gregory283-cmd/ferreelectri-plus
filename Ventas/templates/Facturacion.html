@@ -702,7 +702,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <div class="ventas-main">
     <h2 class="ventas-title">
-        <span class="material-symbols-outlined">receipt_long</span> Facturación y Ventas
+        <span class="material-symbols-outlined">receipt_long</span> Ventas y notas de entrega
     </h2>
 
     <!-- Resumen de ventas -->
@@ -711,7 +711,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <span class="icon material-symbols-outlined">check_circle</span>
             <div class="info">
                 <h5>{{ total_facturadas }}</h5>
-                <small><span class="material-symbols-outlined" style="font-size:1.1em;">check_circle</span> Facturadas</small>
+                <small><span class="material-symbols-outlined" style="font-size:1.1em;">check_circle</span> Vigentes</small>
             </div>
         </div>
         <div class="ventas-summary-card">
@@ -733,7 +733,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <!-- Barra de acciones -->
     <div class="ventas-actions-bar">
         <div class="ventas-form-search">
-            <input type="text" placeholder="Buscar por cliente, número, fecha..." id="buscador-facturas">
+            <input type="text" placeholder="Buscar por cliente, nota, fecha..." id="buscador-facturas">
             <button type="button" tabindex="-1">
                 <span class="material-symbols-outlined">search</span> Buscar
             </button>
@@ -746,14 +746,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 <span class="material-symbols-outlined">grid_on</span> Excel ventas
             </a>
         </div>
-        <a href="{% url 'formato_facturacion' %}" class="ventas-btn-nuevo">
-            <span class="material-symbols-outlined">add</span> Nueva Factura
+            <a href="{% url 'formato_facturacion' %}" class="ventas-btn-nuevo">
+            <span class="material-symbols-outlined">add</span> Registrar venta
         </a>
     </div>
 
     <div class="ventas-table-container">
         <h3 style="color:#00b2ff; font-weight:700; margin-bottom:18px; display:flex;align-items:center;gap:8px;">
-            <span class="material-symbols-outlined">list_alt</span> Últimas Facturas
+            <span class="material-symbols-outlined">list_alt</span> Últimas notas
         </h3>
         <table class="tabla-facturas">
             <thead>
@@ -774,7 +774,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <td data-label="Cédula">{{ f.cliente.cedula }}</td>
                     <td data-label="Nombre">{{ f.cliente.nombre }} {{ f.cliente.apellido }}</td>
                     <td data-label="Fecha">{{ f.fecha|date:"d/m/Y H:i" }}</td>
-                    <td data-label="Monto Total">${{ f.total|floatformat:2 }}</td>
+                    <td data-label="Monto Total">{{ f.moneda }} {{ f.total|floatformat:2 }}</td>
                     <td data-label="Estado">
                         {% if f.estado == 'anulada' %}
                             <span style="display:inline-flex; align-items:center; gap:8px; padding:8px 14px; border-radius:999px; background:rgba(231,76,60,0.12); color:#c0392b; border:1px solid rgba(231,76,60,0.26); font-weight:900;">
@@ -784,21 +784,21 @@ document.addEventListener('DOMContentLoaded', function() {
                         {% else %}
                             <span style="display:inline-flex; align-items:center; gap:8px; padding:8px 14px; border-radius:999px; background:rgba(39,174,96,0.12); color:#1e8449; border:1px solid rgba(39,174,96,0.26); font-weight:900;">
                                 <span class="material-symbols-outlined" style="font-size:18px;">check_circle</span>
-                                Facturada/Activa
+                                Vigente
                             </span>
                         {% endif %}
                     </td>
                     <td data-label="Acciones" style="display:flex; gap:8px; justify-content:center; align-items:center;">
-                        <!-- Ver factura -->
-                        <a href="{% url 'ver_factura' f.numero %}" title="Ver" style="background:#00b2ff; color:white; padding:8px 12px; border-radius:8px; text-decoration:none; display:inline-flex; align-items:center;">
+                        <!-- Ver nota de entrega -->
+                        <a href="{% url 'ver_factura' f.numero %}" title="Ver nota de entrega" aria-label="Ver nota de entrega #{{ f.numero }}" style="background:#00b2ff; color:white; padding:8px 12px; border-radius:8px; text-decoration:none; display:inline-flex; align-items:center;">
                             <span class="material-symbols-outlined" style="font-size:24px; color:white;">visibility</span>
                         </a>
                         <!-- Imprimir -->
-                        <a href="{% url 'reporte_factura_pdf' f.numero %}" target="_blank" title="Imprimir" style="background:#00b2ff; color:white; padding:8px 12px; border-radius:8px; text-decoration:none; display:inline-flex; align-items:center;">
+                        <a href="{% url 'reporte_factura_pdf' f.numero %}" target="_blank" title="Imprimir nota" aria-label="Imprimir nota de entrega #{{ f.numero }}" style="background:#00b2ff; color:white; padding:8px 12px; border-radius:8px; text-decoration:none; display:inline-flex; align-items:center;">
                             <span class="material-symbols-outlined" style="font-size:24px; color:white;">print</span>
                         </a>
                         <!-- Editar -->
-                        <a href="{% url 'editar_factura' f.numero %}" title="Editar"
+                        <a href="{% url 'editar_factura' f.numero %}" title="Editar venta"
                         class="editar-factura"
                         style="background:#1976d2; color:white; padding:8px 12px; border-radius:8px; text-decoration:none; display:inline-flex; align-items:center;">
                             <span class="material-symbols-outlined" style="font-size:24px; color:white;">edit</span>
@@ -807,7 +807,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <!-- Anular -->
                             <form action="{% url 'anular_factura' f.numero %}" method="post" class="anular-form" style="display:inline-flex;">
                                 {% csrf_token %}
-                                <button type="submit" title="Anular" class="anular-factura" style="background:#e74c3c; color:white; padding:8px 12px; border:0; border-radius:8px; display:inline-flex; align-items:center; cursor:pointer;">
+                                <button type="submit" title="Anular nota" class="anular-factura" style="background:#e74c3c; color:white; padding:8px 12px; border:0; border-radius:8px; display:inline-flex; align-items:center; cursor:pointer;">
                                     <span class="material-symbols-outlined" style="font-size:24px; color:white;">cancel</span>
                                 </button>
                             </form>
@@ -815,12 +815,12 @@ document.addEventListener('DOMContentLoaded', function() {
                             <!-- Activar -->
                             <form action="{% url 'activar_factura' f.numero %}" method="post" class="activar-form" style="display:inline-flex;">
                                 {% csrf_token %}
-                                <button type="submit" title="Activar" class="activar-factura" style="background:#27ae60; color:white; padding:8px 12px; border:0; border-radius:8px; display:inline-flex; align-items:center; cursor:pointer;">
+                                <button type="submit" title="Reactivar nota" class="activar-factura" style="background:#27ae60; color:white; padding:8px 12px; border:0; border-radius:8px; display:inline-flex; align-items:center; cursor:pointer;">
                                     <span class="material-symbols-outlined" style="font-size:24px; color:white;">restart_alt</span>
                                 </button>
                             </form>
                             <!-- Eliminar -->
-                            <a href="{% url 'eliminar_factura' f.numero %}" title="Eliminar"
+                            <a href="{% url 'eliminar_factura' f.numero %}" title="Eliminar nota"
                             class="eliminar-factura"
                             style="background:#b71c1c; color:white; padding:8px 12px; border-radius:8px; text-decoration:none; display:inline-flex; align-items:center;">
                                 <span class="material-symbols-outlined" style="font-size:24px; color:white;">delete</span>
@@ -830,13 +830,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="6" style="text-align:center; color:#888; padding:20px;">No hay facturas registradas.</td>
+                    <td colspan="6" style="text-align:center; color:#888; padding:20px;">No hay ventas registradas.</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
-    <div style="text-align: right; color:#888; font-size:1.5em; margin-right: 20px;">Total de facturas: {{ facturas|length }}</div>
+    <div style="text-align: right; color:#888; font-size:1.5em; margin-right: 20px;">Total de ventas: {{ facturas|length }}</div>
     <div class="pagination">
         <span class="step-links">
             {% if facturas.has_previous %}
@@ -882,7 +882,7 @@ document.addEventListener('DOMContentLoaded', function() {
         btn.addEventListener('click', function(e) {
             e.preventDefault();
             Swal.fire({
-                title: '¿Seguro que deseas anular esta factura?',
+                title: '¿Seguro que deseas anular esta nota?',
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#e74c3c',
@@ -901,7 +901,7 @@ document.addEventListener('DOMContentLoaded', function() {
         btn.addEventListener('click', function(e) {
             e.preventDefault();
             Swal.fire({
-                title: '¿Seguro que deseas activar esta factura?',
+                title: '¿Seguro que deseas reactivar esta nota?',
                 icon: 'question',
                 showCancelButton: true,
                 confirmButtonColor: '#27ae60',
@@ -920,7 +920,7 @@ document.addEventListener('DOMContentLoaded', function() {
         btn.addEventListener('click', function(e) {
             e.preventDefault();
             Swal.fire({
-                title: '¿Seguro que deseas eliminar esta factura? Esta acción es irreversible.',
+                title: '¿Seguro que deseas eliminar esta nota? Esta acción es irreversible.',
                 icon: 'error',
                 showCancelButton: true,
                 confirmButtonColor: '#b71c1c',
@@ -1040,18 +1040,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
 {% block help_content %}
 <div>
-    <h4>Ayuda: Facturación (rápido)</h4>
-    <p>En este módulo creas y gestionas facturas. A continuación indicaciones útiles:</p>
+    <h4>Ayuda: Ventas y notas de entrega</h4>
+    <p>En este módulo registras ventas y consultas sus notas de entrega internas.</p>
     <ul>
         <li><strong>Autocompletar por código:</strong> Escribe el código del producto en el campo correspondiente; el sistema intentará completar descripción, precio y stock automáticamente. Si el artículo no se reconoce, usa Buscar producto o F2.</li>
         <li><strong>Botón "Agregar":</strong> Está bloqueado hasta que la fila tenga un producto válido; si lo pulsas verás una explicación del motivo.</li>
-        <li><strong>Guardar borrador:</strong> Las facturas se guardan automáticamente en un borrador local al gestionar precios; puedes continuar más tarde.</li>
-        <li><strong>Gestionar precios:</strong> Si necesitas ajustar precios usa el botón de "Gestionar precios" y luego vuelve —la factura en curso se puede restaurar.</li>
+        <li><strong>Guardar borrador:</strong> El detalle de la venta en curso puede restaurarse al volver desde la gestión de precios.</li>
+        <li><strong>Gestionar precios:</strong> Si necesitas ajustar precios usa el botón de "Gestionar precios" y luego vuelve a completar la venta.</li>
     </ul>
     <p>Consejos rápidos:</p>
     <ol>
         <li>Usa Enter/Tab para confirmar la autocompletación del producto al escribir el código.</li>
-        <li>Verifica que el stock sea suficiente antes de completar la factura.</li>
+        <li>Verifica que el stock sea suficiente antes de completar la venta.</li>
     </ol>
 </div>
 {% endblock %}

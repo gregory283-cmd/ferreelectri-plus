@@ -8,6 +8,7 @@ from datetime import date, timedelta
 from io import BytesIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from urllib.parse import urlparse
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django.core.cache import cache
@@ -33,6 +34,15 @@ def make_test_payment_image():
     Image.new('RGB', (2, 2), color='white').save(image_buffer, format='PNG')
     image_buffer.seek(0)
     return SimpleUploadedFile('comprobante.png', image_buffer.getvalue(), content_type='image/png')
+
+
+def confirm_customer_email(client, email):
+    message = next(item for item in mail.outbox if email in item.to)
+    verify_url = next(
+        line for line in message.body.splitlines()
+        if '/cliente/verificar-correo/' in line
+    )
+    return client.get(urlparse(verify_url).path, HTTP_HOST='localhost')
 
 
 class AdminClientesDashboardPresentationTest(TestCase):
@@ -680,7 +690,33 @@ class BackupArchiveIntegrityTest(TestCase):
                 _verify_archive(archive_path, 'database.dump')
 
 
+@override_settings(
+    EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
+    DEFAULT_FROM_EMAIL='registro@example.test',
+)
 class ClienteRegistroPersistenceTest(TestCase):
+    def test_pending_registration_can_resend_verification_without_duplicate_profile_data(self):
+        registration = self.client.post(reverse('cliente_registro'), {
+            'nombre': 'María Reenvío',
+            'email': 'maria.reenvio@example.com',
+            'cedula': 'V-12345679',
+            'telefono': '+58 414 123 4567',
+            'direccion': 'San Cristóbal, Centro',
+            'password1': 'Quito!Fuerte-2026-123',
+            'password2': 'Quito!Fuerte-2026-123',
+        }, HTTP_HOST='localhost')
+        self.assertEqual(registration.status_code, 200)
+        self.assertEqual(len(mail.outbox), 1)
+
+        resend = self.client.post(reverse('cliente_registro'), {
+            'email': 'maria.reenvio@example.com',
+        }, HTTP_HOST='localhost')
+
+        self.assertEqual(resend.status_code, 200)
+        self.assertContains(resend, 'Revisa tu correo')
+        self.assertEqual(len(mail.outbox), 2)
+        self.assertEqual(Customer.objects.filter(email='maria.reenvio@example.com').count(), 1)
+
     def test_registration_persists_identification_and_delivery_data(self):
         response = self.client.post(reverse('cliente_registro'), {
             'nombre': 'María Pérez',
@@ -690,10 +726,24 @@ class ClienteRegistroPersistenceTest(TestCase):
             'direccion': 'San Cristóbal, Centro',
             'password1': 'Quito!Fuerte-2026-123',
             'password2': 'Quito!Fuerte-2026-123',
-        })
+        }, HTTP_HOST='localhost')
 
-        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Revisa tu correo')
         customer = Customer.objects.get(email='maria.perez@example.com')
+        self.assertFalse(customer.email_verified)
+        self.assertFalse(Cliente.objects.filter(email=customer.email).exists())
+        self.client.post(reverse('cliente_login'), {
+            'username': customer.email,
+            'password': 'Quito!Fuerte-2026-123',
+        })
+        self.assertNotIn('customer_id', self.client.session)
+
+        verification = confirm_customer_email(self.client, customer.email)
+        self.assertEqual(verification.status_code, 200)
+        self.assertContains(verification, 'Correo confirmado')
+        customer.refresh_from_db()
+        self.assertTrue(customer.email_verified)
         cliente = Cliente.objects.get(email='maria.perez@example.com')
         self.assertEqual(customer.cedula, 'V-12345678')
         self.assertEqual(customer.telefono, '+584141234567')
@@ -954,9 +1004,9 @@ class ClienteFinanzasModulesTest(TestCase):
         self.assertEqual(invoices.status_code, 200)
         self.assertContains(invoices, f'<strong>#{self.invoice.numero}</strong>')
         self.assertNotContains(invoices, f'<strong>#{self.other_invoice.numero}</strong>')
-        self.assertContains(invoices, 'Descargar factura')
+        self.assertContains(invoices, 'Descargar nota de entrega')
         self.assertEqual(len(invoices.context['invoice_month_chart']), 6)
-        self.assertEqual(invoices.context['invoice_month_chart'][-1]['value'], 125.5)
+        self.assertEqual(invoices.context['invoice_month_chart'][-1]['value'], 1)
         self.assertEqual(invoices.context['invoice_status_chart'][0]['value'], 1)
         self.assertContains(invoices, 'id="client-invoice-month-series"')
         self.assertContains(invoices, 'data-source="client-invoice-status-series"')
@@ -998,6 +1048,10 @@ class ClienteFinanzasModulesTest(TestCase):
         self.assertEqual(foreign_payments.status_code, 404)
 
 
+@override_settings(
+    EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
+    DEFAULT_FROM_EMAIL='registro@example.test',
+)
 class ClienteCompraEndToEndTest(TestCase):
     def setUp(self):
         self.media_directory = TemporaryDirectory()
@@ -1031,8 +1085,10 @@ class ClienteCompraEndToEndTest(TestCase):
             'direccion': 'Avenida Central 123, Coloncito',
             'password1': 'FerreE2E!Secure-2026',
             'password2': 'FerreE2E!Secure-2026',
-        })
-        self.assertEqual(registration.status_code, 302)
+        }, HTTP_HOST='localhost')
+        self.assertEqual(registration.status_code, 200)
+        verification = confirm_customer_email(self.client, 'camila.e2e@example.com')
+        self.assertEqual(verification.status_code, 200)
 
         customer = Customer.objects.get(email='camila.e2e@example.com')
         cliente = Cliente.objects.get(email=customer.email)
@@ -1155,8 +1211,10 @@ class ClienteCompraEndToEndTest(TestCase):
             'direccion': 'Avenida Central 123, Coloncito',
             'password1': 'FerreE2E!Secure-2026',
             'password2': 'FerreE2E!Secure-2026',
-        })
-        self.assertEqual(registration.status_code, 302)
+        }, HTTP_HOST='localhost')
+        self.assertEqual(registration.status_code, 200)
+        verification = confirm_customer_email(self.client, 'camila.binance.e2e@example.com')
+        self.assertEqual(verification.status_code, 200)
         cliente = Cliente.objects.get(email='camila.binance.e2e@example.com')
         self.client.post(
             reverse('agregar_al_carrito', kwargs={'codigo': self.product.Codigo}),
@@ -1218,8 +1276,10 @@ class ClienteCompraEndToEndTest(TestCase):
             'direccion': 'Avenida Central 123, Coloncito',
             'password1': 'FerreE2E!Secure-2026',
             'password2': 'FerreE2E!Secure-2026',
-        })
-        self.assertEqual(registration.status_code, 302)
+        }, HTTP_HOST='localhost')
+        self.assertEqual(registration.status_code, 200)
+        verification = confirm_customer_email(self.client, 'camila.paypal.e2e@example.com')
+        self.assertEqual(verification.status_code, 200)
         cliente = Cliente.objects.get(email='camila.paypal.e2e@example.com')
         self.client.post(
             reverse('agregar_al_carrito', kwargs={'codigo': self.product.Codigo}),
@@ -1359,6 +1419,58 @@ class CookieConsentTemplateTest(TestCase):
         self.assertEqual(privacy.status_code, 200)
         self.assertContains(privacy, 'js-open-cookie-preferences')
         self.assertContains(privacy, 'Actualmente no activamos cookies de analítica ni publicidad.')
+
+
+@override_settings(
+    EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
+    DEFAULT_FROM_EMAIL='ventas@example.test',
+)
+class PaidOrderNoteEmailTest(TestCase):
+    def test_verified_paid_order_emails_the_non_fiscal_delivery_note_pdf(self):
+        user = User.objects.create_user(
+            username='nota-cliente',
+            email='cliente.nota@example.test',
+            password='TestPassword123!',
+            first_name='Cliente',
+            last_name='Nota',
+        )
+        customer = UsuarioClientes.objects.create(
+            nombre='Cliente', apellido='Nota', telefono='04140000000',
+            cedula='V90000002', direccion='Calle 7, Coloncito',
+            email=user.email,
+        )
+        product = Productos.objects.create(
+            Codigo='N9001', Descripcion='Lámpara de prueba', Precio=116, Cantidad=0,
+        )
+        order = Pedido.objects.create(
+            cliente=user, total=Decimal('116.00'), estado='pagado', stock_descontado=True,
+        )
+        PedidoItem.objects.create(pedido=order, producto=product, cantidad=1, precio=Decimal('100.00'))
+        Pago.objects.create(
+            pedido=order, metodo='PAGO_MOVIL', monto=Decimal('116.00'),
+            numero_referencia='NOTA-REF-1', verificado=True, estado='confirmado',
+        )
+        invoice = Factura.objects.create(
+            pedido=order, cliente=customer, total=Decimal('116.00'),
+            subtotal=Decimal('100.00'), iva=Decimal('16.00'), moneda='USD',
+        )
+        DetalleFactura.objects.create(
+            factura=invoice, producto=product, cantidad=1, precio=Decimal('100.00'),
+            iva=Decimal('16.00'),
+        )
+
+        from .tasks import send_paid_order_note_email
+        result = send_paid_order_note_email.run(invoice.pk)
+
+        self.assertTrue(result['sent'])
+        self.assertEqual(len(mail.outbox), 1)
+        email = mail.outbox[0]
+        self.assertEqual(email.to, [user.email])
+        self.assertIn('pedido #', email.subject.lower())
+        self.assertIn('Total pagado: USD 116.00', email.body)
+        self.assertIn('NOTA-REF-1', email.body)
+        self.assertEqual(email.attachments[0][0], f'nota_entrega_pedido_{order.pk}.pdf')
+        self.assertTrue(email.attachments[0][1].startswith(b'%PDF'))
 
 
 class CheckoutProfileValidationTest(TestCase):
@@ -1937,6 +2049,7 @@ class CheckoutProfileValidationTest(TestCase):
         self.assertEqual(factura.subtotal, Decimal('120.00'))
         self.assertEqual(factura.iva, Decimal('16.00'))
         self.assertEqual(factura.total, Decimal('136.00'))
+        self.assertEqual(factura.moneda, 'USD')
         self.assertEqual(
             set(DetalleFactura.objects.filter(factura=factura).values_list('iva', flat=True)),
             {Decimal('0.00'), Decimal('16.00')},
@@ -2127,6 +2240,144 @@ class LegalPagesTest(TestCase):
         self.assertContains(privacy, 'Los comprobantes manuales son revisados')
 
 
+class AdminPWASecurityTest(TestCase):
+    def test_manifest_and_service_worker_are_available(self):
+        manifest = self.client.get(reverse('admin_pwa_manifest'))
+        worker = self.client.get(reverse('admin_pwa_service_worker'))
+
+        self.assertEqual(manifest.status_code, 200)
+        self.assertEqual(manifest['Content-Type'], 'application/manifest+json; charset=utf-8')
+        self.assertEqual(manifest.json()['display'], 'standalone')
+        self.assertIn('/admin-panel/dashboard/', manifest.json()['start_url'])
+        self.assertEqual(worker.status_code, 200)
+        self.assertContains(worker, "addEventListener('push'")
+
+    def test_staff_panel_renders_mobile_menu_install_push_and_passkey_controls(self):
+        staff = User.objects.create_superuser(
+            username='pwa-render-admin', email='pwa-render-admin@example.test', password='TestPassword123!',
+        )
+        self.client.force_login(staff)
+
+        response = self.client.get(reverse('dashboard'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'id="admin-sidebar-toggle"')
+        self.assertContains(response, 'admin-theme.css?v=20261017-mobile-sidebar-scroll-v1')
+        self.assertContains(response, 'id="admin-install-app"')
+        self.assertContains(response, 'id="admin-enable-push"')
+        self.assertContains(response, 'id="admin-register-passkey"')
+        self.assertContains(response, 'id="admin-revoke-passkeys"')
+
+    def test_non_staff_cannot_save_push_subscription(self):
+        customer = User.objects.create_user(
+            username='pwa-customer', email='pwa-customer@example.test', password='TestPassword123!',
+        )
+        self.client.force_login(customer)
+
+        response = self.client.post(
+            reverse('admin_push_subscribe'),
+            data=json.dumps({
+                'endpoint': 'https://push.example.test/subscription/1',
+                'keys': {'p256dh': 'public', 'auth': 'secret'},
+            }),
+            content_type='application/json',
+        )
+
+        self.assertEqual(response.status_code, 302)
+
+    @override_settings(
+        ADMIN_WEBPUSH_VAPID_PUBLIC_KEY='public-key',
+        ADMIN_WEBPUSH_VAPID_PRIVATE_KEY='private-key',
+    )
+    def test_staff_can_register_push_subscription(self):
+        from .models import AdminPushSubscription
+
+        staff = User.objects.create_user(
+            username='pwa-admin', email='pwa-admin@example.test', password='TestPassword123!', is_staff=True,
+        )
+        self.client.force_login(staff)
+
+        response = self.client.post(
+            reverse('admin_push_subscribe'),
+            data=json.dumps({
+                'endpoint': 'https://push.example.test/subscription/1',
+                'keys': {'p256dh': 'public', 'auth': 'secret'},
+            }),
+            content_type='application/json',
+        )
+
+        self.assertEqual(response.status_code, 200)
+        subscription = AdminPushSubscription.objects.get(user=staff)
+        self.assertEqual(subscription.subscription['keys']['p256dh'], 'public')
+
+    def test_passkey_login_options_do_not_expose_unregistered_credentials(self):
+        response = self.client.post(
+            reverse('admin_passkey_login_options'),
+            data='{}',
+            content_type='application/json',
+            HTTP_HOST='localhost',
+            secure=True,
+        )
+
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.json()['error'], 'No hay llaves de acceso registradas.')
+
+    def test_staff_gets_passkey_registration_options_for_https_origin(self):
+        staff = User.objects.create_user(
+            username='passkey-admin', email='passkey-admin@example.test',
+            password='TestPassword123!', is_staff=True,
+        )
+        self.client.force_login(staff)
+
+        response = self.client.post(
+            reverse('admin_passkey_registration_options'),
+            data='{}',
+            content_type='application/json',
+            HTTP_HOST='localhost',
+            secure=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        options = response.json()
+        self.assertIn('challenge', options)
+        self.assertEqual(options['rp']['id'], 'localhost')
+        self.assertEqual(options['authenticatorSelection']['residentKey'], 'required')
+
+    @override_settings(
+        ADMIN_WEBPUSH_VAPID_PUBLIC_KEY='public-key',
+        ADMIN_WEBPUSH_VAPID_PRIVATE_KEY='private-key',
+        ADMIN_WEBPUSH_VAPID_CONTACT='mailto:admin@example.test',
+    )
+    def test_new_order_push_only_targets_active_staff_subscriptions(self):
+        from .models import AdminPushSubscription
+        from .tasks import notify_admin_order_created
+
+        customer = User.objects.create_user(
+            username='push-order-customer', email='push-order-customer@example.test', password='TestPassword123!',
+        )
+        staff = User.objects.create_user(
+            username='push-order-admin', email='push-order-admin@example.test', password='TestPassword123!', is_staff=True,
+        )
+        order = Pedido.objects.create(cliente=customer, total=Decimal('25.00'))
+        AdminPushSubscription.objects.create(
+            user=staff,
+            endpoint_hash='f' * 64,
+            endpoint='https://push.example.test/subscription/2',
+            subscription={
+                'endpoint': 'https://push.example.test/subscription/2',
+                'keys': {'p256dh': 'public', 'auth': 'secret'},
+            },
+        )
+
+        with patch('pywebpush.webpush') as send_push:
+            result = notify_admin_order_created.run(order.pk)
+
+        self.assertEqual(result['sent'], 1)
+        payload = json.loads(send_push.call_args.kwargs['data'])
+        self.assertEqual(payload['title'], f'Nuevo pedido #{order.pk}')
+        self.assertEqual(payload['url'], reverse('detalle_pedido_admin', args=[order.pk]))
+
+
 class AdminLoginResponsivePresentationTest(TestCase):
     def test_mobile_login_promotes_typewriter_and_removes_duplicate_badge(self):
         response = self.client.get(reverse('login_admin_custom'))
@@ -2167,7 +2418,7 @@ class CreditsGalleryTest(TestCase):
         self.assertContains(response, 'id="creditReportForm"')
         self.assertContains(response, 'data-photo-input="gregory"')
         self.assertContains(response, 'color: #f4f7fa !important')
-        self.assertContains(response, '.credits-page .credits-card-controls {')
+        self.assertContains(response, '#main-content .credits-page .credits-card-controls {')
         self.assertContains(response, 'background-color: transparent !important;')
         self.assertContains(response, 'background-color: rgba(7,18,32,.94) !important; background-image: none !important;')
         self.assertContains(response, 'credit-dialog-visual')

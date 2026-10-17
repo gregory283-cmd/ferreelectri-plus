@@ -11,13 +11,31 @@ import unicodedata
 from pathlib import Path
 from functools import wraps
 from types import SimpleNamespace
+from urllib.parse import urlsplit
+from webauthn import (
+    generate_authentication_options,
+    generate_registration_options,
+    options_to_json,
+    verify_authentication_response,
+    verify_registration_response,
+)
+from webauthn.helpers import base64url_to_bytes, bytes_to_base64url
+from webauthn.helpers.structs import (
+    AuthenticatorSelectionCriteria,
+    PublicKeyCredentialDescriptor,
+    ResidentKeyRequirement,
+    UserVerificationRequirement,
+)
 
 from django.conf import settings
+from django.core import signing
 from django.core.mail import EmailMultiAlternatives, send_mail
 from django.core.cache import cache
 from django.core.paginator import Paginator
 from django.core.serializers.json import DjangoJSONEncoder
 from django.contrib import messages
+from django.contrib.staticfiles import finders
+from django.contrib.staticfiles import finders
 from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
 from django.contrib.auth.hashers import check_password as check_password_hash, make_password
 from django.contrib.auth.backends import ModelBackend
@@ -29,6 +47,7 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.models import User, Permission
 from django.contrib.auth.views import LoginView
 from django.core.exceptions import PermissionDenied, ValidationError
+from django.core.signing import BadSignature, SignatureExpired
 from django.contrib.auth.password_validation import validate_password
 from django.db import models, transaction
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -42,7 +61,7 @@ from django.utils.crypto import get_random_string
 from django.utils.timezone import now
 from datetime import date, datetime, timedelta
 from decimal import Decimal, ROUND_HALF_UP
-from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
+from django.views.decorators.csrf import csrf_exempt, csrf_protect, ensure_csrf_cookie
 from django.views.decorators.http import require_POST
 from django.views.decorators.http import require_POST
 import urllib.request as urllib_request
@@ -58,7 +77,7 @@ from Ventas.models import DetalleFactura
 from .forms import ClienteRegistroForm, ClienteAuthenticationForm, EnvioAdminForm, PagoManualForm, PagoMovilCheckoutForm
 from .decorators import cliente_required, log_view_access
 from .models import AdminDashboardConfig, AuditLog, Carrito, CarritoItem, ChatMessage, ChatSession, Cliente, Customer, Envio, EnvioEvento, Pedido, PedidoItem, PerfilCliente
-from .models import Pago, PedidoArchivado
+from .models import AdminPasskey, AdminPushSubscription, Pago, PedidoArchivado
 from .customer_auth import (
     get_customer_from_request,
     login_customer as login_customer_cookie,
@@ -92,6 +111,243 @@ try:
 except Exception:
     id_token = None
     google_requests = None
+
+
+def admin_pwa_manifest(request):
+    response = JsonResponse({
+        'id': reverse('dashboard'),
+        'name': 'FerreElectri PLUS · Administración',
+        'short_name': 'FerreAdmin',
+        'description': 'Panel administrativo de FerreElectri PLUS',
+        'start_url': reverse('dashboard'),
+        'scope': '/',
+        'display': 'standalone',
+        'background_color': '#f3f7fa',
+        'theme_color': '#08243b',
+        'icons': [
+            {
+                'src': '/static/dashboard/pwa/icon-192.png',
+                'sizes': '192x192',
+                'type': 'image/png',
+                'purpose': 'any maskable',
+            },
+            {
+                'src': '/static/dashboard/pwa/icon-512.png',
+                'sizes': '512x512',
+                'type': 'image/png',
+                'purpose': 'any maskable',
+            },
+        ],
+    })
+    response['Content-Type'] = 'application/manifest+json; charset=utf-8'
+    return response
+
+
+def admin_pwa_service_worker(request):
+    worker_path = finders.find('dashboard/pwa/service-worker.js')
+    if not worker_path:
+        return HttpResponse('Service worker no disponible.', status=404)
+    response = FileResponse(open(worker_path, 'rb'), content_type='application/javascript; charset=utf-8')
+    response['Service-Worker-Allowed'] = '/'
+    response['Cache-Control'] = 'no-cache'
+    return response
+
+
+@staff_member_required(login_url='login_admin_custom')
+@require_POST
+def admin_push_subscribe(request):
+    if not settings.ADMIN_WEBPUSH_VAPID_PUBLIC_KEY or not settings.ADMIN_WEBPUSH_VAPID_PRIVATE_KEY:
+        return JsonResponse({'ok': False, 'error': 'push_not_configured'}, status=503)
+    try:
+        payload = json.loads(request.body or b'{}')
+    except (TypeError, ValueError):
+        return JsonResponse({'ok': False, 'error': 'invalid_json'}, status=400)
+    endpoint = str(payload.get('endpoint') or '').strip()
+    keys = payload.get('keys') or {}
+    if not endpoint.startswith('https://') or not keys.get('p256dh') or not keys.get('auth'):
+        return JsonResponse({'ok': False, 'error': 'invalid_subscription'}, status=400)
+    endpoint_hash = hashlib.sha256(endpoint.encode('utf-8')).hexdigest()
+    AdminPushSubscription.objects.update_or_create(
+        endpoint_hash=endpoint_hash,
+        defaults={
+            'user': request.user,
+            'endpoint': endpoint,
+            'subscription': {'endpoint': endpoint, 'keys': keys},
+        },
+    )
+    return JsonResponse({'ok': True})
+
+
+@staff_member_required(login_url='login_admin_custom')
+@require_POST
+def admin_push_unsubscribe(request):
+    try:
+        payload = json.loads(request.body or b'{}')
+    except (TypeError, ValueError):
+        return JsonResponse({'ok': False, 'error': 'invalid_json'}, status=400)
+    endpoint = str(payload.get('endpoint') or '').strip()
+    if endpoint:
+        endpoint_hash = hashlib.sha256(endpoint.encode('utf-8')).hexdigest()
+        AdminPushSubscription.objects.filter(
+            endpoint_hash=endpoint_hash,
+            user=request.user,
+        ).delete()
+    return JsonResponse({'ok': True})
+
+
+def _admin_webauthn_origin(request):
+    if not request.is_secure() and not settings.DEBUG:
+        return None, None
+    origin = request.build_absolute_uri('/').rstrip('/')
+    rp_id = settings.ADMIN_WEBAUTHN_RP_ID or urlsplit(origin).hostname
+    return rp_id, origin
+
+
+def _store_admin_webauthn_challenge(request, session_key, challenge, rp_id, origin):
+    request.session[session_key] = {
+        'challenge': bytes_to_base64url(challenge),
+        'rp_id': rp_id,
+        'origin': origin,
+        'issued_at': timezone.now().timestamp(),
+    }
+
+
+def _consume_admin_webauthn_challenge(request, session_key):
+    challenge_data = request.session.pop(session_key, None)
+    request.session.modified = True
+    if not challenge_data or timezone.now().timestamp() - challenge_data.get('issued_at', 0) > 300:
+        return None
+    try:
+        challenge_data['challenge'] = base64url_to_bytes(challenge_data['challenge'])
+    except (KeyError, TypeError, ValueError):
+        return None
+    return challenge_data
+
+
+@staff_member_required(login_url='login_admin_custom')
+@ratelimit(key='user', rate='10/m', method='POST', block=True)
+@require_POST
+def admin_passkey_registration_options(request):
+    rp_id, origin = _admin_webauthn_origin(request)
+    if not rp_id or not origin:
+        return JsonResponse({'error': 'El acceso con llave requiere HTTPS.'}, status=400)
+    options = generate_registration_options(
+        rp_id=rp_id,
+        rp_name='FerreElectri PLUS',
+        user_id=hashlib.sha256(f'{settings.SECRET_KEY}:admin:{request.user.pk}'.encode()).digest(),
+        user_name=request.user.email or request.user.get_username(),
+        user_display_name=request.user.get_full_name() or request.user.get_username(),
+        authenticator_selection=AuthenticatorSelectionCriteria(
+            resident_key=ResidentKeyRequirement.REQUIRED,
+            user_verification=UserVerificationRequirement.REQUIRED,
+        ),
+        exclude_credentials=[
+            PublicKeyCredentialDescriptor(id=base64url_to_bytes(item.credential_id))
+            for item in AdminPasskey.objects.filter(user=request.user)
+        ],
+    )
+    _store_admin_webauthn_challenge(
+        request, 'admin_passkey_registration_challenge', options.challenge, rp_id, origin,
+    )
+    return JsonResponse(json.loads(options_to_json(options)))
+
+
+@staff_member_required(login_url='login_admin_custom')
+@ratelimit(key='user', rate='10/m', method='POST', block=True)
+@require_POST
+def admin_passkey_registration_verify(request):
+    challenge = _consume_admin_webauthn_challenge(request, 'admin_passkey_registration_challenge')
+    if not challenge:
+        return JsonResponse({'error': 'El registro venció. Inténtalo de nuevo.'}, status=400)
+    try:
+        payload = json.loads(request.body or b'{}')
+        verified = verify_registration_response(
+            credential=payload.get('credential'),
+            expected_challenge=challenge['challenge'],
+            expected_rp_id=challenge['rp_id'],
+            expected_origin=challenge['origin'],
+            require_user_verification=True,
+        )
+    except Exception:
+        return JsonResponse({'error': 'No se pudo verificar la llave de acceso.'}, status=400)
+
+    credential_id = bytes_to_base64url(verified.credential_id)
+    transports = ((payload.get('credential') or {}).get('response') or {}).get('transports') or []
+    AdminPasskey.objects.create(
+        user=request.user,
+        credential_id=credential_id,
+        public_key=verified.credential_public_key,
+        sign_count=verified.sign_count,
+        transports=transports,
+        name='Llave de acceso móvil',
+    )
+    return JsonResponse({'ok': True})
+
+
+@ratelimit(key='ip', rate='10/m', method='POST', block=True)
+@require_POST
+def admin_passkey_login_options(request):
+    rp_id, origin = _admin_webauthn_origin(request)
+    if not rp_id or not origin:
+        return JsonResponse({'error': 'El acceso con llave requiere HTTPS.'}, status=400)
+    if not AdminPasskey.objects.filter(user__is_active=True, user__is_staff=True).exists():
+        return JsonResponse({'error': 'No hay llaves de acceso registradas.'}, status=404)
+    options = generate_authentication_options(
+        rp_id=rp_id,
+        user_verification=UserVerificationRequirement.REQUIRED,
+    )
+    _store_admin_webauthn_challenge(
+        request, 'admin_passkey_login_challenge', options.challenge, rp_id, origin,
+    )
+    return JsonResponse(json.loads(options_to_json(options)))
+
+
+@ratelimit(key='ip', rate='10/m', method='POST', block=True)
+@require_POST
+def admin_passkey_login_verify(request):
+    challenge = _consume_admin_webauthn_challenge(request, 'admin_passkey_login_challenge')
+    if not challenge:
+        return JsonResponse({'error': 'El inicio de sesión venció. Inténtalo de nuevo.'}, status=400)
+    try:
+        payload = json.loads(request.body or b'{}')
+        credential = payload.get('credential') or {}
+        credential_id = credential.get('id') or credential.get('rawId')
+        passkey = AdminPasskey.objects.select_related('user').get(
+            credential_id=credential_id,
+            user__is_active=True,
+            user__is_staff=True,
+        )
+        verified = verify_authentication_response(
+            credential=credential,
+            expected_challenge=challenge['challenge'],
+            expected_rp_id=challenge['rp_id'],
+            expected_origin=challenge['origin'],
+            credential_public_key=bytes(passkey.public_key),
+            credential_current_sign_count=passkey.sign_count,
+            require_user_verification=True,
+        )
+    except Exception:
+        return JsonResponse({'error': 'No se pudo verificar la llave de acceso.'}, status=400)
+
+    passkey.sign_count = verified.new_sign_count
+    passkey.last_used_at = timezone.now()
+    passkey.save(update_fields=['sign_count', 'last_used_at'])
+    user = passkey.user
+    user.backend = settings.AUTHENTICATION_BACKENDS[0]
+    login(request, user)
+    log_auth_event(request, 'ADMIN_PASSKEY_LOGIN', user=user, details='Acceso administrativo mediante llave de acceso.')
+    return JsonResponse({'ok': True, 'next': reverse('dashboard')})
+
+
+@staff_member_required(login_url='login_admin_custom')
+@require_POST
+def admin_passkey_revoke_all(request):
+    deleted, _details = AdminPasskey.objects.filter(user=request.user).delete()
+    log_auth_event(
+        request, 'ADMIN_PASSKEYS_REVOKED', user=request.user,
+        details=f'Se revocaron {deleted} credenciales WebAuthn.',
+    )
+    return JsonResponse({'ok': True, 'revoked': deleted})
 
 
 INTENT_MATRIX = {
@@ -3323,6 +3579,14 @@ def checkout(request):
         except Exception:
             # El pedido no falla si el broker está temporalmente no disponible.
             pass
+        if settings.ADMIN_WEBPUSH_VAPID_PUBLIC_KEY and settings.ADMIN_WEBPUSH_VAPID_PRIVATE_KEY:
+            try:
+                from .tasks import notify_admin_order_created
+                notify_admin_order_created.delay(pedido.pk)
+            except Exception:
+                logging.getLogger(__name__).exception(
+                    'No se pudo encolar la notificación administrativa del pedido %s.', pedido.pk,
+                )
 
         request.session['checkout_method'] = metodo
         request.session['checkout_referencia'] = referencia
@@ -3342,13 +3606,13 @@ def checkout(request):
             messages.success(
                 request,
                 f'Pedido #{pedido.id} recibido. El comprobante está pendiente de revisión; '
-                'la factura se generará después de que el administrador apruebe el pago.',
+                'la nota de entrega estará disponible después de que el administrador confirme el pago.',
             )
         else:
             messages.success(
                 request,
                 f'Pedido #{pedido.id} creado y pendiente de confirmación del pago. '
-                'La factura se generará después de verificarlo.',
+                'La nota de entrega estará disponible después de verificar el pago.',
             )
         return redirect('cliente_panel')
 
@@ -3412,7 +3676,7 @@ def binance_webhook(request):
     return JsonResponse({'ok': True, 'status': pago.gateway_status})
 
 
-def _create_invoice_for_paid_order(pedido):
+def _create_invoice_for_paid_order(pedido, pago=None):
     """Crear la factura asociada a un pedido pagado en una transacción atómica."""
     if Factura.objects.filter(pedido=pedido).exists():
         return Factura.objects.get(pedido=pedido)
@@ -3447,13 +3711,17 @@ def _create_invoice_for_paid_order(pedido):
             subtotal += base
             iva += _calcular_impuesto_linea(base, item.iva)
         total = subtotal + iva
+        if pago is None:
+            pago = pedido.pagos.filter(verificado=True).order_by('-creado', '-id').first()
+        currency = 'USDT' if pago and pago.metodo == 'BINANCE' else 'USD'
         factura = Factura.objects.create(
             pedido=pedido,
             cliente=usuario_cliente,
+            tipo_documento='nota_entrega',
             total=total,
             subtotal=subtotal,
             iva=iva,
-            moneda='Bs.',
+            moneda=currency,
             estado='facturada',
             rif=(perfil.cedula_rif if perfil else '') or '',
             direccion_fiscal=(perfil.direccion if perfil else '') or '',
@@ -3569,16 +3837,29 @@ def _approve_pending_order(pedido_id, payment_id=None):
                 return None, 'El pedido no tiene un pago para revisar.'
             if not _payment_has_manual_evidence(pago):
                 return None, 'Falta un comprobante válido y los datos necesarios para verificar el pago.'
+            if Decimal(str(pago.monto or 0)) != Decimal(str(pedido.total or 0)):
+                return None, 'El monto del pago no coincide con el total del pedido. No se aprobó.'
 
             pago.verificado = True
             pago.estado = 'confirmado'
             pago.save(update_fields=['verificado', 'estado'])
             _validate_reserved_order_stock(pedido)
-            factura = _create_invoice_for_paid_order(pedido)
+            factura = _create_invoice_for_paid_order(pedido, pago)
             pedido.stock_descontado = True
             pedido.save(update_fields=['stock_descontado'])
     except ValueError as error:
         return None, str(error)
+
+    def enqueue_paid_order_note():
+        try:
+            from .tasks import send_paid_order_note_email
+            send_paid_order_note_email.delay(factura.pk)
+        except Exception:
+            logging.getLogger(__name__).exception(
+                'No se pudo encolar la nota de entrega del pedido %s.', pedido_id,
+            )
+
+    transaction.on_commit(enqueue_paid_order_note)
 
     return factura, ''
 
@@ -3695,7 +3976,7 @@ def confirmar_pago_admin(request, payment_id):
     if error:
         messages.error(request, error)
         return redirect(reverse('historial_pedidos_global'))
-    messages.success(request, f'Pago confirmado y factura #{factura.numero} generada.')
+    messages.success(request, f'Pago confirmado y nota de entrega #{factura.numero} generada.')
     return redirect(reverse('historial_pedidos_global'))
 
 
@@ -3741,8 +4022,22 @@ def _contexto_factura_pdf(factura):
     documento_cliente = factura.rif or factura.cliente.cedula or ''
     if documento_cliente.upper().startswith('AUTO'):
         documento_cliente = ''
+    pedido = factura.pedido if factura.pedido_id else None
+    pago = (
+        pedido.pagos.filter(verificado=True).order_by('-creado', '-id').first()
+        if pedido else None
+    )
+    envio = getattr(pedido, 'envio', None) if pedido else None
+    logo_path = finders.find('img/logo.png')
+    logo_data_uri = ''
+    if logo_path:
+        logo_data_uri = 'data:image/png;base64,' + base64.b64encode(Path(logo_path).read_bytes()).decode('ascii')
     return {
         'factura': factura,
+        'pedido': pedido,
+        'pago': pago,
+        'envio': envio,
+        'logo_data_uri': logo_data_uri,
         'detalles': detalles,
         'resumen_impuestos': resumen_impuestos,
         'base_imponible': base_imponible,
@@ -4065,7 +4360,7 @@ def aprobar_pedido_admin(request, pedido_id):
     if error:
         messages.warning(request, error, extra_tags='admin-action')
         return redirect('historial_pedidos_admin')
-    messages.success(request, f'Pedido #{pedido.id} aprobado y factura generada.', extra_tags='admin-action')
+    messages.success(request, f'Pedido #{pedido.id} aprobado y nota de entrega generada.', extra_tags='admin-action')
     return redirect('historial_pedidos_admin')
 
 
@@ -4262,7 +4557,7 @@ def cliente_facturas(request):
         facturas_emitidas.filter(fecha__date__gte=date(first_month['year'], first_month['month'], 1))
         .annotate(month=TruncMonth('fecha'))
         .values('month')
-        .annotate(total=Sum('total'))
+        .annotate(total=models.Count('numero'))
     )
     invoice_month_totals = {
         (row['month'].year, row['month'].month): float(row['total'] or 0)
@@ -4289,8 +4584,11 @@ def cliente_facturas(request):
             'value': invoice_status_counts.get(key, 0),
             'percentage': round(invoice_status_counts.get(key, 0) * 100 / max(sum(invoice_status_counts.values()), 1)),
         }
-        for key, label in (('facturada', 'Facturadas'), ('anulada', 'Anuladas'))
+        for key, label in (('facturada', 'Vigentes'), ('anulada', 'Anuladas'))
     ]
+    importes_por_moneda = list(
+        facturas_emitidas.values('moneda').annotate(total=Sum('total')).order_by('moneda')
+    )
     facturas_page = Paginator(facturas, 12).get_page(request.GET.get('page'))
     return render(request, 'cliente_facturas.html', {
         'facturas': facturas_page,
@@ -4299,6 +4597,7 @@ def cliente_facturas(request):
         'facturas_emitidas': facturas_emitidas.count(),
         'total_facturas': sum(invoice_status_counts.values()),
         'importe_facturado': facturas_emitidas.aggregate(total=Sum('total'))['total'] or Decimal('0.00'),
+        'importes_por_moneda': importes_por_moneda,
         'invoice_month_chart': invoice_month_chart,
         'invoice_status_chart': invoice_status_chart,
     })
@@ -4411,13 +4710,36 @@ def cliente_registro(request):
     next_value = request.POST.get('next') or request.GET.get('next', '')
     next_url = get_safe_redirect(request, next_value, default=reverse('index'))
     if request.method == 'POST':
+        email_input = (request.POST.get('email') or '').strip().lower()
+        pending_customer = Customer.objects.filter(
+            email__iexact=email_input,
+            is_active=True,
+            email_verified=False,
+        ).first() if email_input else None
+        if pending_customer:
+            try:
+                _send_customer_email_verification(request, pending_customer, next_url)
+            except Exception:
+                logging.getLogger(__name__).exception(
+                    'No se pudo reenviar la verificación al cliente %s.', pending_customer.pk,
+                )
+                return render(request, 'cliente_verificacion.html', {
+                    'pending': True,
+                    'email': email_input,
+                    'send_failed': True,
+                })
+            return render(request, 'cliente_verificacion.html', {
+                'pending': True,
+                'email': email_input,
+                'resent': True,
+            })
         form = ClienteRegistroForm(request.POST)
         if form.is_valid():
             email = form.cleaned_data['email']
             password = form.cleaned_data['password1']
-            customer = Customer.objects.filter(email__iexact=email, is_active=True).first()
+            customer = Customer.objects.filter(email__iexact=email).first()
             if customer:
-                messages.error(request, 'Ya existe una cuenta de cliente registrada con ese correo. Inicia sesión o usa otro email.')
+                messages.error(request, 'Ya existe una cuenta con ese correo. Inicia sesión.')
             else:
                 customer = Customer.objects.create(
                     nombre=form.cleaned_data['nombre'],
@@ -4425,33 +4747,110 @@ def cliente_registro(request):
                     cedula=form.cleaned_data.get('cedula'),
                     telefono=form.cleaned_data['telefono'],
                     direccion=form.cleaned_data['direccion'],
+                    email_verified=False,
                     is_guest=False,
                 )
                 customer.set_password(password)
                 customer.save()
-
-                customer.backend = 'dashboard.customer_auth.CustomerBackend'
-                login(request, customer)
-
-                cliente = customer.ensure_cliente_profile()
-                sync_admin_cliente_record(cliente)
-                if cliente and not cliente.cedula and customer.cedula:
-                    cliente.cedula = customer.cedula
-                    cliente.save(update_fields=['cedula'])
-                merge_session_cart_items(request, cliente)
-                request.session['customer_id'] = customer.id
-                request.session['cliente_id'] = cliente.id
-                request.session['cliente_nombre'] = cliente.nombre
-                request.session['cliente_email'] = cliente.email
-                request.session.modified = True
-                response = redirect(next_url)
-                response = login_customer_cookie(response, customer)
-                log_auth_event(request, 'CLIENT_REGISTRATION', user=None, details='Registro de cliente completado.')
-                messages.success(request, '¡Registro exitoso! Bienvenido, ' + cliente.nombre)
-                return response
+                try:
+                    _send_customer_email_verification(request, customer, next_url)
+                except Exception:
+                    logging.getLogger(__name__).exception(
+                        'No se pudo enviar la verificación de correo al cliente %s.', customer.pk,
+                    )
+                    return render(request, 'cliente_verificacion.html', {
+                        'pending': True,
+                        'email': email,
+                        'send_failed': True,
+                    })
+                log_auth_event(request, 'CLIENT_REGISTRATION_PENDING', user=None, details='Verificación de correo pendiente.')
+                return render(request, 'cliente_verificacion.html', {'pending': True, 'email': email})
     else:
         form = ClienteRegistroForm()
     return render(request, 'cliente_registro.html', {'form': form, 'next': next_value})
+
+
+def _send_customer_email_verification(request, customer, next_url=''):
+    token = signing.dumps(
+        {'customer_id': customer.pk, 'email': customer.email, 'next': next_url},
+        salt='dashboard.customer.email-verification',
+    )
+    verify_url = request.build_absolute_uri(
+        reverse('cliente_verificar_email', kwargs={'token': token})
+    )
+    message = EmailMultiAlternatives(
+        subject='Confirma tu correo de FerreElectri PLUS',
+        body=(
+            f'Hola {customer.nombre},\n\n'
+            'Confirma que puedes recibir mensajes en esta dirección abriendo el enlace seguro:\n'
+            f'{verify_url}\n\n'
+            'El enlace vence en 24 horas. Si no solicitaste esta cuenta, ignora este mensaje.'
+        ),
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        to=[customer.email],
+    )
+    message.send(fail_silently=False)
+
+
+@ratelimit(key='ip', rate='5/m', method='POST', block=True)
+def cliente_reenviar_verificacion(request):
+    if request.method != 'POST':
+        return HttpResponseForbidden('Método no permitido.')
+    email = request.POST.get('email', '').strip().lower()
+    customer = Customer.objects.filter(email__iexact=email, email_verified=False).first()
+    if customer:
+        try:
+            _send_customer_email_verification(request, customer)
+        except Exception:
+            logging.getLogger(__name__).exception(
+                'No se pudo reenviar la verificación al cliente %s.', customer.pk,
+            )
+    return render(request, 'cliente_verificacion.html', {
+        'pending': True,
+        'email': email,
+        'resent': True,
+    })
+
+
+def cliente_verificar_email(request, token):
+    try:
+        payload = signing.loads(
+            token,
+            salt='dashboard.customer.email-verification',
+            max_age=60 * 60 * 24,
+        )
+    except (BadSignature, SignatureExpired):
+        return render(request, 'cliente_verificacion.html', {'invalid_token': True})
+
+    customer = Customer.objects.filter(
+        pk=payload.get('customer_id'),
+        email__iexact=payload.get('email', ''),
+        is_active=True,
+    ).first()
+    if not customer:
+        return render(request, 'cliente_verificacion.html', {'invalid_token': True})
+    if customer.email_verified:
+        return render(request, 'cliente_verificacion.html', {'already_verified': True})
+
+    customer.email_verified = True
+    customer.save(update_fields=['email_verified'])
+    cliente = customer.ensure_cliente_profile()
+    sync_admin_cliente_record(cliente)
+    if cliente and not cliente.cedula and customer.cedula:
+        cliente.cedula = customer.cedula
+        cliente.save(update_fields=['cedula'])
+    merge_session_cart_items(request, cliente)
+    request.session['customer_id'] = customer.id
+    request.session['cliente_id'] = cliente.id
+    request.session['cliente_nombre'] = cliente.nombre
+    request.session['cliente_email'] = cliente.email
+    request.session.modified = True
+    customer.backend = 'dashboard.customer_auth.CustomerBackend'
+    login(request, customer)
+    response = render(request, 'cliente_verificacion.html', {'verified': True})
+    response = login_customer_cookie(response, customer)
+    log_auth_event(request, 'CLIENT_EMAIL_VERIFIED', user=None, details='Correo de cliente verificado.')
+    return response
 
 
 @csrf_exempt

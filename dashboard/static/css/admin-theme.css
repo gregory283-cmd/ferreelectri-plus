@@ -398,6 +398,21 @@
     pointer-events: auto !important;
   }
 
+  body.admin-sidebar-open {
+    overflow: hidden !important;
+    overscroll-behavior: none;
+  }
+
+  body.admin-sidebar-open #admin-sidebar {
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  body.admin-sidebar-open #admin-sidebar .sidebar-menu {
+    flex: 0 0 auto !important;
+    overflow-y: visible !important;
+  }
+
   .navbar > a img {
     width: 128px !important;
     height: 128px !important;

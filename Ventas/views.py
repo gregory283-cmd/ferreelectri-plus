@@ -377,6 +377,7 @@ def guardar_factura(request):
 
                 factura = Factura.objects.create(
                     cliente=cliente,
+                    tipo_documento='nota_entrega',
                     total=Decimal('0.00'),
                     estado='facturada'
                 )
@@ -450,8 +451,14 @@ def ver_factura(request, numero):
     documento_cliente = factura.rif or factura.cliente.cedula or ''
     if documento_cliente.upper().startswith('AUTO'):
         documento_cliente = ''
+    pedido = factura.pedido if factura.pedido_id else None
+    pago = pedido.pagos.filter(verificado=True).order_by('-creado', '-id').first() if pedido else None
+    envio = getattr(pedido, 'envio', None) if pedido else None
     return render(request, 'ver_factura.html', {
         'factura': factura,
+        'pedido': pedido,
+        'pago': pago,
+        'envio': envio,
         'detalles': detalles,
         'resumen_impuestos': resumen_impuestos,
         'base_imponible': base_imponible,
@@ -462,7 +469,7 @@ def ver_factura(request, numero):
         'documento_cliente': documento_cliente,
         'razon_social_cliente': factura.razon_social or f'{factura.cliente.nombre} {factura.cliente.apellido}'.strip(),
         'domicilio_cliente': factura.direccion_fiscal or factura.cliente.direccion or '',
-        'nota_entrega': request.GET.get('tipo_documento') == 'nota_entrega',
+        'nota_entrega': factura.tipo_documento == 'nota_entrega',
     })
 
 def ventas(request):

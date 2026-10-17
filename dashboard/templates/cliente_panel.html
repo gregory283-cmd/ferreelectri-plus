@@ -9,7 +9,7 @@
 <section class="client-dashboard" id="overview" aria-label="Resumen de tu cuenta">
   {% if pago_pendiente %}
   <div class="client-notice client-notice-warning" role="status">
-    <div><strong>Pedido #{{ pago_pendiente }} recibido</strong><p>El pago sigue pendiente de revisión. La factura aparecerá aquí cuando se confirme.</p></div>
+    <div><strong>Pedido #{{ pago_pendiente }} recibido</strong><p>El pago sigue pendiente de revisión. La nota de entrega aparecerá aquí cuando se confirme.</p></div>
     <a href="{% url 'detalle_pedido_cliente' pago_pendiente %}" class="client-action">Ver pedido <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
   </div>
   {% endif %}
@@ -48,7 +48,7 @@
       <strong class="client-metric-value">{{ pending_payment_count }}</strong><span class="client-metric-note">Comprobantes sin confirmar</span>
     </a>
     <a href="#invoices" class="client-metric client-reveal" data-tone="violet">
-      <span class="client-metric-top"><span class="client-metric-label">Facturas emitidas</span><span class="client-metric-icon"><i class="fa-solid fa-file-invoice" aria-hidden="true"></i></span></span>
+      <span class="client-metric-top"><span class="client-metric-label">Notas de entrega</span><span class="client-metric-icon"><i class="fa-solid fa-file-lines" aria-hidden="true"></i></span></span>
       <strong class="client-metric-value">{{ facturas_emitidas }}</strong><span class="client-metric-note">Documentos disponibles</span>
     </a>
   </div>
@@ -106,7 +106,7 @@
         <span class="client-state" data-state="{{ pedido.estado }}">{{ pedido.get_estado_display|capfirst }}</span>
         <span class="client-row-actions">
           <a class="client-icon-link" href="{% url 'detalle_pedido_cliente' pedido.id %}" aria-label="Ver pedido #{{ pedido.id }}" title="Ver pedido"><i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i></a>
-          {% if pedido.factura and pedido.factura.estado == 'facturada' %}<a class="client-icon-link" href="{% url 'descargar_factura_pdf_cliente' pedido.factura.numero %}" aria-label="Descargar factura del pedido #{{ pedido.id }}" title="Descargar factura"><i class="fa-solid fa-file-arrow-down" aria-hidden="true"></i></a>{% endif %}
+          {% if pedido.factura and pedido.factura.estado == 'facturada' %}<a class="client-icon-link" href="{% url 'descargar_factura_pdf_cliente' pedido.factura.numero %}" aria-label="Descargar nota de entrega del pedido #{{ pedido.id }}" title="Descargar nota de entrega"><i class="fa-solid fa-file-arrow-down" aria-hidden="true"></i></a>{% endif %}
         </span>
       </article>
       {% endfor %}
@@ -118,15 +118,15 @@
 
   <div class="client-module-grid">
     <section class="client-module client-reveal" id="invoices" aria-labelledby="invoices-title">
-      <div class="client-module-heading"><div><h3 id="invoices-title">Facturas</h3><p>Documentos emitidos después de confirmar el pago.</p></div><a href="{% url 'cliente_facturas' %}" class="client-module-link">Ver todas <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a></div>
+      <div class="client-module-heading"><div><h3 id="invoices-title">Notas de entrega</h3><p>Documentos internos disponibles después de confirmar el pago.</p></div><a href="{% url 'cliente_facturas' %}" class="client-module-link">Ver todas <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a></div>
       {% if recent_invoices %}
       <ul class="client-record-list">
         {% for factura in recent_invoices %}
-        <li class="client-record-row"><span class="client-record-main"><strong>Factura #{{ factura.numero }}</strong><span>{{ factura.fecha|date:"d M Y" }} · {{ factura.get_estado_display }}</span></span><span class="client-record-value">$ {{ factura.total|floatformat:2 }}</span><a class="client-icon-link" href="{% url 'descargar_factura_pdf_cliente' factura.numero %}" aria-label="Descargar factura #{{ factura.numero }}"><i class="fa-solid fa-download" aria-hidden="true"></i></a></li>
+        <li class="client-record-row"><span class="client-record-main"><strong>{% if factura.tipo_documento == 'nota_entrega' %}Nota de entrega{% else %}Documento histórico{% endif %} #{{ factura.numero }}</strong><span>{{ factura.fecha|date:"d M Y" }} · {{ factura.get_estado_display }}</span></span><span class="client-record-value">{{ factura.moneda }} {{ factura.total|floatformat:2 }}</span><a class="client-icon-link" href="{% url 'descargar_factura_pdf_cliente' factura.numero %}" aria-label="Descargar documento #{{ factura.numero }}"><i class="fa-solid fa-download" aria-hidden="true"></i></a></li>
         {% endfor %}
       </ul>
       {% else %}
-      <div class="client-empty-state"><i class="fa-regular fa-file-lines" aria-hidden="true"></i><strong>No hay facturas emitidas</strong><p>Las facturas estarán disponibles aquí al confirmarse una compra.</p></div>
+      <div class="client-empty-state"><i class="fa-regular fa-file-lines" aria-hidden="true"></i><strong>No hay notas de entrega</strong><p>El documento estará disponible aquí al confirmarse el pago de una compra.</p></div>
       {% endif %}
     </section>
 

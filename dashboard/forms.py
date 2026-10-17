@@ -36,6 +36,10 @@ class ClienteAuthenticationForm(AuthenticationForm):
             if self.user_cache is None:
                 customer = Customer.objects.filter(Q(email__iexact=username) | Q(nombre__iexact=username)).first()
                 if customer:
+                    if not customer.email_verified:
+                        raise forms.ValidationError(
+                            'Confirma tu correo antes de iniciar sesión. Puedes reenviar el enlace desde el registro.'
+                        )
                     raise forms.ValidationError('Contraseña incorrecta. Usa la contraseña correcta o restablece tu cuenta.')
                 raise forms.ValidationError('Credenciales inválidas o acceso no permitido.')
             if getattr(self.user_cache, 'is_staff', False) or getattr(self.user_cache, 'is_superuser', False):
@@ -168,7 +172,8 @@ class ClienteRegistroForm(forms.ModelForm):
             raise forms.ValidationError("El correo es obligatorio.")
         if not re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', email):
             raise forms.ValidationError("Ingrese un correo electrónico válido.")
-        if Customer.objects.filter(email__iexact=email).exists():
+        existing_customer = Customer.objects.filter(email__iexact=email).first()
+        if existing_customer and existing_customer.email_verified:
             raise forms.ValidationError("Este correo ya está registrado como cliente.")
         if User.objects.filter(email__iexact=email, is_staff=True).exists():
             raise forms.ValidationError("Este correo está reservado para administradores.")

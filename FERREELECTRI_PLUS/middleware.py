@@ -52,6 +52,8 @@ class AdminPanelIsolationMiddleware:
         '/admin-panel/recuperar/',
         '/admin-panel/solicitar-recuperacion/',
         '/admin-panel/recuperar-codigo/',
+        '/admin-panel/passkeys/login/options/',
+        '/admin-panel/passkeys/login/verify/',
     }
 
     def __init__(self, get_response):
