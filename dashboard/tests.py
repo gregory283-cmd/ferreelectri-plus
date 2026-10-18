@@ -2503,12 +2503,13 @@ class AdminPWASecurityTest(TestCase):
         self.assertEqual(options['rp']['id'], 'localhost')
         self.assertEqual(options['authenticatorSelection']['residentKey'], 'required')
 
-    def test_login_offers_conditional_passkey_without_duplicate_button(self):
+    def test_login_keeps_fingerprint_button_for_mobile_only(self):
         response = self.client.get(reverse('login_admin_custom'))
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'autocomplete="username webauthn"')
         self.assertContains(response, 'id="admin-passkey-login"')
+        self.assertNotContains(response, 'admin-passkey-key-login')
         self.assertContains(response, 'Iniciar con huella')
         self.assertContains(response, 'viewBox="0 0 32 32"')
         self.assertNotContains(response, 'fingerprint</span>')

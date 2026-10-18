@@ -36,7 +36,12 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  if (heroTitle) {
+  if (heroTitle && window.matchMedia('(max-width: 720px)').matches) {
+    const titleLines = Array.from(heroTitle.querySelectorAll('.hero-title-line'));
+    titleLines[0].textContent = '¡Bienvenido';
+    titleLines[1].textContent = 'de nuevo!';
+    titleLines[2].textContent = '';
+  } else if (heroTitle) {
     const titleLines = Array.from(heroTitle.querySelectorAll('.hero-title-line'));
     const rotatingLine = heroTitle.querySelector('.rotating-line');
     const staticTexts = titleLines.slice(0, 2).map(function(line) {

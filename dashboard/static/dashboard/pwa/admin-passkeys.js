@@ -129,9 +129,9 @@
     if (error.name === 'NotAllowedError') return 'Se canceló la operación o el dispositivo no encontró una llave registrada.';
     if (error.name === 'SecurityError') return 'El dominio HTTPS no coincide con el dominio de la llave. Revisa ADMIN_WEBAUTHN_RP_ID.';
     if (error.name === 'InvalidStateError') return 'Esta llave ya está registrada para este sitio en el dispositivo.';
-    if (error.message === 'No hay llaves de acceso registradas para esta cuenta.') return 'Esta cuenta todavía no tiene una huella registrada.';
-    if (error.message === 'passkey_not_registered') return 'Esta cuenta no tiene una huella registrada. Contacta al administrador para recuperar el acceso.';
-    if (error.message === 'Escribe tu usuario o correo para usar la llave de acceso.') return 'Escribe tu usuario o correo una vez para identificar la cuenta de la huella.';
+    if (error.message === 'No hay llaves de acceso registradas para esta cuenta.') return 'Esta cuenta todavía no tiene una llave de acceso registrada.';
+    if (error.message === 'passkey_not_registered') return 'Esta cuenta no tiene una llave de acceso registrada. Contacta al administrador para recuperar el acceso.';
+    if (error.message === 'Escribe tu usuario o correo para usar la llave de acceso.') return 'Escribe tu usuario o correo para identificar la cuenta.';
     return 'No se pudo completar la operación con la llave de acceso. Inténtalo nuevamente.';
   }
 
@@ -185,31 +185,34 @@
       loader.classList.add('is-biometric');
       loader.style.display = 'flex';
       const label = loader.querySelector('.loader-label');
-      if (label) label.textContent = 'Huella verificada. Desbloqueando…';
+      if (label) label.textContent = 'Acceso verificado. Desbloqueando…';
       requestAnimationFrame(() => loader.classList.add('is-unlocking'));
       await new Promise((resolve) => window.setTimeout(resolve, 520));
     }
     window.location.assign(result.next || '/admin-panel/dashboard/');
   }
 
-  biometricLoginButton?.addEventListener('click', async () => {
+  async function loginWithPasskey(button, hints = []) {
     if (!window.PublicKeyCredential || !navigator.credentials?.get) {
-      showStatus('Este dispositivo no admite identificación biométrica para este sitio. Usa tu contraseña.');
+      showStatus('Este navegador no admite llaves de acceso para este sitio. Usa tu contraseña.');
       return;
     }
-    biometricLoginButton.disabled = true;
+    button.disabled = true;
     try {
       const options = await postJson('/admin-panel/passkeys/login/options/', {
         username: usernameInput?.value.trim() || '',
       });
+      if (hints.length) options.hints = hints;
       const credential = await navigator.credentials.get({ publicKey: prepareRequestOptions(options) });
       await finishPasskeyLogin(credential);
     } catch (error) {
       showStatus(explainError(error));
     } finally {
-      biometricLoginButton.disabled = false;
+      button.disabled = false;
     }
-  });
+  }
+
+  biometricLoginButton?.addEventListener('click', () => loginWithPasskey(biometricLoginButton, ['client-device']));
 
   registrationButton?.addEventListener('click', async () => {
     if (!window.PublicKeyCredential || !navigator.credentials) {

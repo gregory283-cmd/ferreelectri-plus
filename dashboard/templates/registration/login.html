@@ -166,6 +166,7 @@
       object-fit: contain;
       animation: logoPop 1s ease-out both;
     }
+    .brand-logo { display: none; }
     .hero-logo::before {
       content: '';
       position: absolute;
@@ -507,7 +508,7 @@
     }
     .button-row {
       display: grid;
-      grid-template-columns: minmax(0, 3fr) minmax(104px, 2fr);
+      grid-template-columns: 1fr;
       gap: 10px;
       margin-top: 18px;
     }
@@ -543,6 +544,7 @@
       color: #14568e;
       box-shadow: 0 8px 22px rgba(17, 94, 153, .10);
     }
+    .biometric-actions { display: none; min-width: 0; }
     .fingerprint-icon {
       display: grid;
       width: 42px;
@@ -791,35 +793,46 @@
     }
     @media (max-width: 720px) {
       html, body { height: auto; min-height: 100%; overflow-x: hidden; overflow-y: auto; }
-      .page-shell { height: auto; min-height: 100svh; grid-template-columns: minmax(0, 1fr); gap: 0; }
-      .hero-panel { min-height: 0; height: auto; gap: 12px; padding: 16px 16px 14px; border-radius: 0 0 24px 24px; }
-      .hero-badge, .hero-logo, .hero-features, .hero-footer { display: none; }
+      .page-shell { display: block; width: 100%; height: auto; min-height: 100svh; }
+      .hero-panel { min-height: 320px; height: 41svh; max-height: 370px; gap: 14px; padding: max(22px, env(safe-area-inset-top)) 22px 88px; border-radius: 0 0 28px 28px; background: linear-gradient(150deg, #3d81e5 0%, #1254bb 54%, #073878 100%); }
+      .hero-badge { display: grid; justify-items: center; gap: 8px; width: 100%; margin: 0; padding: 0; border: 0; background: transparent; backdrop-filter: none; text-align: center; }
+      .brand-mark { width: min(76vw, 260px); height: auto; flex-basis: auto; display: block; overflow: visible; margin: 0 auto; border-radius: 0; background: transparent; box-shadow: none; }
+      .brand-bolt { display: none; }
+      .brand-logo { display: block; width: 100%; height: auto; object-fit: contain; mix-blend-mode: lighten; }
+      .hero-badge-copy, .hero-text { display: none; }
       .hero-header-grid { display: block; }
       .hero-title-group { max-width: 100%; gap: 0; }
-      .auth-card { padding: 14px 14px; }
-      .hero-title { font-size: 1.8rem; line-height: 1.05; max-width: 100%; }
+      .hero-logo, .hero-features, .hero-footer { display: none; }
+      .hero-title { font-size: 2rem; line-height: 1.04; text-align: center; }
       .hero-title-line { width: 100%; white-space: normal; overflow: visible; }
       .hero-title-line.current { border-right: 0; }
-      .hero-title-line.full { min-height: 1.18em; }
-      .hero-text { margin: 0; font-size: 0.88rem; line-height: 1.4; }
-      .form-panel { min-height: 0; height: auto; padding: 10px 12px 16px; }
-      .auth-card { width: min(100%, 520px); margin: 0 auto; border-radius: 18px; }
-      .auth-top { gap: 6px; margin-bottom: 10px; }
-      .auth-title, .known-admin-greeting h2 { font-size: 1.5rem; line-height: 1.1; }
-      .login-form { gap: 10px; }
-      .field { gap: 6px; }
-      .field__label { font-size: 0.84rem; }
-      .button-row { grid-template-columns: minmax(0, 3fr) minmax(96px, 2fr); gap: 8px; margin-top: 2px; }
-      .primary-btn, .secondary-btn { min-height: 48px; border-radius: 13px; font-size: 0.92rem; }
-      .input-wrap { min-height: 54px; gap: 10px; padding: 7px 11px; border-radius: 16px; }
-      .input-wrap input { min-height: 38px; font-size: 0.92rem; }
-      .field__icon { width: 32px; height: 32px; border-radius: 11px; font-size: 1rem; }
-      .remember-device { gap: 8px; font-size: 0.78rem; line-height: 1.3; }
-      .remember-device input { width: 16px; height: 16px; }
-      .form-footer { gap: 8px; margin-top: 10px; }
+      .hero-title-line.full { min-height: 0; }
+      .form-panel { position: relative; z-index: 1; min-height: 0; height: auto; margin-top: -76px; padding: 0 16px max(24px, env(safe-area-inset-bottom)); align-items: flex-start; background: transparent; }
+      .auth-card { width: min(100%, 520px); min-height: 0; display: flex; flex-direction: column; justify-content: center; margin: 0 auto; padding: 25px 20px 18px; border: 1px solid rgba(255,255,255,0.82); border-radius: 22px; background: rgba(250,253,255,0.97); box-shadow: 0 24px 60px rgba(10,38,79,0.2); backdrop-filter: blur(18px); }
+      .auth-top { gap: 8px; margin-bottom: 16px; }
+      .auth-title, .known-admin-greeting h2 { font-size: 1.65rem; line-height: 1.12; }
+      .login-form { gap: 13px; }
+      .field { gap: 7px; }
+      .field__label { font-size: 0.9rem; }
+      .button-row { grid-template-columns: minmax(0, 1.2fr) minmax(116px, 1fr); gap: 9px; margin-top: 5px; }
+      .biometric-actions { display: flex; }
+      .primary-btn, .secondary-btn { min-height: 52px; border-radius: 14px; font-size: 0.96rem; }
+      .input-wrap { min-height: 58px; gap: 10px; padding: 8px 11px; border-radius: 16px; }
+      .input-wrap input { min-height: 38px; font-size: 0.96rem; }
+      .field__icon { width: 36px; height: 36px; border-radius: 11px; font-size: 1.05rem; }
+      .remember-device { gap: 9px; font-size: 0.86rem; line-height: 1.35; }
+      .remember-device input { width: 17px; height: 17px; }
+      .form-footer { gap: 10px; margin-top: 14px; }
       .action-links { margin-top: 0; }
-      .action-links a { width: 100%; min-width: 0; padding: 7px 8px; border: 0; border-radius: 8px; background: transparent; box-shadow: none; color: #1765bd; font-size: .82rem; text-decoration: underline; }
-      .toggle-password { right: 14px; }
+      .action-links a { width: 100%; min-width: 0; min-height: 46px; padding: 10px 14px; border: 1px solid rgba(0,91,190,0.2); border-radius: 12px; background: rgba(232,244,255,0.86); box-shadow: 0 5px 14px rgba(15,62,110,0.06); color: #145a9f; font-size: 0.92rem; font-weight: 700; text-decoration: none; }
+      .toggle-password { right: 12px; width: 44px; height: 44px; }
+    }
+    @media (max-width: 380px) {
+      .hero-panel { min-height: 310px; padding-right: 18px; padding-left: 18px; }
+      .auth-card { padding-right: 16px; padding-left: 16px; }
+      .button-row { grid-template-columns: minmax(0, 1fr) minmax(108px, .9fr); gap: 8px; }
+      .biometric-login-btn { gap: 5px; }
+      .fingerprint-icon { width: 36px; height: 36px; }
     }
   </style>
 </head>
@@ -827,7 +840,7 @@
   <div class="page-shell">
     <section class="hero-panel">
       <div class="hero-badge">
-        <span class="brand-mark" aria-hidden="true">⚡</span>
+        <span class="brand-mark" aria-hidden="true"><span class="brand-bolt">⚡</span><img class="brand-logo" src="{% static 'img/logo.png' %}" alt="" /></span>
         <span class="hero-badge-copy">
           <strong>FERREELECTRI PLUS</strong>
           <span>Control total para tu taller</span>
@@ -896,20 +909,22 @@
           </div>
           <label class="remember-device" for="remember-device">
             <input id="remember-device" name="remember_device" type="checkbox" value="1" />
-            <span>Recordarme en este dispositivo. Después de validar la contraseña podrás activar huella, rostro o PIN para próximos accesos.</span>
+            <span>Recordarme en este dispositivo</span>
           </label>
           <div class="button-row">
             <button type="submit" class="primary-btn">Iniciar sesión</button>
-            <button type="button" class="secondary-btn biometric-login-btn" id="admin-passkey-login" aria-label="Iniciar con huella" title="Iniciar con huella">
-              <span class="fingerprint-icon" aria-hidden="true">
+            <div class="biometric-actions">
+              <button type="button" class="secondary-btn biometric-login-btn" id="admin-passkey-login" aria-label="Iniciar con huella" title="Iniciar con huella">
+                <span class="fingerprint-icon" aria-hidden="true">
                 <svg viewBox="0 0 32 32"><path d="M16 4.5A11.5 11.5 0 0 0 4.5 16"/><path d="M27.2 11.2c.6 1.5.9 3.1.9 4.8 0 3.7-1.1 7.2-3.1 10.2"/><path d="M9.3 9.4A9.5 9.5 0 0 0 6 16.5c0 2-.1 3.9-.7 5.8"/><path d="M12 11.5a6.4 6.4 0 0 0-2.1 4.8c0 3.5-.3 6.3-1.2 8.7"/><path d="M16 9.4a6.6 6.6 0 0 0-6.6 6.6"/><path d="M16 14a2 2 0 0 0-2 2c0 4.5-.8 8.2-2.2 11"/><path d="M16 12.5a3.5 3.5 0 0 1 3.5 3.5c0 4.7-.5 8.2-1.6 11.2"/><path d="M21.7 12a8 8 0 0 1 1.8 5.2c0 2.5-.2 4.8-.8 7"/><path d="M12.8 2.9c1-.3 2.1-.4 3.2-.4 2 0 3.9.5 5.6 1.4"/></svg>
-              </span>
-              <span class="biometric-label">Huella</span>
-            </button>
+                </span>
+                <span class="biometric-label">Huella</span>
+              </button>
+            </div>
           </div>
           <p id="admin-passkey-status" role="status" aria-live="polite"></p>
         </form>
-        <script src="{% static 'dashboard/pwa/admin-passkeys.js' %}?v=20261018-passkeys-v4" defer></script>
+        <script src="{% static 'dashboard/pwa/admin-passkeys.js' %}?v=20261018-passkeys-v7" defer></script>
         {% if admin_login_expires_at %}
         <script>
           (() => {
