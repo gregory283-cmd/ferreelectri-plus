@@ -2374,8 +2374,34 @@ class AdminPWASecurityTest(TestCase):
             secure=True,
         )
 
-        self.assertEqual(response.status_code, 404)
-        self.assertEqual(response.json()['error'], 'No hay llaves de acceso registradas.')
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()['error'], 'Escribe tu usuario o correo para usar la llave de acceso.')
+
+    def test_passkey_login_options_only_return_the_selected_admin_key(self):
+        from .models import AdminPasskey
+
+        selected_admin = User.objects.create_user(
+            username='selected-passkey-admin', email='selected-passkey@example.test',
+            password='TestPassword123!', is_staff=True,
+        )
+        other_admin = User.objects.create_user(
+            username='other-passkey-admin', email='other-passkey@example.test',
+            password='TestPassword123!', is_staff=True,
+        )
+        AdminPasskey.objects.create(user=selected_admin, credential_id='YWJj', public_key=b'selected')
+        AdminPasskey.objects.create(user=other_admin, credential_id='ZGVm', public_key=b'other')
+
+        response = self.client.post(
+            reverse('admin_passkey_login_options'),
+            data=json.dumps({'username': selected_admin.username}),
+            content_type='application/json',
+            HTTP_HOST='localhost',
+            secure=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['allowCredentials'][0]['id'], 'YWJj')
+        self.assertEqual(len(response.json()['allowCredentials']), 1)
 
     def test_staff_gets_passkey_registration_options_for_https_origin(self):
         staff = User.objects.create_user(

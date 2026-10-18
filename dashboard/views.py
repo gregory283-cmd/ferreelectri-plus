@@ -309,11 +309,28 @@ def admin_passkey_login_options(request):
     rp_id, origin = _admin_webauthn_origin(request)
     if not rp_id or not origin:
         return JsonResponse({'error': 'El acceso con llave requiere HTTPS.'}, status=400)
-    if not AdminPasskey.objects.filter(user__is_active=True, user__is_staff=True).exists():
-        return JsonResponse({'error': 'No hay llaves de acceso registradas.'}, status=404)
+    try:
+        payload = json.loads(request.body or b'{}')
+    except (TypeError, ValueError):
+        return JsonResponse({'error': 'No se pudo leer la cuenta para iniciar con llave.'}, status=400)
+    identifier = str(payload.get('username') or '').strip()
+    if not identifier:
+        return JsonResponse({'error': 'Escribe tu usuario o correo para usar la llave de acceso.'}, status=400)
+    user = User.objects.filter(is_active=True, is_staff=True).filter(
+        Q(username__iexact=identifier) | Q(email__iexact=identifier),
+    ).first()
+    if not user:
+        return JsonResponse({'error': 'No hay una cuenta administrativa con ese usuario o correo.'}, status=404)
+    passkeys = list(AdminPasskey.objects.filter(user=user))
+    if not passkeys:
+        return JsonResponse({'error': 'No hay llaves de acceso registradas para esta cuenta.'}, status=404)
     options = generate_authentication_options(
         rp_id=rp_id,
         user_verification=UserVerificationRequirement.REQUIRED,
+        allow_credentials=[
+            PublicKeyCredentialDescriptor(id=base64url_to_bytes(item.credential_id))
+            for item in passkeys
+        ],
     )
     _store_admin_webauthn_challenge(
         request, 'admin_passkey_login_challenge', options.challenge, rp_id, origin,

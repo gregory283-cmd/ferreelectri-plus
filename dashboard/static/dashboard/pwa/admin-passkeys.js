@@ -125,7 +125,8 @@
     if (error.name === 'NotAllowedError') return 'Se canceló la operación o el dispositivo no encontró una llave registrada.';
     if (error.name === 'SecurityError') return 'El dominio HTTPS no coincide con el dominio de la llave. Revisa ADMIN_WEBAUTHN_RP_ID.';
     if (error.name === 'InvalidStateError') return 'Esta llave ya está registrada para este sitio en el dispositivo.';
-    if (error.message === 'No hay llaves de acceso registradas.') return 'Todavía no hay llaves de acceso registradas para el personal administrativo.';
+    if (error.message === 'No hay llaves de acceso registradas para esta cuenta.') return 'Esta cuenta todavía no tiene una huella registrada.';
+    if (error.message === 'Escribe tu usuario o correo para usar la llave de acceso.') return 'Escribe tu usuario o correo una vez para identificar la cuenta de la huella.';
     return 'No se pudo completar la operación con la llave de acceso. Inténtalo nuevamente.';
   }
 
@@ -147,7 +148,9 @@
     }
     biometricLoginButton.disabled = true;
     try {
-      const options = await postJson('/admin-panel/passkeys/login/options/', {});
+      const options = await postJson('/admin-panel/passkeys/login/options/', {
+        username: usernameInput?.value.trim() || '',
+      });
       const credential = await navigator.credentials.get({ publicKey: prepareRequestOptions(options) });
       await finishPasskeyLogin(credential);
     } catch (error) {
