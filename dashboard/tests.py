@@ -1077,6 +1077,8 @@ class ClienteCompraEndToEndTest(TestCase):
         self.media_directory.cleanup()
 
     def test_customer_registers_orders_and_admin_approves_with_data_isolated(self):
+        from .models import Envio
+
         registration = self.client.post(reverse('cliente_registro'), {
             'nombre': 'Camila Demo',
             'email': 'camila.e2e@example.com',
@@ -1139,10 +1141,10 @@ class ClienteCompraEndToEndTest(TestCase):
         self.assertEqual(pedido.estado, 'pendiente')
         self.assertEqual(pedido.estado_operativo, 'pendiente_pago')
         self.assertEqual(pago.estado, 'en_revision')
-        self.assertEqual(pedido.envio.nombre_destinatario, 'Camila Demo')
-        self.assertEqual(pedido.envio.telefono, '+58 414 765 4321')
-        self.assertEqual(pedido.envio.direccion, 'Avenida Central 123, Coloncito')
-        self.assertEqual(pedido.envio.eventos.count(), 1)
+        self.assertFalse(Envio.objects.filter(pedido=pedido).exists())
+        cliente.refresh_from_db()
+        self.assertEqual(cliente.telefono, '+58 414 765 4321')
+        self.assertEqual(cliente.direccion, 'Avenida Central 123, Coloncito')
         self.assertEqual(pedido.total, Decimal('116.00'))
         self.assertEqual(pedido.items.get().iva, Decimal('16.00'))
         self.assertTrue(pago.comprobante)
@@ -1469,6 +1471,8 @@ class PaidOrderNoteEmailTest(TestCase):
         self.assertIn('pedido #', email.subject.lower())
         self.assertIn('Total pagado: USD 116.00', email.body)
         self.assertIn('NOTA-REF-1', email.body)
+        self.assertIn('Mis pedidos', email.body)
+        self.assertIn(reverse('cliente_panel'), email.body)
         self.assertEqual(email.attachments[0][0], f'nota_entrega_pedido_{order.pk}.pdf')
         self.assertTrue(email.attachments[0][1].startswith(b'%PDF'))
 
@@ -1994,8 +1998,6 @@ class CheckoutProfileValidationTest(TestCase):
                 'banco': 'Banesco',
                 'cedula_pagador': 'V12345678',
                 'referencia': 'REF-QA-123',
-                'telefono': '04121234567',
-                'direccion': 'Dirección de prueba QA',
                 'capture': make_test_payment_image(),
             },
             follow=True,
@@ -2059,11 +2061,21 @@ class CheckoutProfileValidationTest(TestCase):
         self.assertContains(detail, 'V-12345678')
         self.assertContains(detail, 'REF-QA-123')
         self.assertContains(detail, receipt_url)
-        self.assertContains(detail, 'Detalle administrativo para revisar entrega')
+        self.assertContains(detail, 'Detalle administrativo para revisar productos y evidencia de pago.')
+        self.assertNotContains(detail, 'Preparación y envío')
+        from .models import Envio
+        self.assertFalse(Envio.objects.filter(pedido=pedido).exists())
         self.assertContains(detail, 'Clientes')
         self.assertContains(detail, 'css/admin-theme.css')
         self.assertContains(detail, 'Modo oscuro')
         self.assertNotContains(detail, 'Mi perfil')
+
+        self.client.force_login(self.user)
+        customer_panel = self.client.get(reverse('cliente_panel'))
+        self.assertContains(
+            customer_panel,
+            reverse('descargar_factura_pdf_cliente', args=[factura.numero]),
+        )
 
     def test_admin_cannot_approve_order_without_payment_evidence(self):
         order = Pedido.objects.create(cliente=self.user, total=Decimal('100.00'), estado='pendiente')

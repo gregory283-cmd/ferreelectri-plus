@@ -15,7 +15,6 @@
         <div class="executive-header-actions">
             <span class="period-chip"><span class="status-dot"></span> Últimos 30 días</span>
             <a class="quiet-action" href="{% url 'admin_historial_pedidos' %}"><span class="material-symbols-outlined" aria-hidden="true">receipt_long</span> Pedidos</a>
-            {% if perms.dashboard.view_operational_orders %}<a class="quiet-action" href="{% url 'admin_envios' %}"><span class="material-symbols-outlined" aria-hidden="true">local_shipping</span> Envíos</a>{% endif %}
             <a class="quiet-action" href="{% url 'cierre_caja' %}"><span class="material-symbols-outlined" aria-hidden="true">point_of_sale</span> Cierre de caja</a>
             <div class="header-currency-controls" aria-label="Moneda y tasa BCV">
                 <form class="currency-picker" method="get" action="{% url 'dashboard' %}">

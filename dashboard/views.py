@@ -3405,7 +3405,7 @@ def _calcular_totales_checkout(items):
     return subtotal, iva_total, subtotal + iva_total
 
 
-def create_order_with_locked_stock(user_obj, items, metodo='PAGO_MOVIL', referencia='', gateway_payload=None, datos_envio=None):
+def create_order_with_locked_stock(user_obj, items, metodo='PAGO_MOVIL', referencia='', gateway_payload=None):
     """Crea un pedido pendiente y reserva existencias sin descontarlas todavía."""
     with transaction.atomic():
         locked_products = {}
@@ -3440,21 +3440,6 @@ def create_order_with_locked_stock(user_obj, items, metodo='PAGO_MOVIL', referen
             estado_operativo='pendiente_pago',
             stock_descontado=False,
         )
-        if datos_envio:
-            envio = Envio.objects.create(
-                pedido=pedido,
-                estado='no_preparado',
-                nombre_destinatario=datos_envio.get('nombre_destinatario', '')[:180],
-                telefono=datos_envio.get('telefono', '')[:30],
-                direccion=datos_envio.get('direccion', '')[:500],
-            )
-            EnvioEvento.objects.create(
-                envio=envio,
-                estado_nuevo=envio.estado,
-                actor=user_obj,
-                descripcion='Datos de entrega capturados al confirmar el pedido.',
-            )
-
         for item in items:
             product = locked_products[item.producto.Codigo]
             PedidoItem.objects.create(
@@ -3554,7 +3539,6 @@ def checkout(request):
             'checkout_method': checkout_method,
             'checkout_post_data': {
                 'telefono': request.POST.get('telefono', ''),
-                'direccion': request.POST.get('direccion', ''),
                 'referencia': request.POST.get('referencia', ''),
             },
             'checkout_errors': errors,
@@ -3571,17 +3555,8 @@ def checkout(request):
             return redirect(reverse('login_cliente') + f"?next={request.path}")
         referencia = request.POST.get('referencia', '').strip()
         telefono = request.POST.get('telefono', '').strip()
-        direccion = request.POST.get('direccion', '').strip()
         metodo = (request.POST.get('metodo') or '').strip().upper()
         checkout_method = metodo or 'PAGO_MOVIL'
-        telephone_digits = re.sub(r'\D', '', telefono)
-        shipping_errors = []
-        if len(telephone_digits) < 7 or len(telephone_digits) > 15:
-            shipping_errors.append('El teléfono debe contener entre 7 y 15 dígitos.')
-        if len(direccion.strip()) < 5:
-            shipping_errors.append('La dirección de entrega debe contener al menos 5 caracteres.')
-        if shipping_errors:
-            return render_checkout_errors(shipping_errors)
         if not metodo:
             return render_checkout_errors(['Selecciona un método de pago antes de continuar.'])
 
@@ -3641,10 +3616,9 @@ def checkout(request):
                 pass
 
         # Actualiza el perfil de contacto sin almacenar secretos de pago.
-        if telefono or direccion:
+        if telefono:
             cliente.telefono = telefono[:20]
-            cliente.direccion = direccion[:255]
-            cliente.save(update_fields=['telefono', 'direccion'])
+            cliente.save(update_fields=['telefono'])
         gateway_payload = {}
         if metodo == 'BINANCE':
             gateway_payload = {
@@ -3665,15 +3639,6 @@ def checkout(request):
                 metodo=metodo,
                 referencia=referencia,
                 gateway_payload=gateway_payload,
-                datos_envio={
-                    'nombre_destinatario': (
-                        user_obj.get_full_name().strip()
-                        or getattr(cliente, 'nombre', '')
-                        or user_obj.username
-                    ),
-                    'telefono': telefono,
-                    'direccion': direccion,
-                },
             )
         except ValueError as stock_error:
             messages.error(request, str(stock_error))
@@ -3762,7 +3727,7 @@ def checkout(request):
         'cliente': cliente,
         'payment_form': PagoMovilCheckoutForm(),
         'checkout_method': checkout_method,
-        'checkout_post_data': {'telefono': '', 'direccion': '', 'referencia': ''},
+        'checkout_post_data': {'telefono': '', 'referencia': ''},
     })
 
 
@@ -3879,21 +3844,6 @@ def _create_invoice_for_paid_order(pedido, pago=None):
         pedido.estado_operativo = 'confirmado'
         pedido.requiere_revision_operativa = False
         pedido.save(update_fields=['estado', 'estado_operativo', 'requiere_revision_operativa'])
-        envio, creado = Envio.objects.get_or_create(
-            pedido=pedido,
-            defaults={
-                'estado': 'no_preparado',
-                'requiere_revision': True,
-                'observaciones': 'Pedido histórico sin datos de entrega congelados; requiere verificación.',
-            },
-        )
-        if creado:
-            EnvioEvento.objects.create(
-                envio=envio,
-                estado_nuevo=envio.estado,
-                descripcion='Envío histórico creado al confirmar el pago.',
-            )
-
         PedidoArchivado.objects.create(
             original=pedido,
             cliente_nombre=cliente_nombre,
@@ -3958,6 +3908,24 @@ def _payment_has_manual_evidence(pago):
     return bool(pago.comprobante and (pago.numero_referencia or pago.referencia))
 
 
+def _manual_payment_evidence_error(pago):
+    missing = []
+    if not pago.comprobante:
+        missing.append('un comprobante legible')
+    if pago.metodo == 'PAGO_MOVIL':
+        if not pago.banco_origen:
+            missing.append('el banco de origen')
+        if not pago.cedula_pagador:
+            missing.append('la cédula del pagador')
+        if not pago.numero_referencia:
+            missing.append('el número de referencia')
+    elif not (pago.numero_referencia or pago.referencia):
+        missing.append('el número de referencia')
+    if not missing:
+        return 'El comprobante no tiene los datos necesarios para verificar el pago.'
+    return f'No se puede aprobar el pago: falta {", ".join(missing)}.'
+
+
 def _approve_pending_order(pedido_id, payment_id=None):
     try:
         with transaction.atomic():
@@ -3973,7 +3941,7 @@ def _approve_pending_order(pedido_id, payment_id=None):
             if not pago:
                 return None, 'El pedido no tiene un pago para revisar.'
             if not _payment_has_manual_evidence(pago):
-                return None, 'Falta un comprobante válido y los datos necesarios para verificar el pago.'
+                return None, _manual_payment_evidence_error(pago)
             if Decimal(str(pago.monto or 0)) != Decimal(str(pedido.total or 0)):
                 return None, 'El monto del pago no coincide con el total del pedido. No se aprobó.'
 
@@ -4164,7 +4132,6 @@ def _contexto_factura_pdf(factura):
         pedido.pagos.filter(verificado=True).order_by('-creado', '-id').first()
         if pedido else None
     )
-    envio = getattr(pedido, 'envio', None) if pedido else None
     logo_path = finders.find('img/logo.png')
     logo_data_uri = ''
     if logo_path:
@@ -4173,7 +4140,6 @@ def _contexto_factura_pdf(factura):
         'factura': factura,
         'pedido': pedido,
         'pago': pago,
-        'envio': envio,
         'logo_data_uri': logo_data_uri,
         'detalles': detalles,
         'resumen_impuestos': resumen_impuestos,
@@ -4549,17 +4515,14 @@ def detalle_pedido_admin(request, pedido_id):
     if not request.user.is_active or not request.user.is_staff:
         return HttpResponseForbidden('Acceso no autorizado')
     pedido = get_object_or_404(
-        Pedido.objects.select_related('cliente', 'envio').prefetch_related(
+        Pedido.objects.select_related('cliente').prefetch_related(
             'items__producto',
             'pagos',
-            'envio__eventos__actor',
         ),
         id=pedido_id,
     )
-    envio = getattr(pedido, 'envio', None)
     return render(request, 'detalle_pedido_admin.html', {
         'pedido': pedido,
-        'envio_form': EnvioAdminForm(instance=envio) if envio else None,
     })
 
 

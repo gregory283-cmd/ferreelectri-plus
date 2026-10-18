@@ -6,6 +6,7 @@ import logging
 from celery import shared_task
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
+from django.contrib.sites.shortcuts import get_current_site
 from django.template.loader import render_to_string
 from django.urls import reverse
 
@@ -68,7 +69,7 @@ def send_order_confirmation_email(self, pedido_id):
 def send_paid_order_note_email(self, factura_id):
     factura = (
         Factura.objects
-        .select_related('cliente', 'pedido__cliente', 'pedido__envio')
+        .select_related('cliente', 'pedido__cliente')
         .prefetch_related('detalles__producto', 'pedido__pagos')
         .get(pk=factura_id)
     )
@@ -105,7 +106,8 @@ def send_paid_order_note_email(self, factura_id):
             f'Total pagado: {factura.moneda} {pago.monto:.2f}\n'
             f'Método: {pago.get_metodo_display()}\n'
             f'Referencia: {pago.numero_referencia or pago.referencia or "No informada"}\n\n'
-            'La modalidad y fecha de entrega se coordinarán por separado. '
+            'Descarga la nota en tu panel de cliente, en Mis pedidos:\n'
+            f"https://{get_current_site(None).domain}{reverse('cliente_panel')}\n\n"
             'Este documento es interno y no fiscal.'
         ),
         from_email=settings.DEFAULT_FROM_EMAIL,

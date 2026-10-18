@@ -33,8 +33,8 @@
         <div class="checkout-card-heading">
           <div class="checkout-step">01</div>
           <div>
-            <h2 id="contactTitle">Datos de envío</h2>
-            <p>Los usamos para coordinar la entrega y la verificación de pago.</p>
+            <h2 id="contactTitle">Datos de contacto</h2>
+            <p>Opcional: deja un teléfono para aclarar cualquier detalle del pedido o del pago.</p>
           </div>
         </div>
 
@@ -48,12 +48,8 @@
             <input type="email" value="{{ cliente.email|default:'' }}" readonly>
           </label>
           <label class="checkout-field">
-            <span>Teléfono</span>
-            <input name="telefono" type="tel" value="{{ checkout_post_data.telefono|default:cliente.telefono }}" placeholder="0414 000 0000" required>
-          </label>
-          <label class="checkout-field">
-            <span>Dirección de entrega</span>
-            <input name="direccion" type="text" value="{{ checkout_post_data.direccion|default:cliente.direccion }}" placeholder="Ciudad, sector y dirección" required>
+            <span>Teléfono de contacto</span>
+            <input name="telefono" type="tel" value="{{ checkout_post_data.telefono|default:cliente.telefono }}" placeholder="0414 000 0000" autocomplete="tel">
           </label>
         </div>
       </section>

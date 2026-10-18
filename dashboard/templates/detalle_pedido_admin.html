@@ -67,7 +67,7 @@
     <div>
       <a class="admin-order-back" href="{% url 'historial_pedidos_admin' %}"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Volver a pedidos</a>
       <h1 class="admin-order-title">Pedido #{{ pedido.id }} <span class="admin-order-status {% if pedido.estado == 'pagado' %}paid{% elif pedido.estado == 'cancelado' %}rejected{% else %}pending{% endif %}">{{ pedido.get_estado_display|default:pedido.estado|capfirst }}</span></h1>
-      <p class="admin-order-muted">Detalle administrativo para revisar entrega, productos y evidencia de pago.</p>
+      <p class="admin-order-muted">Detalle administrativo para revisar productos y evidencia de pago.</p>
     </div>
     <div class="admin-order-total"><span>Total del pedido</span><strong>${{ pedido.total|floatformat:2 }}</strong></div>
   </header>
@@ -76,9 +76,6 @@
     <div class="admin-order-meta-item"><span>Cliente</span><strong>{{ pedido.cliente.get_full_name|default:pedido.cliente.username }}</strong></div>
     <div class="admin-order-meta-item"><span>Correo</span><strong>{{ pedido.cliente.email|default:'No indicado' }}</strong></div>
     <div class="admin-order-meta-item"><span>Estado operativo</span><strong>{{ pedido.get_estado_operativo_display }}{% if pedido.requiere_revision_operativa %} · Requiere revisión{% endif %}</strong></div>
-    <div class="admin-order-meta-item"><span>Destinatario</span><strong>{% if pedido.envio %}{{ pedido.envio.nombre_destinatario|default:'Pendiente de verificar' }}{% else %}Sin datos congelados{% endif %}</strong></div>
-    <div class="admin-order-meta-item"><span>Teléfono de entrega</span><strong>{% if pedido.envio %}{{ pedido.envio.telefono|default:'Pendiente de verificar' }}{% else %}Sin datos congelados{% endif %}</strong></div>
-    <div class="admin-order-meta-item"><span>Dirección de entrega</span><strong>{% if pedido.envio %}{{ pedido.envio.direccion|default:'Pendiente de verificar' }}{% else %}Sin datos congelados{% endif %}</strong></div>
     <div class="admin-order-meta-item"><span>Fecha del pedido</span><strong>{{ pedido.fecha_creacion|date:'d/m/Y H:i' }}</strong></div>
     <div class="admin-order-meta-item"><span>Stock</span><strong>{% if pedido.stock_descontado %}Descontado al confirmar el pago{% else %}Reservado; pendiente de aprobación{% endif %}</strong></div>
   </section>
@@ -125,38 +122,5 @@
     </div>
   </section>
 
-  <section class="admin-order-section">
-    <header><h2>Preparación y envío</h2></header>
-    {% if pedido.envio %}
-    <div class="admin-order-shipment-summary">
-      <p><strong>Estado:</strong> {{ pedido.envio.get_estado_display }}{% if pedido.envio.requiere_revision %} · Datos históricos por verificar{% endif %}</p>
-      <p><strong>Transportista:</strong> {{ pedido.envio.transportista|default:'Sin asignar' }} · <strong>Guía:</strong> {{ pedido.envio.numero_guia|default:'Sin asignar' }}</p>
-      {% if pedido.envio.url_seguimiento %}<p><a href="{{ pedido.envio.url_seguimiento }}" target="_blank" rel="noopener noreferrer">Abrir seguimiento del transportista</a></p>{% endif %}
-    </div>
-    {% if perms.dashboard.manage_fulfillment %}
-    <form class="admin-shipping-form" method="post" action="{% url 'actualizar_envio_admin' pedido.id %}">
-      {% csrf_token %}
-      {% for error in envio_form.non_field_errors %}<p class="admin-shipping-error">{{ error }}</p>{% endfor %}
-      <div class="admin-shipping-field"><label for="{{ envio_form.estado.id_for_label }}">Estado</label>{{ envio_form.estado }}{{ envio_form.estado.errors }}</div>
-      <div class="admin-shipping-field"><label for="{{ envio_form.nombre_destinatario.id_for_label }}">Destinatario</label>{{ envio_form.nombre_destinatario }}{{ envio_form.nombre_destinatario.errors }}</div>
-      <div class="admin-shipping-field"><label for="{{ envio_form.telefono.id_for_label }}">Teléfono</label>{{ envio_form.telefono }}{{ envio_form.telefono.errors }}</div>
-      <div class="admin-shipping-field wide"><label for="{{ envio_form.direccion.id_for_label }}">Dirección de entrega</label>{{ envio_form.direccion }}{{ envio_form.direccion.errors }}</div>
-      <div class="admin-shipping-field"><label for="{{ envio_form.transportista.id_for_label }}">Transportista</label>{{ envio_form.transportista }}{{ envio_form.transportista.errors }}</div>
-      <div class="admin-shipping-field"><label for="{{ envio_form.numero_guia.id_for_label }}">Número de guía</label>{{ envio_form.numero_guia }}{{ envio_form.numero_guia.errors }}</div>
-      <div class="admin-shipping-field wide"><label for="{{ envio_form.url_seguimiento.id_for_label }}">URL de seguimiento</label>{{ envio_form.url_seguimiento }}{{ envio_form.url_seguimiento.errors }}</div>
-      <div class="admin-shipping-field wide"><label for="{{ envio_form.observaciones.id_for_label }}">Observaciones o incidencia</label>{{ envio_form.observaciones }}{{ envio_form.observaciones.errors }}</div>
-      <div class="admin-order-actions wide"><button class="approve" type="submit"><i class="fa-solid fa-truck" aria-hidden="true"></i> Guardar seguimiento</button></div>
-    </form>
-    {% endif %}
-    <div class="admin-shipping-events" aria-label="Historial del envío">
-      <h3>Actividad</h3>
-      {% for evento in pedido.envio.eventos.all %}
-      <p><strong>{{ evento.get_estado_nuevo_display }}</strong> · {{ evento.creado|date:'d/m/Y H:i' }}{% if evento.actor %} · {{ evento.actor.get_full_name|default:evento.actor.username }}{% endif %}{% if evento.descripcion %}<br>{{ evento.descripcion }}{% endif %}</p>
-      {% empty %}<p class="admin-order-muted">Aún no hay eventos registrados.</p>{% endfor %}
-    </div>
-    {% else %}
-    <p class="admin-order-empty">El envío se crea al confirmar el pago.</p>
-    {% endif %}
-  </section>
 </section>
 {% endblock %}
