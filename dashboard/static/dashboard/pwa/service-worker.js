@@ -19,8 +19,8 @@ self.addEventListener('push', (event) => {
     : '/admin-panel/dashboard/';
   event.waitUntil(self.registration.showNotification(data.title || 'Nuevo pedido', {
     body: data.body || 'Hay un pedido que requiere revisión.',
-    icon: '/static/dashboard/pwa/icon-192.png',
-    badge: '/static/dashboard/pwa/icon-192.png',
+    icon: '/pwa/icons/192.png',
+    badge: '/pwa/icons/192.png',
     tag: data.tag || 'ferreelectri-admin-order',
     data: { url },
     renotify: true,

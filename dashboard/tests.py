@@ -2249,8 +2249,42 @@ class AdminPWASecurityTest(TestCase):
         self.assertEqual(manifest['Content-Type'], 'application/manifest+json; charset=utf-8')
         self.assertEqual(manifest.json()['display'], 'standalone')
         self.assertIn('/admin-panel/dashboard/', manifest.json()['start_url'])
+        for icon in manifest.json()['icons']:
+            response = self.client.get(icon['src'])
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response['Content-Type'], 'image/png')
         self.assertEqual(worker.status_code, 200)
         self.assertContains(worker, "addEventListener('push'")
+
+    def test_password_login_can_request_passkey_enrollment_after_validation(self):
+        staff = User.objects.create_superuser(
+            username='passkey-enrollment-admin', email='passkey-enrollment@example.test',
+            password='TestPassword123!',
+        )
+
+        response = self.client.post(
+            reverse('login_admin_custom'),
+            {'username': staff.username, 'password': 'TestPassword123!', 'remember_device': '1'},
+            follow=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(self.client.session.get('admin_passkey_enrollment_prompt'))
+        self.assertContains(response, 'Activar acceso con huella o PIN')
+
+    def test_invalid_password_does_not_request_passkey_enrollment(self):
+        User.objects.create_superuser(
+            username='passkey-invalid-admin', email='passkey-invalid@example.test',
+            password='TestPassword123!',
+        )
+
+        response = self.client.post(
+            reverse('login_admin_custom'),
+            {'username': 'passkey-invalid-admin', 'password': 'wrong', 'remember_device': '1'},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(self.client.session.get('admin_passkey_enrollment_prompt', False))
 
     def test_staff_panel_renders_mobile_menu_install_push_and_passkey_controls(self):
         staff = User.objects.create_superuser(

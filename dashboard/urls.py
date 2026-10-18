@@ -4,6 +4,7 @@ from .views import reset_password
 
 urlpatterns = [
     path('manifest.webmanifest', views.admin_pwa_manifest, name='admin_pwa_manifest'),
+    path('pwa/icons/<int:size>.png', views.admin_pwa_icon, name='admin_pwa_icon'),
     path('service-worker.js', views.admin_pwa_service_worker, name='admin_pwa_service_worker'),
     path('admin-panel/push/subscribe/', views.admin_push_subscribe, name='admin_push_subscribe'),
     path('admin-panel/push/unsubscribe/', views.admin_push_unsubscribe, name='admin_push_unsubscribe'),

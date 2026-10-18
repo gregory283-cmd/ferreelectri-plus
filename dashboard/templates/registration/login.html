@@ -395,6 +395,21 @@
       font-weight: 700;
       color: #28406e;
     }
+    .remember-device {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      color: #28406e;
+      font-size: 0.92rem;
+      line-height: 1.45;
+    }
+    .remember-device input {
+      width: 18px;
+      height: 18px;
+      flex: 0 0 auto;
+      margin: 1px 0 0;
+      accent-color: var(--accent);
+    }
     .input-wrap {
       position: relative;
       display: flex;
@@ -808,6 +823,10 @@
               <button type="button" class="toggle-password" aria-label="Mostrar contraseña">👁️</button>
             </div>
           </div>
+          <label class="remember-device" for="remember-device">
+            <input id="remember-device" name="remember_device" type="checkbox" value="1" />
+            <span>Recordarme en este dispositivo. Después de validar la contraseña podrás activar huella, rostro o PIN para próximos accesos.</span>
+          </label>
           <div class="button-row">
             <button type="submit" class="primary-btn">Iniciar sesión</button>
             <button type="reset" class="secondary-btn">Limpiar</button>

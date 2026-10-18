@@ -126,13 +126,13 @@ def admin_pwa_manifest(request):
         'theme_color': '#08243b',
         'icons': [
             {
-                'src': '/static/dashboard/pwa/icon-192.png',
+                'src': reverse('admin_pwa_icon', kwargs={'size': 192}),
                 'sizes': '192x192',
                 'type': 'image/png',
                 'purpose': 'any maskable',
             },
             {
-                'src': '/static/dashboard/pwa/icon-512.png',
+                'src': reverse('admin_pwa_icon', kwargs={'size': 512}),
                 'sizes': '512x512',
                 'type': 'image/png',
                 'purpose': 'any maskable',
@@ -140,6 +140,17 @@ def admin_pwa_manifest(request):
         ],
     })
     response['Content-Type'] = 'application/manifest+json; charset=utf-8'
+    return response
+
+
+def admin_pwa_icon(request, size):
+    if size not in {192, 512}:
+        return HttpResponse(status=404)
+    icon_path = finders.find(f'dashboard/pwa/icon-{size}.png')
+    if not icon_path:
+        return HttpResponse(status=404)
+    response = FileResponse(open(icon_path, 'rb'), content_type='image/png')
+    response['Cache-Control'] = 'public, max-age=86400'
     return response
 
 
@@ -281,6 +292,7 @@ def admin_passkey_registration_verify(request):
         transports=transports,
         name='Llave de acceso móvil',
     )
+    request.session.pop('admin_passkey_enrollment_prompt', None)
     return JsonResponse({'ok': True})
 
 
@@ -2164,6 +2176,10 @@ def login_view(request):
             if user.is_staff or user.is_superuser:
                 request.session.pop('admin_login_unlocked_until', None)
                 login(request, user)
+                if request.POST.get('remember_device') == '1' and not AdminPasskey.objects.filter(user=user).exists():
+                    request.session['admin_passkey_enrollment_prompt'] = True
+                else:
+                    request.session.pop('admin_passkey_enrollment_prompt', None)
                 redirect_url = reverse('dashboard')
                 if is_ajax:
                     return JsonResponse({'ok': True, 'next': redirect_url})

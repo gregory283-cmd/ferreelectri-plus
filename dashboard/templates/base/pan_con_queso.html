@@ -1687,8 +1687,8 @@
             </li>
         </ul>
     </nav>
-    <div class="admin-utility-dock">
-        <button class="admin-utility-toggle" id="admin-utility-toggle" type="button" aria-label="Abrir herramientas" aria-controls="admin-utility-panel" aria-expanded="false" title="Herramientas">
+    <div class="admin-utility-dock{% if request.session.admin_passkey_enrollment_prompt %} is-open{% endif %}">
+        <button class="admin-utility-toggle" id="admin-utility-toggle" type="button" aria-label="Abrir herramientas" aria-controls="admin-utility-panel" aria-expanded="{% if request.session.admin_passkey_enrollment_prompt %}true{% else %}false{% endif %}" title="Herramientas">
             <span class="material-symbols-outlined" aria-hidden="true">tune</span>
             <span class="admin-utility-hint">Presiona para ver más</span>
         </button>
@@ -1702,9 +1702,12 @@
                 <span>Notificaciones de pedidos</span>
             </button>
             <p id="admin-pwa-status" role="status" aria-live="polite"></p>
+            {% if request.session.admin_passkey_enrollment_prompt %}
+            <p role="status">Contraseña verificada. Activa una llave de acceso para iniciar sesión en este dispositivo.</p>
+            {% endif %}
             <button class="theme-toggle-btn" id="admin-register-passkey" type="button" aria-label="Registrar llave de acceso">
                 <span class="material-symbols-outlined" aria-hidden="true">passkey</span>
-                <span>Registrar llave de acceso</span>
+                <span>{% if request.session.admin_passkey_enrollment_prompt %}Activar acceso con huella o PIN{% else %}Registrar llave de acceso{% endif %}</span>
             </button>
             <button class="theme-toggle-btn" id="admin-revoke-passkeys" type="button" aria-label="Revocar llaves de acceso">
                 <span class="material-symbols-outlined" aria-hidden="true">key_off</span>

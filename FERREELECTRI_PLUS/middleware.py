@@ -92,6 +92,9 @@ class LoginRequiredMiddleware:
         '/cliente/login/',
         '/cliente/registro/',
         '/oauth/',
+        '/manifest.webmanifest',
+        '/service-worker.js',
+        '/pwa/icons/',
     ]
     
     def __init__(self, get_response):
