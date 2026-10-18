@@ -1620,14 +1620,44 @@
     </style>
     <link rel="stylesheet" href="{% static 'css/admin-theme.css' %}?v=20261017-mobile-sidebar-scroll-v3">
     {% if request.user.is_authenticated and request.user.is_staff %}
-    <meta id="admin-auth-identity" data-username="{{ request.user.get_username }}" data-display-name="{{ request.user.get_short_name|default:request.user.username }}">
+    <meta id="admin-auth-identity" data-username="{{ request.user.get_username }}" data-display-name="{{ request.user.get_short_name|default:request.user.username }}" data-dashboard-url="{% url 'dashboard' %}" data-login-url="{% url 'login_admin_custom' %}">
     <link rel="manifest" href="{% url 'admin_pwa_manifest' %}">
     <meta name="theme-color" content="#08243b">
-    <script src="{% static 'dashboard/pwa/admin-pwa.js' %}?v=20261017-pwa-v3" defer></script>
+    <style>
+        #admin-session-dialog { width: min(440px, calc(100vw - 32px)); max-width: calc(100vw - 32px); margin: auto; padding: 26px; border: 1px solid rgba(24, 107, 178, .18); border-radius: 16px; color: #15344f; background: #fff; box-shadow: 0 24px 80px rgba(4, 24, 48, .28); }
+        #admin-session-dialog::backdrop { background: rgba(3, 18, 38, .62); backdrop-filter: blur(5px); }
+        #admin-session-dialog[open] { animation: adminSessionDialogIn 220ms cubic-bezier(.2,.8,.2,1) both; }
+        #admin-session-dialog .admin-session-icon { display: grid; width: 48px; height: 48px; place-items: center; margin-bottom: 14px; border-radius: 14px; color: #0759a8; background: #e5f2ff; }
+        #admin-session-dialog h2 { margin: 0 0 8px; font-size: 1.25rem; }
+        #admin-session-dialog p { margin: 0 0 12px; color: #526a7e; line-height: 1.5; }
+        #admin-session-dialog #admin-session-countdown { color: #0759a8; font-size: .9rem; font-weight: 700; }
+        #admin-session-dialog #admin-session-status { min-height: 1.3em; color: #a33a2f; font-size: .85rem; }
+        #admin-session-dialog .admin-session-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 12px; }
+        #admin-session-dialog button { min-height: 44px; padding: 10px 16px; border: 1px solid #cbd9e6; border-radius: 10px; color: #174266; background: #f4f8fc; font: inherit; font-weight: 700; cursor: pointer; }
+        #admin-session-dialog #admin-session-close { border-color: #0759a8; color: #fff; background: #0759a8; }
+        #admin-session-dialog button:disabled { opacity: .6; cursor: wait; }
+        @keyframes adminSessionDialogIn { from { opacity: 0; transform: translateY(12px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        @media (max-width: 520px) { #admin-session-dialog { padding: 22px 18px; } #admin-session-dialog .admin-session-actions { display: grid; grid-template-columns: 1fr 1fr; } }
+        @media (prefers-reduced-motion: reduce) { #admin-session-dialog[open] { animation: none; } }
+    </style>
+    <script src="{% static 'dashboard/pwa/admin-pwa.js' %}?v=20261018-session-guard-v1" defer></script>
     <script src="{% static 'dashboard/pwa/admin-passkeys.js' %}?v=20261017-passkeys-v3" defer></script>
     {% endif %}
 </head>
 <body>
+    {% if request.user.is_authenticated and request.user.is_staff %}
+    <dialog id="admin-session-dialog" aria-labelledby="admin-session-title" aria-describedby="admin-session-message">
+        <span class="admin-session-icon material-symbols-outlined" aria-hidden="true">lock_clock</span>
+        <h2 id="admin-session-title">¿Sigues ahí?</h2>
+        <p id="admin-session-message">Tu sesión se cerrará por inactividad. ¿Quieres continuar trabajando?</p>
+        <p id="admin-session-countdown" role="timer" aria-live="off"></p>
+        <p id="admin-session-status" role="status" aria-live="polite"></p>
+        <div class="admin-session-actions">
+            <button type="button" id="admin-session-continue">Seguir trabajando</button>
+            <button type="button" id="admin-session-close">Cerrar sesión</button>
+        </div>
+    </dialog>
+    {% endif %}
     {% if '/carrito' not in request.path and '/pedido' not in request.path and '/pagar' not in request.path and '/cliente/' not in request.path and '/checkout' not in request.path and '/mis-pedidos' not in request.path or '/admin/pedidos/' in request.path %}
     <button id="admin-sidebar-toggle" class="admin-sidebar-toggle" type="button" aria-controls="admin-sidebar" aria-expanded="false" aria-label="Abrir menú">
         <span class="material-symbols-outlined" aria-hidden="true">menu</span>
