@@ -2525,11 +2525,27 @@ class AdminPWASecurityTest(TestCase):
         session = self.client.session
         session['admin_current_passkey_id'] = owner_passkey.pk
         session.save()
+        AuditLog.objects.create(
+            user=owner,
+            action='ADMIN_PASSKEY_LOGIN',
+            model_name='AdminAuth',
+            details='Acceso de prueba',
+            ip_address='203.0.113.18',
+            user_agent='Android · Chrome móvil',
+        )
         owner_dashboard = self.client.get(reverse('dashboard'))
         self.assertContains(owner_dashboard, 'Actividad del sistema')
         self.assertContains(owner_dashboard, 'Registro reciente')
         self.assertContains(owner_dashboard, 'audit-chart-data')
-        self.assertEqual(self.client.get(reverse('auditoria_completa')).status_code, 200)
+        audit_page = self.client.get(reverse('auditoria_completa'))
+        self.assertEqual(audit_page.status_code, 200)
+        self.assertContains(audit_page, 'data-label="Usuario"')
+        self.assertContains(audit_page, 'data-label="Acción"')
+        self.assertContains(audit_page, 'data-label="Detalles"')
+        self.assertContains(audit_page, 'data-label="IP"')
+        self.assertContains(audit_page, 'data-label="Dispositivo"')
+        self.assertContains(audit_page, 'Android · Chrome móvil')
+        self.assertEqual(audit_page.content.decode().count('<td class="td-useragent audit-device-cell"'), 1)
         self.assertEqual(self.client.get(reverse('descargar_auditoria_csv')).status_code, 200)
 
     def test_security_owner_can_designate_only_its_own_primary_passkey(self):

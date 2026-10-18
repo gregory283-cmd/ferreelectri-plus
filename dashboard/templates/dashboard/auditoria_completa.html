@@ -1,101 +1,71 @@
 {% extends "base/pan_con_queso.html" %}
 {% block arroz_con_pollo %}
 <style>
-    .auditoria-wrapper {
-        margin: 0;
-        padding: 40px 24px 30px 24px;
-        background: transparent;
-        min-height: 100vh;
-        width: 100%;
-        max-width: none;
-        box-sizing: border-box;
+    .auditoria-wrapper { width: 100%; max-width: 1440px; min-height: 100vh; margin: 0 auto; padding: 28px 24px 40px; box-sizing: border-box; }
+    .auditoria-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; margin-bottom: 22px; }
+    .auditoria-eyebrow { display: block; margin-bottom: 7px; color: #087f9a; font-size: .72rem; font-weight: 800; }
+    .auditoria-title { margin: 0; color: var(--text-primary, #15283c); font-size: 1.8rem; font-weight: 800; line-height: 1.15; }
+    .auditoria-subtitle { margin: 7px 0 0; color: var(--text-secondary, #65798d); font-size: .9rem; }
+    .auditoria-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+    .audit-action { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 40px; padding: 8px 12px; border: 1px solid rgba(8,127,154,.18); border-radius: 9px; color: #075b70; background: rgba(8,127,154,.08); font-size: .82rem; font-weight: 700; text-decoration: none; }
+    .audit-action:hover { color: #063f51; background: rgba(8,127,154,.14); }
+    .audit-action .material-symbols-outlined { font-size: 18px; }
+    .audit-count { display: flex; align-items: baseline; gap: 6px; margin: 0 0 12px; color: var(--text-secondary, #65798d); font-size: .8rem; }
+    .audit-count strong { color: var(--text-primary, #15283c); font-size: .92rem; }
+    .table-responsive { width: 100%; overflow-x: auto; border: 1px solid rgba(51,75,102,.14); border-radius: 11px; background: #fff; box-shadow: 0 8px 28px rgba(16,41,76,.06); }
+    .audit-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: .82rem; }
+    .audit-table thead tr { color: #35516a; background: #edf5fa; }
+    .audit-table th, .audit-table td { padding: 12px 13px; border-bottom: 1px solid #e4edf3; text-align: left; vertical-align: top; }
+    .audit-table th { position: sticky; top: 0; z-index: 2; font-size: .72rem; font-weight: 800; white-space: nowrap; }
+    .audit-table tbody tr:last-child td { border-bottom: 0; }
+    .audit-table tbody tr:hover { background: #f6fbfd; }
+    .audit-user { min-width: 105px; color: #15283c; font-weight: 750; overflow-wrap: anywhere; }
+    .audit-action-name { min-width: 155px; color: #075b70; font-weight: 750; overflow-wrap: anywhere; }
+    .audit-model { min-width: 100px; color: #526a7e; }
+    .td-details { min-width: 180px; max-width: 380px; color: #354d61; overflow-wrap: anywhere; }
+    .audit-date { min-width: 112px; color: #526a7e; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .audit-ip { min-width: 110px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .td-useragent { min-width: 160px; max-width: 300px; color: #526a7e; overflow-wrap: anywhere; }
+    .audit-empty { padding: 28px !important; color: #65798d; text-align: center !important; }
+    @media (max-width: 760px) {
+        .auditoria-wrapper { padding: 16px 14px 34px; }
+        .auditoria-header { align-items: stretch; flex-direction: column; gap: 14px; margin-bottom: 18px; }
+        .auditoria-title { font-size: 1.45rem; }
+        .auditoria-subtitle { font-size: .82rem; }
+        .auditoria-actions { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); justify-content: stretch; }
+        .audit-action { min-width: 0; min-height: 42px; padding: 8px 7px; font-size: .75rem; }
+        .table-responsive { overflow: visible; border: 0; background: transparent; box-shadow: none; }
+        .audit-table, .audit-table tbody { display: block; width: 100%; }
+        .audit-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; clip-path: inset(50%); }
+        .audit-table tbody { display: grid; gap: 11px; }
+        .audit-table tbody tr { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); overflow: hidden; border: 1px solid #dce7ee; border-radius: 11px; background: #fff; box-shadow: 0 6px 18px rgba(16,41,76,.06); }
+        .audit-table tbody tr:hover { background: #fff; }
+        .audit-table td { display: grid; align-content: start; gap: 4px; min-width: 0; max-width: none; padding: 10px 11px; border-bottom: 1px solid #edf2f5; font-size: .78rem; white-space: normal; }
+        .audit-table td::before { content: attr(data-label); color: #718397; font-size: .64rem; font-weight: 800; }
+        .audit-table td.audit-detail-cell, .audit-table td.audit-device-cell { grid-column: 1 / -1; }
+        .audit-table td.audit-detail-cell { white-space: pre-wrap; }
+        .audit-table td.audit-ip { white-space: normal; overflow-wrap: anywhere; }
+        .audit-table td.audit-device-cell { color: #526a7e; overflow-wrap: anywhere; }
+        .audit-table tbody tr td:last-child { border-bottom: 0; }
+        .audit-empty { display: block !important; grid-column: 1 / -1; padding: 20px !important; }
     }
-    .table-responsive {
-        overflow-x: auto;
-        border-radius: 12px;
-        box-shadow: 0 2px 12px 0 rgba(0,178,255,0.08);
-        background: transparent;
-        margin-bottom: 40px;
-        border: 1px solid rgba(255,255,255,0.08);
-    }
-        /* Detalles: recortar con ellipsis cuando el ancho no alcanza; permitir wrap en pantallas pequeñas */
-        td.td-details {
-            max-width: 48ch;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        td.td-useragent {
-            max-width: 36ch;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        @media (max-width: 900px) {
-            td.td-details, td.td-useragent { white-space: normal; }
-        }
-    table {
-        width: 100%;
-        border-collapse: separate;
-        border-spacing: 0;
-        font-size: 1.08rem;
-        min-width: 700px;
-    }
-    thead tr {
-        background: #00b2ff;
-        color: #fff;
-        position: sticky;
-        top: 0;
-        z-index: 2;
-    }
-    th, td {
-        padding: 14px 16px;
-        text-align: left;
-        border-bottom: 1px solid #e6f7ff;
-    }
-    th {
-        font-weight: 700;
-        letter-spacing: 1px;
-        font-size: 1.1rem;
-    }
-    tbody tr:hover {
-        background: #e6f7ff;
-        transition: background 0.2s;
-    }
-    tbody tr:last-child td {
-        border-bottom: none;
-    }
-    .volver-btn {
-        background: #00b2ff;
-        color: #fff;
-        border: none;
-        border-radius: 8px;
-        padding: 10px 22px;
-        font-weight: 600;
-        font-size: 1rem;
-        cursor: pointer;
-        transition: background 0.2s, color 0.2s;
-        box-shadow: 0 2px 8px 0 rgba(0,178,255,0.08);
-        outline: none;
-        margin-bottom: 24px;
-        display: inline-block;
-        text-decoration: none;
-    }
-    .volver-btn:hover {
-        background: #0090cc;
-        color: #fff;
-    }
-    @media (max-width: 900px) {
-        .auditoria-wrapper { padding: 15px; }
-        table { min-width: 500px; }
-    }
+    @media (max-width: 360px) { .auditoria-wrapper { padding-right: 10px; padding-left: 10px; } .audit-action { font-size: .7rem; } }
 </style>
 <div class="auditoria-wrapper">
-    <a href="{% url 'dashboard' %}" class="volver-btn">&larr; Volver al dashboard</a>
-    <a href="{% url 'admin_security_devices' %}" class="volver-btn">Dispositivos y llaves</a>
-    <h2 style="color:#00b2ff; font-size:2.1rem; font-weight:800; margin-bottom:32px;">Auditoría completa (últimos 7 días)</h2>
+    <header class="auditoria-header">
+        <div>
+            <span class="auditoria-eyebrow">CONTROL Y TRAZABILIDAD</span>
+            <h1 class="auditoria-title">Auditoría administrativa</h1>
+            <p class="auditoria-subtitle">Accesos y actividad registrados durante los últimos 7 días.</p>
+        </div>
+        <nav class="auditoria-actions" aria-label="Acciones de auditoría">
+            <a href="{% url 'dashboard' %}" class="audit-action"><span class="material-symbols-outlined" aria-hidden="true">arrow_back</span> Volver al panel</a>
+            <a href="{% url 'admin_security_devices' %}" class="audit-action"><span class="material-symbols-outlined" aria-hidden="true">devices</span> Dispositivos y llaves</a>
+        </nav>
+    </header>
+    <p class="audit-count"><strong>{{ logs|length }}</strong> eventos recientes</p>
     <div class="table-responsive">
-        <table>
+        <table class="audit-table">
             <thead>
                 <tr>
                     <th>Usuario</th>
@@ -110,18 +80,17 @@
             <tbody>
                 {% for log in logs %}
                 <tr>
-                    <td>{{ log.username }}</td>
-                    <td>{{ log.action }}</td>
-                    <td>{{ log.model_name }}</td>
-                        <td class="td-details" title="{{ log.raw_details|default:'' }}">{{ log.details }}</td>
-                    <td>{{ log.timestamp|date:"d/m/Y H:i" }}</td>
-                    {% if include_ip %}<td>{{ log.ip_address }}</td>{% endif %}
-                    {% if include_user_agent %}<td style="max-width:200px;overflow-x:auto;">{{ log.user_agent }}</td>{% endif %}
-                        {% if include_user_agent %}<td class="td-useragent" title="{{ log.user_agent|default:'' }}">{{ log.user_agent }}</td>{% endif %}
+                    <td class="audit-user" data-label="Usuario">{{ log.username }}</td>
+                    <td class="audit-action-name" data-label="Acción">{{ log.action }}</td>
+                    <td class="audit-model" data-label="Área">{{ log.model_name }}</td>
+                    <td class="td-details audit-detail-cell" data-label="Detalles" title="{{ log.raw_details|default:'' }}">{{ log.details }}</td>
+                    <td class="audit-date" data-label="Fecha">{{ log.timestamp|date:"d/m/Y H:i" }}</td>
+                    {% if include_ip %}<td class="audit-ip" data-label="IP">{{ log.ip_address|default:'No disponible' }}</td>{% endif %}
+                    {% if include_user_agent %}<td class="td-useragent audit-device-cell" data-label="Dispositivo">{{ log.user_agent|default:'No identificado' }}</td>{% endif %}
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="{{ colspan }}">No hay registros de auditoría en los últimos 7 días.</td>
+                    <td class="audit-empty" colspan="{{ colspan }}">No hay registros de auditoría en los últimos 7 días.</td>
                 </tr>
                 {% endfor %}
             </tbody>
