@@ -57,6 +57,7 @@ class AdminPanelIsolationMiddleware:
         '/admin-panel/passkeys/recovery/options/',
         '/admin-panel/passkeys/recovery/verify/',
         '/admin-panel/app-session/lock/',
+        '/admin-panel/app-launch/',
     }
 
     def __init__(self, get_response):
@@ -98,6 +99,7 @@ class LoginRequiredMiddleware:
         '/manifest.webmanifest',
         '/service-worker.js',
         '/admin-panel/app-session/lock/',
+        '/admin-panel/app-launch/',
         '/pwa/icons/',
     ]
     

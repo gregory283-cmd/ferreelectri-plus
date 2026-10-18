@@ -864,6 +864,7 @@
     (() => {
       const standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
       if (!standalone) return;
+      if (new URLSearchParams(window.location.search).get('pwa_ready') === '1') return;
       document.documentElement.classList.add('pwa-launching');
     })();
   </script>

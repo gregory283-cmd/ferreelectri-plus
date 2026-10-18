@@ -1,0 +1,40 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#08243b">
+    <title>FerreElectri PLUS</title>
+    <style>
+        :root { color-scheme: dark; background: #08243b; font-family: 'Segoe UI', system-ui, sans-serif; }
+        * { box-sizing: border-box; }
+        html, body { width: 100%; min-height: 100%; margin: 0; }
+        body { min-height: 100svh; overflow: hidden; background: #08243b; color: #fff; }
+        .launch-screen { position: relative; display: grid; min-height: 100svh; place-items: center; overflow: hidden; padding: 28px; isolation: isolate; }
+        .launch-screen::before { position: absolute; z-index: -1; inset: 0; background: radial-gradient(ellipse at 50% 42%, rgba(31,121,206,.35), transparent 46%); content: ''; }
+        .launch-brand { display: grid; justify-items: center; gap: 38px; width: min(100%, 390px); animation: brand-arrive 700ms cubic-bezier(.18,.82,.22,1) both; }
+        .launch-brand img { display: block; width: min(72vw, 340px); height: auto; object-fit: contain; }
+        .launch-progress { position: relative; width: min(220px, 58vw); height: 5px; overflow: hidden; border-radius: 99px; background: rgba(255,255,255,.2); }
+        .launch-progress::after { position: absolute; inset: 0 auto 0 -42%; width: 42%; border-radius: inherit; background: #fff; content: ''; animation: launch-progress 1.05s cubic-bezier(.4,0,.2,1) infinite; }
+        .launch-status { min-height: 1.4em; margin: -24px 0 0; color: rgba(240,247,255,.78); font-size: .88rem; text-align: center; }
+        .launch-csrf { display: none; }
+        @keyframes brand-arrive { from { opacity: 0; transform: translateY(14px) scale(.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        @keyframes launch-progress { to { transform: translateX(340%); } }
+        @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; } }
+    </style>
+    <script src="{% static 'js/pwa_launch.js' %}?v=20261018-launch-v1" defer></script>
+</head>
+<body>
+    <main class="launch-screen" aria-label="Iniciando FerreElectri PLUS">
+        <div class="launch-brand">
+            <img src="{% static 'img/logo.png' %}" alt="FerreElectri PLUS">
+            <div class="launch-progress" role="progressbar" aria-label="Cargando inicio de sesión"></div>
+            <p class="launch-status" id="launch-status" role="status" aria-live="polite">Preparando acceso seguro</p>
+        </div>
+        <form class="launch-csrf" id="launch-session-form" method="post" action="{% url 'admin_app_session_lock' %}">
+            {% csrf_token %}
+        </form>
+    </main>
+</body>
+</html>

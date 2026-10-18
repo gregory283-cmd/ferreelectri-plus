@@ -2273,7 +2273,7 @@ class AdminPWASecurityTest(TestCase):
         self.assertEqual(manifest['Content-Type'], 'application/manifest+json; charset=utf-8')
         self.assertEqual(manifest.json()['display'], 'standalone')
         self.assertEqual(manifest.json()['background_color'], '#08243b')
-        self.assertEqual(manifest.json()['start_url'], reverse('login_admin_custom'))
+        self.assertEqual(manifest.json()['start_url'], reverse('admin_pwa_launch'))
         self.assertIn('no-cache', manifest['Cache-Control'])
         for icon in manifest.json()['icons']:
             response = self.client.get(icon['src'])
@@ -2288,6 +2288,13 @@ class AdminPWASecurityTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'class="pwa-launch-splash"')
         self.assertContains(response, 'class="pwa-launch-logo"')
+
+    def test_pwa_launch_is_public_and_renders_progress_before_login(self):
+        response = self.client.get(reverse('admin_pwa_launch'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'class="launch-progress"')
+        self.assertContains(response, reverse('admin_app_session_lock'))
 
     def test_admin_password_login_ajax_returns_success_destination(self):
         staff = User.objects.create_superuser(
@@ -2361,7 +2368,8 @@ class AdminPWASecurityTest(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'id="admin-sidebar-toggle"')
-        self.assertContains(response, 'class="quiet-action ecommerce-action"')
+        self.assertContains(response, 'id="admin-ecommerce-link"')
+        self.assertNotContains(response, 'class="quiet-action ecommerce-action"')
         self.assertNotContains(response, 'class="label">E-commerce</span>')
         self.assertContains(response, 'css/admin-theme.css')
         self.assertContains(response, 'id="admin-theme-toggle"')
@@ -2370,6 +2378,8 @@ class AdminPWASecurityTest(TestCase):
         self.assertContains(response, 'id="admin-session-dialog"')
         self.assertContains(response, 'id="admin-session-continue"')
         self.assertContains(response, 'id="admin-session-close"')
+        self.assertContains(response, 'id="admin-ecommerce-link"')
+        self.assertNotContains(response, 'class="quiet-action ecommerce-action"')
         self.assertContains(response, 'id="admin-install-app"')
         self.assertContains(response, 'id="admin-enable-push"')
         self.assertContains(response, 'id="admin-register-passkey"')
