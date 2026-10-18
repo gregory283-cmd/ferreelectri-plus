@@ -1051,9 +1051,19 @@ class ClienteFinanzasModulesTest(TestCase):
 @override_settings(
     EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
     DEFAULT_FROM_EMAIL='registro@example.test',
+    PAGO_MOVIL_RECEPTOR='FerreElectri QA',
+    PAGO_MOVIL_BANCO='Banesco',
+    PAGO_MOVIL_TELEFONO='04140000000',
+    PAGO_MOVIL_CEDULA='V-12345678',
+    TRANSFERENCIA_RECEPTOR='FerreElectri QA',
+    TRANSFERENCIA_BANCO='Banesco',
+    TRANSFERENCIA_CUENTA='01020000000000000000',
+    TRANSFERENCIA_CEDULA='V-12345678',
 )
 class ClienteCompraEndToEndTest(TestCase):
     def setUp(self):
+        from .models import AdminDashboardConfig
+
         self.media_directory = TemporaryDirectory()
         self.media_settings = override_settings(
             MEDIA_ROOT=self.media_directory.name,
@@ -1064,6 +1074,10 @@ class ClienteCompraEndToEndTest(TestCase):
             },
         )
         self.media_settings.enable()
+        AdminDashboardConfig.objects.update_or_create(
+            pk=1,
+            defaults={'bcv_rate': Decimal('50.0000')},
+        )
         self.product = Productos.objects.create(
             Codigo='E2E001',
             Descripcion='Lámpara de prueba E2E',
@@ -1141,7 +1155,14 @@ class ClienteCompraEndToEndTest(TestCase):
         self.assertEqual(pedido.estado, 'pendiente')
         self.assertEqual(pedido.estado_operativo, 'pendiente_pago')
         self.assertEqual(pago.estado, 'en_revision')
-        self.assertFalse(Envio.objects.filter(pedido=pedido).exists())
+        envio = Envio.objects.get(pedido=pedido)
+        self.assertEqual(envio.telefono, '+58 414 765 4321')
+        self.assertEqual(envio.direccion, 'Avenida Central 123, Coloncito')
+        self.assertEqual(json.loads(pago.gateway_payload), {
+            'currency': 'VES',
+            'bcv_rate': '50.0000',
+            'amount_bs': '5800.00',
+        })
         cliente.refresh_from_db()
         self.assertEqual(cliente.telefono, '+58 414 765 4321')
         self.assertEqual(cliente.direccion, 'Avenida Central 123, Coloncito')
@@ -1191,6 +1212,8 @@ class ClienteCompraEndToEndTest(TestCase):
         self.assertEqual(admin_order_detail.status_code, 200)
         self.assertContains(admin_order_detail, customer.email)
         self.assertContains(admin_order_detail, 'E2E-REF-01')
+        self.assertContains(admin_order_detail, 'https://wa.me/584147654321')
+        self.assertContains(admin_order_detail, 'Confirmar dirección por WhatsApp')
 
         customer_admin_response = self.client.get('/admin-panel/clientes/')
         self.assertEqual(customer_admin_response.status_code, 302)
@@ -1200,11 +1223,7 @@ class ClienteCompraEndToEndTest(TestCase):
             302,
         )
 
-    @patch.dict('os.environ', {'BINANCE_SECRET_KEY': 'checkout-e2e-test-secret'})
-    @override_settings(BINANCE_SECRET_KEY='checkout-e2e-test-secret')
-    def test_binance_checkout_signature_and_webhook_use_the_same_order_reference(self):
-        from django.conf import settings
-
+    def test_binance_checkout_is_rejected_when_only_manual_methods_are_enabled(self):
         registration = self.client.post(reverse('cliente_registro'), {
             'nombre': 'Camila Binance',
             'email': 'camila.binance.e2e@example.com',
@@ -1237,42 +1256,14 @@ class ClienteCompraEndToEndTest(TestCase):
             'direccion': 'Avenida Central 123, Coloncito',
         })
 
-        self.assertRedirects(checkout, reverse('cliente_panel'), fetch_redirect_response=False)
-        pago = Pago.objects.get(pedido__cliente__email=cliente.email)
-        gateway_payload = json.loads(pago.gateway_payload)
-        signature = gateway_payload.pop('signature')
-        self.assertEqual(pago.gateway_reference, gateway_payload['orderId'])
-        self.assertEqual(pago.referencia, gateway_payload['orderId'])
-        self.assertTrue(signature)
-        self.assertEqual(signature, settings.BUILD_BINANCE_SIGNATURE(gateway_payload))
+        self.assertEqual(checkout.status_code, 200)
+        self.assertContains(checkout, 'El método de pago seleccionado no es válido.')
+        self.assertFalse(Pedido.objects.filter(cliente__email=cliente.email).exists())
 
-        webhook_body = json.dumps({
-            'orderId': pago.gateway_reference,
-            'amount': str(pago.monto),
-            'status': 'SUCCESS',
-        }, separators=(',', ':')).encode('utf-8')
-        webhook_signature = hmac.new(
-            b'checkout-e2e-test-secret', webhook_body, hashlib.sha256,
-        ).hexdigest()
-        webhook = self.client.post(
-            reverse('binance_webhook'),
-            data=webhook_body,
-            content_type='application/json',
-            HTTP_X_BINANCEPAY_SIGNATURE=webhook_signature,
-        )
-
-        self.assertEqual(webhook.status_code, 200)
-        pago.refresh_from_db()
-        pedido = pago.pedido
-        pedido.refresh_from_db()
-        self.assertTrue(pago.verificado)
-        self.assertEqual(pedido.estado, 'pagado')
-        self.assertTrue(Factura.objects.filter(pedido=pedido).exists())
-
-    def test_paypal_checkout_requires_receipt_and_admin_can_approve(self):
+    def test_transfer_checkout_requires_receipt_and_admin_can_approve(self):
         registration = self.client.post(reverse('cliente_registro'), {
-            'nombre': 'Camila PayPal',
-            'email': 'camila.paypal.e2e@example.com',
+            'nombre': 'Camila Transferencia',
+            'email': 'camila.transfer.e2e@example.com',
             'cedula': 'V-76543212',
             'telefono': '+58 414 765 4321',
             'direccion': 'Avenida Central 123, Coloncito',
@@ -1280,16 +1271,16 @@ class ClienteCompraEndToEndTest(TestCase):
             'password2': 'FerreE2E!Secure-2026',
         }, HTTP_HOST='localhost')
         self.assertEqual(registration.status_code, 200)
-        verification = confirm_customer_email(self.client, 'camila.paypal.e2e@example.com')
+        verification = confirm_customer_email(self.client, 'camila.transfer.e2e@example.com')
         self.assertEqual(verification.status_code, 200)
-        cliente = Cliente.objects.get(email='camila.paypal.e2e@example.com')
+        cliente = Cliente.objects.get(email='camila.transfer.e2e@example.com')
         self.client.post(
             reverse('agregar_al_carrito', kwargs={'codigo': self.product.Codigo}),
             {'cantidad': '1', 'presentation_factor': '1'},
         )
         self.client.post(reverse('completar_datos_facturacion'), {
             'nombre': 'Camila',
-            'apellido': 'PayPal',
+            'apellido': 'Transferencia',
             'cedula_rif': 'V-76543212',
             'telefono': '+58 414 765 4321',
             'direccion': 'Avenida Central 123, Coloncito',
@@ -1297,8 +1288,8 @@ class ClienteCompraEndToEndTest(TestCase):
         })
 
         checkout_data = {
-            'metodo': 'PAYPAL',
-            'referencia': 'PAYPAL-REF-01',
+            'metodo': 'TRANSFERENCIA',
+            'referencia': 'TRANSFER-REF-01',
             'telefono': '+58 414 765 4321',
             'direccion': 'Avenida Central 123, Coloncito',
         }
@@ -1312,11 +1303,13 @@ class ClienteCompraEndToEndTest(TestCase):
         pedido = Pedido.objects.get(cliente__email=cliente.email)
         pago = pedido.pagos.get()
         self.assertTrue(pago.comprobante)
-        self.assertEqual(pago.referencia, 'PAYPAL-REF-01')
+        self.assertEqual(pago.metodo, 'TRANSFERENCIA')
+        self.assertEqual(pago.referencia, 'TRANSFER-REF-01')
+        self.assertEqual(json.loads(pago.gateway_payload)['amount_bs'], '5800.00')
 
         admin = User.objects.create_superuser(
-            username='e2e-paypal-admin',
-            email='e2e-paypal-admin@example.com',
+            username='e2e-transfer-admin',
+            email='e2e-transfer-admin@example.com',
             password='QATest123!',
         )
         admin_client = Client()
@@ -1451,6 +1444,7 @@ class PaidOrderNoteEmailTest(TestCase):
         Pago.objects.create(
             pedido=order, metodo='PAGO_MOVIL', monto=Decimal('116.00'),
             numero_referencia='NOTA-REF-1', verificado=True, estado='confirmado',
+            gateway_payload=json.dumps({'currency': 'VES', 'bcv_rate': '50.0000', 'amount_bs': '5800.00'}),
         )
         invoice = Factura.objects.create(
             pedido=order, cliente=customer, total=Decimal('116.00'),
@@ -1470,6 +1464,7 @@ class PaidOrderNoteEmailTest(TestCase):
         self.assertEqual(email.to, [user.email])
         self.assertIn('pedido #', email.subject.lower())
         self.assertIn('Total pagado: USD 116.00', email.body)
+        self.assertIn('Equivalente recibido: Bs. 5800.00 a tasa BCV 50.0000', email.body)
         self.assertIn('NOTA-REF-1', email.body)
         self.assertIn('Mis pedidos', email.body)
         self.assertIn(reverse('cliente_panel'), email.body)
@@ -1477,8 +1472,20 @@ class PaidOrderNoteEmailTest(TestCase):
         self.assertTrue(email.attachments[0][1].startswith(b'%PDF'))
 
 
+@override_settings(
+    PAGO_MOVIL_RECEPTOR='FerreElectri QA',
+    PAGO_MOVIL_BANCO='Banesco',
+    PAGO_MOVIL_TELEFONO='04140000000',
+    PAGO_MOVIL_CEDULA='V-12345678',
+    TRANSFERENCIA_RECEPTOR='FerreElectri QA',
+    TRANSFERENCIA_BANCO='Banesco',
+    TRANSFERENCIA_CUENTA='01020000000000000000',
+    TRANSFERENCIA_CEDULA='V-12345678',
+)
 class CheckoutProfileValidationTest(TestCase):
     def setUp(self):
+        from .models import AdminDashboardConfig
+
         self.client = Client()
         self.media_directory = TemporaryDirectory()
         self.media_settings = override_settings(
@@ -1486,6 +1493,10 @@ class CheckoutProfileValidationTest(TestCase):
             PRIVATE_MEDIA_ROOT=self.media_directory.name,
         )
         self.media_settings.enable()
+        AdminDashboardConfig.objects.update_or_create(
+            pk=1,
+            defaults={'bcv_rate': Decimal('50.0000')},
+        )
         self.product_code = 'A0001'
         self.user = User.objects.create_user(
             username='qa_checkout_user',
@@ -1686,8 +1697,7 @@ class CheckoutProfileValidationTest(TestCase):
     def test_ferrebot_guia_checkout_segun_metodo_seleccionado(self):
         instructions = {
             'PAGO_MOVIL': ('Pago Móvil', 'banco'),
-            'BINANCE': ('Binance Pay', 'referencia'),
-            'PAYPAL': ('PayPal/Tarjeta', 'nota'),
+            'TRANSFERENCIA': ('Transferencia bancaria', 'referencia'),
         }
         for method, (label, expected_field) in instructions.items():
             with self.subTest(method=method):
@@ -1998,6 +2008,8 @@ class CheckoutProfileValidationTest(TestCase):
                 'banco': 'Banesco',
                 'cedula_pagador': 'V12345678',
                 'referencia': 'REF-QA-123',
+                'telefono': '04121234567',
+                'direccion': 'Dirección de prueba QA',
                 'capture': make_test_payment_image(),
             },
             follow=True,
@@ -2062,9 +2074,9 @@ class CheckoutProfileValidationTest(TestCase):
         self.assertContains(detail, 'REF-QA-123')
         self.assertContains(detail, receipt_url)
         self.assertContains(detail, 'Detalle administrativo para revisar productos y evidencia de pago.')
-        self.assertNotContains(detail, 'Preparación y envío')
+        self.assertContains(detail, 'Despacho')
         from .models import Envio
-        self.assertFalse(Envio.objects.filter(pedido=pedido).exists())
+        self.assertTrue(Envio.objects.filter(pedido=pedido).exists())
         self.assertContains(detail, 'Clientes')
         self.assertContains(detail, 'css/admin-theme.css')
         self.assertContains(detail, 'Modo oscuro')

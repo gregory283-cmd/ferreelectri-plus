@@ -405,6 +405,15 @@ STRIPE_PUBLIC_KEY = os.environ.get('STRIPE_PUBLIC_KEY', '')
 STRIPE_WEBHOOK_SECRET = os.environ.get('STRIPE_WEBHOOK_SECRET', '')
 STRIPE_CURRENCY = os.environ.get('STRIPE_CURRENCY', 'usd')
 
+PAGO_MOVIL_RECEPTOR = os.environ.get('PAGO_MOVIL_RECEPTOR', '').strip()
+PAGO_MOVIL_BANCO = os.environ.get('PAGO_MOVIL_BANCO', '').strip()
+PAGO_MOVIL_TELEFONO = os.environ.get('PAGO_MOVIL_TELEFONO', '').strip()
+PAGO_MOVIL_CEDULA = os.environ.get('PAGO_MOVIL_CEDULA', '').strip()
+TRANSFERENCIA_RECEPTOR = os.environ.get('TRANSFERENCIA_RECEPTOR', '').strip()
+TRANSFERENCIA_BANCO = os.environ.get('TRANSFERENCIA_BANCO', '').strip()
+TRANSFERENCIA_CUENTA = os.environ.get('TRANSFERENCIA_CUENTA', '').strip()
+TRANSFERENCIA_CEDULA = os.environ.get('TRANSFERENCIA_CEDULA', '').strip()
+
 # Binance Pay: nunca guardes secretos en el repositorio. Los valores deben venir del entorno.
 BINANCE_API_KEY = os.environ.get('BINANCE_API_KEY', '')
 BINANCE_SECRET_KEY = os.environ.get('BINANCE_SECRET_KEY', '')

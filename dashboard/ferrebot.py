@@ -233,16 +233,12 @@ def _purchase_guide_reply(path, view='', cart_count=None, advance_requested=Fals
     if path.startswith('/checkout/'):
         payment_steps = {
             'PAGO_MOVIL': (
-                'Ya está seleccionado Pago Móvil. Elige tu banco, ingresa la cédula del pagador '
-                'y la referencia, adjunta el capture y luego confirma el pedido.'
+                'Ya está seleccionado Pago Móvil. Revisa el monto en bolívares y la tasa BCV, '
+                'elige tu banco, ingresa la cédula y referencia, adjunta el comprobante y confirma el pedido.'
             ),
-            'BINANCE': (
-                'Ya está seleccionado Binance Pay. Puedes ingresar la referencia si ya la tienes; '
-                'al confirmar se creará el pedido y el pago quedará pendiente de validación.'
-            ),
-            'PAYPAL': (
-                'Ya está seleccionada la opción PayPal/Tarjeta. Completa la referencia si aplica '
-                'o agrega una nota; después confirma el pedido para continuar con la validación.'
+            'TRANSFERENCIA': (
+                'Ya está seleccionada la transferencia bancaria. Revisa el monto en bolívares y la tasa BCV, '
+                'ingresa la referencia y adjunta el comprobante para que podamos verificar el abono.'
             ),
         }
         payment_step = payment_steps.get(payment_method, (
@@ -345,7 +341,7 @@ def build_assistant_reply(message, history=None, page_context=None):
     current_path = str(page_context.get('path') or '/')
     method_selection_requested = (
         current_path.startswith('/checkout/')
-        and page_context.get('payment_method') in {'PAGO_MOVIL', 'BINANCE', 'PAYPAL'}
+        and page_context.get('payment_method') in {'PAGO_MOVIL', 'TRANSFERENCIA'}
         and re.search(r'\b(?:seleccione|elegi|cambie)\b', normalized_message)
     )
     advance_purchase_requested = bool(re.fullmatch(

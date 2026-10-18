@@ -848,7 +848,7 @@
       if (window.location.pathname !== '/checkout/' || drawer.getAttribute('aria-hidden') !== 'false') return;
       var paymentButton = event.target.closest && event.target.closest('[data-payment-method]');
       if (!paymentButton) return;
-      var paymentLabels = {PAGO_MOVIL: 'Pago Móvil', BINANCE: 'Binance Pay', PAYPAL: 'PayPal/Tarjeta'};
+      var paymentLabels = {PAGO_MOVIL: 'Pago Móvil', TRANSFERENCIA: 'Transferencia bancaria'};
       var paymentMethod = paymentButton.getAttribute('data-payment-method');
       window.setTimeout(function () {
         sendMessage('Seleccioné ' + (paymentLabels[paymentMethod] || 'este método de pago') + '. ¿Qué campos debo completar ahora?');

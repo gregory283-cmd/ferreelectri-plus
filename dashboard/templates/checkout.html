@@ -33,8 +33,8 @@
         <div class="checkout-card-heading">
           <div class="checkout-step">01</div>
           <div>
-            <h2 id="contactTitle">Datos de contacto</h2>
-            <p>Opcional: deja un teléfono para aclarar cualquier detalle del pedido o del pago.</p>
+            <h2 id="contactTitle">Datos de entrega</h2>
+            <p>Confirma la dirección y un teléfono de contacto para coordinar el despacho después de verificar el pago.</p>
           </div>
         </div>
 
@@ -49,7 +49,11 @@
           </label>
           <label class="checkout-field">
             <span>Teléfono de contacto</span>
-            <input name="telefono" type="tel" value="{{ checkout_post_data.telefono|default:cliente.telefono }}" placeholder="0414 000 0000" autocomplete="tel">
+            <input name="telefono" type="tel" value="{{ checkout_post_data.telefono|default:cliente.telefono }}" placeholder="0414 000 0000" autocomplete="tel" required>
+          </label>
+          <label class="checkout-field" style="grid-column: 1 / -1;">
+            <span>Dirección de entrega</span>
+            <input name="direccion" type="text" value="{{ checkout_post_data.direccion|default:cliente.direccion }}" placeholder="Ciudad, municipio, sector, calle y punto de referencia" autocomplete="street-address" required>
           </label>
         </div>
       </section>
@@ -64,32 +68,40 @@
         </div>
 
         <div class="payment-methods" role="tablist" aria-label="Métodos de pago">
-          <button type="button" class="payment-method is-selected" data-payment-method="PAGO_MOVIL" role="tab" aria-selected="true">
+          <button type="button" class="payment-method is-selected" data-payment-method="PAGO_MOVIL" role="tab" aria-selected="true" {% if not payment_methods_enabled.PAGO_MOVIL %}disabled title="Pago Móvil pendiente de configuración"{% endif %}>
             <div><i class="fa-solid fa-mobile-screen-button"></i></div>
             <div>
               <strong>Pago Móvil</strong>
-              <span>Venezuela</span>
+              <span>{% if payment_methods_enabled.PAGO_MOVIL %}Venezuela{% else %}Pendiente de configurar{% endif %}</span>
             </div>
           </button>
-          <button type="button" class="payment-method" data-payment-method="BINANCE" role="tab" aria-selected="false">
-            <div><i class="fa-brands fa-bitcoin"></i></div>
+          <button type="button" class="payment-method" data-payment-method="TRANSFERENCIA" role="tab" aria-selected="false" {% if not payment_methods_enabled.TRANSFERENCIA %}disabled title="Transferencia pendiente de configuración"{% endif %}>
+            <div><i class="fa-solid fa-building-columns"></i></div>
             <div>
-              <strong>Binance Pay</strong>
-              <span>USDT · Test</span>
-            </div>
-          </button>
-          <button type="button" class="payment-method" data-payment-method="PAYPAL" role="tab" aria-selected="false">
-            <div><i class="fa-brands fa-paypal"></i></div>
-            <div>
-              <strong>PayPal / Tarjeta</strong>
-              <span>Internacional</span>
+              <strong>Transferencia bancaria</strong>
+              <span>{% if payment_methods_enabled.TRANSFERENCIA %}Bolívares · revisión manual{% else %}Pendiente de configurar{% endif %}</span>
             </div>
           </button>
         </div>
 
-        <input type="hidden" name="metodo" id="paymentMethod" value="{{ checkout_method|default:'PAGO_MOVIL' }}">
+        {% if not payment_methods_enabled.PAGO_MOVIL and not payment_methods_enabled.TRANSFERENCIA %}
+          <p class="checkout-trust" role="status">{% if tasa_bcv <= 0 %}La tasa BCV todavía no está cargada.{% else %}Los datos oficiales para recibir pagos están pendientes de configuración.{% endif %} No es posible continuar hasta que el administrador configure los datos de recepción.</p>
+        {% endif %}
+
+        <input type="hidden" name="metodo" id="paymentMethod" value="{{ checkout_method|default:'' }}">
 
         <div class="payment-panel is-visible" data-payment-panel="PAGO_MOVIL">
+          <div class="payment-callout">
+            <div>
+              <strong>Abona Bs. {{ total_bs|floatformat:2 }}</strong>
+              <p>Total en USD: ${{ total|floatformat:2 }} · BCV: Bs. {{ tasa_bcv|floatformat:4 }} por USD. Se conserva esta tasa en el pedido.</p>
+              {% if payment_accounts.pago_movil_receptor and payment_accounts.pago_movil_banco and payment_accounts.pago_movil_telefono and payment_accounts.pago_movil_cedula %}
+              <p>Beneficiario: {{ payment_accounts.pago_movil_receptor }} · {{ payment_accounts.pago_movil_banco }} · {{ payment_accounts.pago_movil_telefono }} · {{ payment_accounts.pago_movil_cedula }}</p>
+              {% else %}
+              <p>Los datos receptores de Pago Móvil están pendientes de configuración. Confirma los datos oficiales del negocio antes de transferir.</p>
+              {% endif %}
+            </div>
+          </div>
           <div class="checkout-fields-grid">
             <label class="checkout-field">
               <span>Banco de origen</span>
@@ -118,7 +130,7 @@
               {% if payment_form.referencia.errors %}<span class="mt-1 block text-sm font-semibold text-red-300">{{ payment_form.referencia.errors }}</span>{% endif %}
             </label>
             <label class="checkout-field" style="grid-column: 1 / -1;">
-              <span>Capture de pago</span>
+              <span>Comprobante de pago</span>
               <input type="file" name="capture" accept="image/*" class="w-full bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-600 rounded-xl px-3 py-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 file:mr-4 file:rounded-lg file:border-0 file:bg-emerald-500 file:px-4 file:py-2 file:text-white">
               {% if payment_form.capture.errors %}<span class="mt-1 block text-sm font-semibold text-red-300">{{ payment_form.capture.errors }}</span>{% endif %}
             </label>
@@ -126,34 +138,31 @@
           <p class="checkout-trust"><i class="fa-solid fa-circle-info"></i> Tu pedido quedará pendiente de confirmación hasta validar el pago.</p>
         </div>
 
-        <div class="payment-panel" data-payment-panel="BINANCE">
+        <div class="payment-panel" data-payment-panel="TRANSFERENCIA">
           <div class="payment-callout">
             <div>
-              <strong>Binance Pay · Firma HMAC segura</strong>
-              <p>El backend genera una firma SHA-256 segura para cada intención de pago y la valida en el webhook. Nunca compartas tu clave API en este formulario.</p>
+              <strong>Abona Bs. {{ total_bs|floatformat:2 }}</strong>
+              <p>Total en USD: ${{ total|floatformat:2 }} · BCV: Bs. {{ tasa_bcv|floatformat:4 }} por USD. La tasa queda guardada al registrar el pago.</p>
+              {% if payment_accounts.transferencia_receptor and payment_accounts.transferencia_banco and payment_accounts.transferencia_cuenta and payment_accounts.transferencia_cedula %}
+              <p>Beneficiario: {{ payment_accounts.transferencia_receptor }} · {{ payment_accounts.transferencia_banco }} · Cuenta {{ payment_accounts.transferencia_cuenta }} · {{ payment_accounts.transferencia_cedula }}</p>
+              {% else %}
+              <p>Los datos receptores de transferencia están pendientes de configuración. Confirma los datos oficiales del negocio antes de transferir.</p>
+              {% endif %}
             </div>
           </div>
           <label class="checkout-field">
-            <span>Referencia de Binance Pay</span>
-            <input name="referencia" type="text" placeholder="Opcional hasta confirmar la intención">
-          </label>
-        </div>
-
-        <div class="payment-panel" data-payment-panel="PAYPAL">
-          <div class="payment-callout">
-            <div>
-              <strong>PayPal / Tarjeta internacional</strong>
-              <p>Adjunta la referencia y el comprobante del pago. El pedido quedará pendiente de revisión administrativa.</p>
-            </div>
-          </div>
-          <label class="checkout-field">
-            <span>Referencia del pago</span>
-            <input name="referencia" type="text" placeholder="Referencia de PayPal o tarjeta" required>
+            <span>Banco de origen (opcional)</span>
+            <input name="banco_origen_transferencia" type="text" placeholder="Banco desde el que transferiste">
           </label>
           <label class="checkout-field">
-            <span>Comprobante de pago</span>
+            <span>Número de referencia</span>
+            <input name="referencia" type="text" placeholder="Referencia de la transferencia" required>
+          </label>
+          <label class="checkout-field">
+            <span>Comprobante de transferencia</span>
             <input name="comprobante" type="file" accept="image/*" required>
           </label>
+          <p class="checkout-trust">El pedido se confirmará después de verificar manualmente el abono en la cuenta receptora.</p>
         </div>
       </section>
 
@@ -204,4 +213,4 @@
 </div>
 {% endblock %}
 
-{% block scripts %}<script src="{% static 'js/checkout.js' %}"></script>{% endblock %}
+{% block scripts %}<script src="{% static 'js/checkout.js' %}?v=20261018-ves-manual-v1"></script>{% endblock %}

@@ -230,7 +230,10 @@ class ClienteRegistroForm(forms.ModelForm):
 
 class PagoManualForm(forms.ModelForm):
     metodo = forms.ChoiceField(
-        choices=[('', 'Seleccione un método')] + list(Pago.METODOS),
+        choices=[
+            ('', 'Seleccione un método'),
+            ('TRANSFERENCIA', 'Transferencia bancaria'),
+        ],
         required=True,
         label='Método de pago',
     )

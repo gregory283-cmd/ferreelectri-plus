@@ -578,7 +578,7 @@ def _validated_chat_page_context(payload, request):
         if page_view not in {'', 'catalogo'} or page_path != '/':
             page_view = ''
         payment_method = str(raw_context.get('payment_method') or '').upper()
-        if payment_method not in {'PAGO_MOVIL', 'BINANCE', 'PAYPAL'}:
+        if payment_method not in {'PAGO_MOVIL', 'TRANSFERENCIA'}:
             payment_method = ''
         page_context = {
             'path': page_path,
@@ -3405,7 +3405,41 @@ def _calcular_totales_checkout(items):
     return subtotal, iva_total, subtotal + iva_total
 
 
-def create_order_with_locked_stock(user_obj, items, metodo='PAGO_MOVIL', referencia='', gateway_payload=None):
+def _tasa_bcv_checkout():
+    config = AdminDashboardConfig.objects.filter(pk=1).only('bcv_rate').first()
+    return Decimal(str(config.bcv_rate or 0)) if config else Decimal('0.0000')
+
+
+def _cuentas_pago_checkout():
+    return {
+        'pago_movil_receptor': settings.PAGO_MOVIL_RECEPTOR,
+        'pago_movil_banco': settings.PAGO_MOVIL_BANCO,
+        'pago_movil_telefono': settings.PAGO_MOVIL_TELEFONO,
+        'pago_movil_cedula': settings.PAGO_MOVIL_CEDULA,
+        'transferencia_receptor': settings.TRANSFERENCIA_RECEPTOR,
+        'transferencia_banco': settings.TRANSFERENCIA_BANCO,
+        'transferencia_cuenta': settings.TRANSFERENCIA_CUENTA,
+        'transferencia_cedula': settings.TRANSFERENCIA_CEDULA,
+    }
+
+
+def _metodos_pago_checkout_disponibles():
+    accounts = _cuentas_pago_checkout()
+    if _tasa_bcv_checkout() <= 0:
+        return {'PAGO_MOVIL': False, 'TRANSFERENCIA': False}
+    return {
+        'PAGO_MOVIL': all(accounts[key] for key in (
+            'pago_movil_receptor', 'pago_movil_banco',
+            'pago_movil_telefono', 'pago_movil_cedula',
+        )),
+        'TRANSFERENCIA': all(accounts[key] for key in (
+            'transferencia_receptor', 'transferencia_banco',
+            'transferencia_cuenta', 'transferencia_cedula',
+        )),
+    }
+
+
+def create_order_with_locked_stock(user_obj, items, metodo='PAGO_MOVIL', referencia='', gateway_payload=None, datos_envio=None):
     """Crea un pedido pendiente y reserva existencias sin descontarlas todavía."""
     with transaction.atomic():
         locked_products = {}
@@ -3440,6 +3474,22 @@ def create_order_with_locked_stock(user_obj, items, metodo='PAGO_MOVIL', referen
             estado_operativo='pendiente_pago',
             stock_descontado=False,
         )
+        if datos_envio:
+            envio = Envio.objects.create(
+                pedido=pedido,
+                estado='no_preparado',
+                nombre_destinatario=datos_envio.get('nombre_destinatario', '')[:180],
+                telefono=datos_envio.get('telefono', '')[:30],
+                direccion=datos_envio.get('direccion', '')[:500],
+                requiere_revision=True,
+                observaciones='Pendiente de confirmar dirección y coordinar despacho.',
+            )
+            EnvioEvento.objects.create(
+                envio=envio,
+                estado_nuevo=envio.estado,
+                actor=user_obj,
+                descripcion='Dirección guardada; falta confirmar con el cliente.',
+            )
         for item in items:
             product = locked_products[item.producto.Codigo]
             PedidoItem.objects.create(
@@ -3525,8 +3575,15 @@ def checkout(request):
         return redirect('carrito')
 
     subtotal, iva_total, total = _calcular_totales_checkout(items)
+    tasa_bcv = _tasa_bcv_checkout()
+    total_bs = _importe_checkout(total * tasa_bcv) if tasa_bcv > 0 else None
 
-    checkout_method = 'PAGO_MOVIL'
+    payment_methods_enabled = _metodos_pago_checkout_disponibles()
+    checkout_method = (
+        'PAGO_MOVIL' if payment_methods_enabled['PAGO_MOVIL']
+        else 'TRANSFERENCIA' if payment_methods_enabled['TRANSFERENCIA']
+        else ''
+    )
 
     def render_checkout_errors(errors, payment_form=None):
         return render(request, 'checkout.html', {
@@ -3537,8 +3594,13 @@ def checkout(request):
             'cliente': cliente,
             'payment_form': payment_form,
             'checkout_method': checkout_method,
+            'tasa_bcv': tasa_bcv,
+            'total_bs': total_bs,
+            'payment_accounts': _cuentas_pago_checkout(),
+            'payment_methods_enabled': payment_methods_enabled,
             'checkout_post_data': {
                 'telefono': request.POST.get('telefono', ''),
+                'direccion': request.POST.get('direccion', ''),
                 'referencia': request.POST.get('referencia', ''),
             },
             'checkout_errors': errors,
@@ -3555,14 +3617,27 @@ def checkout(request):
             return redirect(reverse('login_cliente') + f"?next={request.path}")
         referencia = request.POST.get('referencia', '').strip()
         telefono = request.POST.get('telefono', '').strip()
+        direccion = request.POST.get('direccion', '').strip()
         metodo = (request.POST.get('metodo') or '').strip().upper()
         checkout_method = metodo or 'PAGO_MOVIL'
+        telefono_digitos = re.sub(r'\D', '', telefono)
+        errores_contacto = []
+        if not 7 <= len(telefono_digitos) <= 15:
+            errores_contacto.append('El teléfono debe contener entre 7 y 15 dígitos para coordinar el despacho.')
+        if len(direccion) < 5:
+            errores_contacto.append('Ingresa la dirección completa para el despacho.')
+        if errores_contacto:
+            return render_checkout_errors(errores_contacto)
         if not metodo:
             return render_checkout_errors(['Selecciona un método de pago antes de continuar.'])
 
-        allowed_methods = {'PAGO_MOVIL', 'BINANCE', 'PAYPAL'}
+        allowed_methods = {'PAGO_MOVIL', 'TRANSFERENCIA'}
         if metodo not in allowed_methods:
             return render_checkout_errors(['El método de pago seleccionado no es válido.'])
+        if not _metodos_pago_checkout_disponibles()[metodo]:
+            return render_checkout_errors(['Los datos receptores de este método todavía no están configurados. Contacta a FerreElectri antes de pagar.'])
+        if tasa_bcv <= 0:
+            return render_checkout_errors(['La tasa BCV todavía no está configurada. Contacta al administrador antes de pagar.'])
         banco = ''
         cedula_pagador = ''
         capture = None
@@ -3577,7 +3652,7 @@ def checkout(request):
             cedula_pagador = payment_form.cleaned_data['cedula_pagador']
             referencia = payment_form.cleaned_data['referencia']
             capture = payment_form.cleaned_data['capture']
-        elif metodo == 'PAYPAL':
+        elif metodo == 'TRANSFERENCIA':
             payment_form = PagoManualForm(request.POST, request.FILES)
             if not payment_form.is_valid():
                 return render_checkout_errors(
@@ -3586,6 +3661,7 @@ def checkout(request):
                 )
             referencia = payment_form.cleaned_data['referencia']
             capture = payment_form.cleaned_data['comprobante']
+            banco = (request.POST.get('banco_origen_transferencia') or '').strip()[:100]
 
         # Asegurarnos de que `Pedido.cliente` reciba una instancia de `User`.
         # Si `cliente` es el modelo Cliente (visitante), enlazamos/creamos un User.
@@ -3616,21 +3692,15 @@ def checkout(request):
                 pass
 
         # Actualiza el perfil de contacto sin almacenar secretos de pago.
-        if telefono:
-            cliente.telefono = telefono[:20]
-            cliente.save(update_fields=['telefono'])
-        gateway_payload = {}
-        if metodo == 'BINANCE':
-            gateway_payload = {
-                'orderId': f'BINANCE-{get_random_string(24)}',
-                'amount': str(total),
-                'currency': 'USDT',
-                'description': f'Compra FerreElectri PLUS #{user_obj.pk}',
-                'timestamp': int(time.time() * 1000),
-                'returnUrl': request.build_absolute_uri(reverse('cliente_panel')),
-                'notifyUrl': request.build_absolute_uri(reverse('binance_webhook')),
-            }
-            gateway_payload['signature'] = settings.BUILD_BINANCE_SIGNATURE(gateway_payload)
+        cliente.telefono = telefono[:20]
+        cliente.direccion = direccion[:255]
+        cliente.save(update_fields=['telefono', 'direccion'])
+        monto_bs = _importe_checkout(total * tasa_bcv)
+        gateway_payload = {
+            'currency': 'VES',
+            'bcv_rate': str(tasa_bcv),
+            'amount_bs': str(monto_bs),
+        }
 
         try:
             pedido, total, pago = create_order_with_locked_stock(
@@ -3639,16 +3709,23 @@ def checkout(request):
                 metodo=metodo,
                 referencia=referencia,
                 gateway_payload=gateway_payload,
+                datos_envio={
+                    'nombre_destinatario': (
+                        user_obj.get_full_name().strip()
+                        or getattr(cliente, 'nombre', '')
+                        or user_obj.username
+                    ),
+                    'telefono': telefono,
+                    'direccion': direccion,
+                },
             )
         except ValueError as stock_error:
             messages.error(request, str(stock_error))
             return redirect('carrito')
 
-        payment_reference = (
-            pago.gateway_reference if metodo == 'BINANCE' else referencia
-        )[:200]
+        payment_reference = referencia[:200]
         pago.referencia = payment_reference
-        pago.numero_referencia = referencia[:100] if metodo == 'PAGO_MOVIL' else ''
+        pago.numero_referencia = referencia[:100]
         pago.banco_origen = banco
         pago.cedula_pagador = cedula_pagador
         pago.estado = 'en_revision' if capture else 'pendiente'
@@ -3656,8 +3733,6 @@ def checkout(request):
         pago.gateway_payload = json.dumps(gateway_payload, ensure_ascii=False, default=str)[:4000]
         if capture:
             pago.comprobante = capture
-        if metodo == 'BINANCE':
-            pago.gateway_status = 'pending'
         payment_update_fields = [
             'referencia', 'numero_referencia', 'banco_origen', 'cedula_pagador', 'estado',
             'gateway_reference', 'gateway_payload', 'gateway_status',
@@ -3666,10 +3741,17 @@ def checkout(request):
             payment_update_fields.append('comprobante')
         pago.save(update_fields=payment_update_fields)
 
-        if metodo == 'PAGO_MOVIL':
+        if metodo in {'PAGO_MOVIL', 'TRANSFERENCIA'}:
             send_telegram_order_alert(
                 pedido,
-                {'banco': banco, 'cedula': cedula_pagador, 'referencia': referencia},
+                {
+                    'metodo': metodo,
+                    'banco': banco,
+                    'cedula': cedula_pagador,
+                    'referencia': referencia,
+                    'monto_bs': str(monto_bs),
+                    'tasa_bcv': str(tasa_bcv),
+                },
             )
 
         # Import local para evitar ciclos entre vistas, modelos y tareas Celery.
@@ -3704,18 +3786,11 @@ def checkout(request):
         # Marcar pago pendiente y redirigir al panel del cliente (mejor UX)
         request.session['pago_pendiente'] = pedido.id
         request.session.modified = True
-        if metodo == 'PAGO_MOVIL':
-            messages.success(
-                request,
-                f'Pedido #{pedido.id} recibido. El comprobante está pendiente de revisión; '
-                'la nota de entrega estará disponible después de que el administrador confirme el pago.',
-            )
-        else:
-            messages.success(
-                request,
-                f'Pedido #{pedido.id} creado y pendiente de confirmación del pago. '
-                'La nota de entrega estará disponible después de verificar el pago.',
-            )
+        messages.success(
+            request,
+            f'Pedido #{pedido.id} recibido por Bs. {monto_bs:,.2f}. '
+            'El pago y la dirección están pendientes de revisión; recibirás la nota cuando se confirme.',
+        )
         return redirect('cliente_panel')
 
     # GET -> mostrar resumen y botón Confirmar (para anónimos abre modal)
@@ -3727,7 +3802,11 @@ def checkout(request):
         'cliente': cliente,
         'payment_form': PagoMovilCheckoutForm(),
         'checkout_method': checkout_method,
-        'checkout_post_data': {'telefono': '', 'referencia': ''},
+        'tasa_bcv': tasa_bcv,
+        'total_bs': total_bs,
+        'payment_accounts': _cuentas_pago_checkout(),
+        'payment_methods_enabled': payment_methods_enabled,
+        'checkout_post_data': {'telefono': '', 'direccion': '', 'referencia': ''},
     })
 
 
@@ -3844,6 +3923,17 @@ def _create_invoice_for_paid_order(pedido, pago=None):
         pedido.estado_operativo = 'confirmado'
         pedido.requiere_revision_operativa = False
         pedido.save(update_fields=['estado', 'estado_operativo', 'requiere_revision_operativa'])
+        Envio.objects.get_or_create(
+            pedido=pedido,
+            defaults={
+                'estado': 'no_preparado',
+                'nombre_destinatario': cliente_nombre[:180],
+                'telefono': (cliente_profile.telefono if cliente_profile else '')[:30],
+                'direccion': (cliente_profile.direccion if cliente_profile else '')[:500],
+                'requiere_revision': True,
+                'observaciones': 'Confirmar dirección con el cliente y asignar agencia/guía.',
+            },
+        )
         PedidoArchivado.objects.create(
             original=pedido,
             cliente_nombre=cliente_nombre,
@@ -3970,7 +4060,7 @@ def _approve_pending_order(pedido_id, payment_id=None):
 
 
 def binance_checkout(request, pedido_id):
-    """Inicia una transacción Binance Pay con firma HMAC en entorno configurado."""
+    """Mantiene una respuesta segura para enlaces antiguos de Binance Pay."""
     pedido = get_object_or_404(Pedido, id=pedido_id)
     if request.user.is_authenticated:
         if request.user.is_staff or pedido.cliente_id == request.user.id:
@@ -3980,35 +4070,8 @@ def binance_checkout(request, pedido_id):
     else:
         return redirect(reverse('login_cliente') + f"?next={request.get_full_path()}")
 
-    if not getattr(settings, 'BINANCE_API_KEY', '') or not getattr(settings, 'BINANCE_SECRET_KEY', ''):
-        messages.error(request, 'Binance Pay no está configurado en este servidor. Define BINANCE_API_KEY y BINANCE_SECRET_KEY en variables de entorno.')
-        return redirect('mis_pedidos')
-
-    order_id = f'BINANCE-{pedido.id}-{int(time.time() * 1000)}'
-    payload = {
-        'orderId': order_id,
-        'amount': str(pedido.total),
-        'currency': 'USDT',
-        'description': f'Pedido #{pedido.id}',
-        'notifyUrl': request.build_absolute_uri(reverse('binance_webhook')),
-        'returnUrl': request.build_absolute_uri(reverse('mis_pedidos')),
-    }
-    payload['signature'] = settings.BUILD_BINANCE_SIGNATURE(payload)
-
-    Pago.objects.create(
-        pedido=pedido,
-        metodo='BINANCE',
-        monto=pedido.total,
-        referencia=order_id,
-        gateway='BINANCE',
-        gateway_reference=order_id,
-        gateway_payload=json.dumps(payload, ensure_ascii=False, default=str)[:4000],
-        gateway_status='pending',
-        estado='pendiente',
-        observaciones='Pago iniciado con Binance Pay.',
-    )
-
-    return render(request, 'binance_checkout.html', {'pedido': pedido, 'payload': payload})
+    messages.info(request, 'Binance Pay está desactivado. Usa Pago Móvil o transferencia bancaria.')
+    return redirect('mis_pedidos')
 
 
 def pagar_pedido(request, pedido_id):
@@ -4038,27 +4101,63 @@ def pagar_pedido(request, pedido_id):
     initial_method = request.session.pop('checkout_method', None)
     initial_referencia = request.session.pop('checkout_referencia', '')
     request.session.modified = True
+    tasa_bcv = _tasa_bcv_checkout()
+    monto_bs = _importe_checkout(pedido.total * tasa_bcv) if tasa_bcv > 0 else None
 
     if request.method == 'POST':
         metodo = (request.POST.get('metodo') or '').strip().upper()
-        if metodo == 'STRIPE':
-            return redirect('stripe_checkout', pedido_id=pedido.id)
+        if metodo not in {'PAGO_MOVIL', 'TRANSFERENCIA'}:
+            messages.error(request, 'Selecciona Pago Móvil o transferencia bancaria.')
+            return redirect('pagar_pedido', pedido_id=pedido.id)
+        if tasa_bcv <= 0:
+            messages.error(request, 'La tasa BCV todavía no está configurada. Contacta al administrador.')
+            return redirect('pagar_pedido', pedido_id=pedido.id)
+        if not _metodos_pago_checkout_disponibles()[metodo]:
+            messages.error(request, 'Los datos receptores de este método todavía no están configurados.')
+            return redirect('pagar_pedido', pedido_id=pedido.id)
+
         payment_data = request.POST.copy()
         payment_data['metodo'] = metodo
-        payment_form = PagoManualForm(payment_data, request.FILES)
+        if metodo == 'PAGO_MOVIL':
+            payment_form = PagoMovilCheckoutForm(request.POST, request.FILES)
+        else:
+            payment_form = PagoManualForm(payment_data, request.FILES)
         if not payment_form.is_valid():
             for errors in payment_form.errors.values():
                 for error in errors:
                     messages.error(request, error)
             return redirect('pagar_pedido', pedido_id=pedido.id)
 
-        pago = payment_form.save(commit=False)
-        pago.pedido = pedido
-        pago.monto = pedido.total
-        pago.numero_referencia = payment_form.cleaned_data['referencia'][:100]
-        pago.verificado = False
-        pago.estado = 'en_revision'
-        pago.save()
+        if metodo == 'PAGO_MOVIL':
+            referencia = payment_form.cleaned_data['referencia']
+            comprobante = payment_form.cleaned_data['capture']
+            banco = payment_form.cleaned_data['banco']
+            cedula_pagador = payment_form.cleaned_data['cedula_pagador']
+        else:
+            referencia = payment_form.cleaned_data['referencia']
+            comprobante = payment_form.cleaned_data['comprobante']
+            banco = (request.POST.get('banco_origen_transferencia') or '').strip()[:100]
+            cedula_pagador = ''
+        pago = Pago.objects.create(
+            pedido=pedido,
+            metodo=metodo,
+            monto=pedido.total,
+            referencia=referencia[:200],
+            numero_referencia=referencia[:100],
+            banco_origen=banco,
+            cedula_pagador=cedula_pagador,
+            comprobante=comprobante,
+            gateway=metodo,
+            gateway_reference=referencia[:200],
+            gateway_status='pending',
+            gateway_payload=json.dumps({
+                'currency': 'VES',
+                'bcv_rate': str(tasa_bcv),
+                'amount_bs': str(monto_bs),
+            }),
+            verificado=False,
+            estado='en_revision',
+        )
         messages.success(request, 'Comprobante enviado. El administrador confirmará el pago en breve.')
         request.session['pago_pendiente'] = pedido.id
         request.session.modified = True
@@ -4068,6 +4167,10 @@ def pagar_pedido(request, pedido_id):
         'pedido': pedido,
         'initial_method': initial_method,
         'initial_referencia': initial_referencia,
+        'tasa_bcv': tasa_bcv,
+        'monto_bs': monto_bs,
+        'payment_accounts': _cuentas_pago_checkout(),
+        'payment_methods_enabled': _metodos_pago_checkout_disponibles(),
     })
 
 
@@ -4132,6 +4235,13 @@ def _contexto_factura_pdf(factura):
         pedido.pagos.filter(verificado=True).order_by('-creado', '-id').first()
         if pedido else None
     )
+    payment_snapshot = {}
+    if pago and pago.gateway_payload:
+        try:
+            payment_snapshot = json.loads(pago.gateway_payload)
+        except (TypeError, ValueError):
+            payment_snapshot = {}
+    envio = getattr(pedido, 'envio', None) if pedido else None
     logo_path = finders.find('img/logo.png')
     logo_data_uri = ''
     if logo_path:
@@ -4140,6 +4250,9 @@ def _contexto_factura_pdf(factura):
         'factura': factura,
         'pedido': pedido,
         'pago': pago,
+        'payment_amount_bs': payment_snapshot.get('amount_bs', ''),
+        'payment_bcv_rate': payment_snapshot.get('bcv_rate', ''),
+        'envio': envio,
         'logo_data_uri': logo_data_uri,
         'detalles': detalles,
         'resumen_impuestos': resumen_impuestos,
@@ -4175,7 +4288,7 @@ def descargar_factura_pdf(request, factura_id):
 
 @cliente_required
 def stripe_checkout(request, pedido_id):
-    """Inicia un pago con Stripe y redirige al flujo seguro de checkout."""
+    """Mantiene una respuesta segura para enlaces antiguos de tarjeta."""
     pedido = get_object_or_404(Pedido, id=pedido_id)
     if request.user.is_staff:
         allowed = True
@@ -4190,39 +4303,8 @@ def stripe_checkout(request, pedido_id):
             allowed = pedido.cliente and pedido.cliente.email.lower() == cliente.email.lower()
     if not allowed:
         return HttpResponseForbidden('No tienes permiso para pagar este pedido.')
-
-    stripe_api_key = getattr(settings, 'STRIPE_SECRET_KEY', '')
-    if stripe is None:
-        messages.error(request, 'La librería stripe no está instalada. Ejecuta `pip install stripe` y reinicia el servidor.')
-        return redirect('pagar_pedido', pedido_id=pedido.id)
-    if not stripe_api_key:
-        messages.error(request, 'Stripe no está configurado en el servidor.')
-        return redirect('pagar_pedido', pedido_id=pedido.id)
-
-    stripe.api_key = stripe_api_key
-    try:
-        session = stripe.checkout.Session.create(
-            payment_method_types=['card'],
-            line_items=[{
-                'price_data': {
-                    'currency': getattr(settings, 'STRIPE_CURRENCY', 'usd'),
-                    'unit_amount': int(Decimal(str(pedido.total)) * Decimal('100')),
-                    'product_data': {
-                        'name': f'Pedido #{pedido.id}',
-                    },
-                },
-                'quantity': 1,
-            }],
-            mode='payment',
-            success_url=request.build_absolute_uri(reverse('mis_pedidos')) + '?paid=1',
-            cancel_url=request.build_absolute_uri(reverse('pagar_pedido', args=[pedido.id])),
-            metadata={'pedido_id': str(pedido.id)},
-            client_reference_id=str(pedido.id),
-        )
-        return redirect(session.url)
-    except Exception as exc:
-        messages.error(request, f'Error al crear sesión de pago: {exc}')
-        return redirect('pagar_pedido', pedido_id=pedido.id)
+    messages.info(request, 'El pago con tarjeta no está habilitado. Usa Pago Móvil o transferencia bancaria.')
+    return redirect('mis_pedidos')
 
 
 @csrf_exempt
@@ -4305,10 +4387,20 @@ def registrar_pago_manual(request, pedido_id):
     if request.method == 'POST':
         form = PagoManualForm(request.POST, request.FILES)
         if form.is_valid():
+            tasa_bcv = _tasa_bcv_checkout()
+            if tasa_bcv <= 0:
+                messages.error(request, 'La tasa BCV todavía no está configurada.')
+                return redirect('registrar_pago_manual', pedido_id=pedido.id)
             pago = form.save(commit=False)
             pago.pedido = pedido
             pago.monto = pedido.total
             pago.numero_referencia = form.cleaned_data['referencia'][:100]
+            pago.gateway = 'TRANSFERENCIA'
+            pago.gateway_payload = json.dumps({
+                'currency': 'VES',
+                'bcv_rate': str(tasa_bcv),
+                'amount_bs': str(_importe_checkout(pedido.total * tasa_bcv)),
+            })
             pago.verificado = False
             pago.estado = 'en_revision'
             pago.save()
@@ -4515,14 +4607,43 @@ def detalle_pedido_admin(request, pedido_id):
     if not request.user.is_active or not request.user.is_staff:
         return HttpResponseForbidden('Acceso no autorizado')
     pedido = get_object_or_404(
-        Pedido.objects.select_related('cliente').prefetch_related(
+        Pedido.objects.select_related('cliente', 'envio').prefetch_related(
             'items__producto',
             'pagos',
+            'envio__eventos__actor',
         ),
         id=pedido_id,
     )
+    envio = getattr(pedido, 'envio', None)
+    for pago in pedido.pagos.all():
+        try:
+            payment_snapshot = json.loads(pago.gateway_payload or '{}')
+        except (TypeError, ValueError):
+            payment_snapshot = {}
+        pago.monto_bs = payment_snapshot.get('amount_bs', '')
+        pago.tasa_bcv = payment_snapshot.get('bcv_rate', '')
+
+    whatsapp_url = ''
+    if envio and envio.telefono and pedido.estado == 'pagado':
+        whatsapp_phone = re.sub(r'\D', '', envio.telefono)
+        if whatsapp_phone.startswith('00'):
+            whatsapp_phone = whatsapp_phone[2:]
+        elif whatsapp_phone.startswith('0'):
+            whatsapp_phone = '58' + whatsapp_phone[1:]
+        elif len(whatsapp_phone) == 10:
+            whatsapp_phone = '58' + whatsapp_phone
+        if whatsapp_phone:
+            customer_name = pedido.cliente.get_full_name() or pedido.cliente.username
+            message = (
+                f'Hola {customer_name}, recibimos tu pedido #{pedido.id}. '
+                f'¿Nos confirmas que la dirección de entrega es: {envio.direccion}? '
+                'Luego coordinaremos el despacho y te enviaremos la guía.'
+            )
+            whatsapp_url = f'https://wa.me/{whatsapp_phone}?text={urllib_parse.quote(message)}'
     return render(request, 'detalle_pedido_admin.html', {
         'pedido': pedido,
+        'envio_form': EnvioAdminForm(instance=envio) if envio else None,
+        'whatsapp_url': whatsapp_url,
     })
 
 

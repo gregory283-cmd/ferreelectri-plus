@@ -2,31 +2,43 @@
 {% block content %}
 <div class="card payment-card" style="max-width:840px;margin:32px auto;padding:20px;">
     <h2>Pago del pedido #{{ pedido.id }}</h2>
-    <p>Total a pagar: <strong>${{ pedido.total|floatformat:2 }}</strong></p>
+    <p>Total: <strong>${{ pedido.total|floatformat:2 }}</strong> · Abona <strong>Bs. {{ monto_bs|floatformat:2 }}</strong> a tasa BCV {{ tasa_bcv|floatformat:4 }}.</p>
     <form method="post" enctype="multipart/form-data" id="pagoForm">
         {% csrf_token %}
         <div class="field">
             <label>Método de pago:</label>
             <div class="method-options">
-                <label><input type="radio" name="metodo" value="TRANSFERENCIA" required onclick="toggleMetodo('TRANSFERENCIA')"> Transferencia bancaria</label>
-                <label><input type="radio" name="metodo" value="COMPROBANTE" onclick="toggleMetodo('COMPROBANTE')"> Otro pago manual</label>
-                <label><input type="radio" name="metodo" value="STRIPE" onclick="toggleMetodo('STRIPE')"> Pagar con tarjeta (Stripe)</label>
+                <label><input type="radio" name="metodo" value="PAGO_MOVIL" required onclick="toggleMetodo('PAGO_MOVIL')" {% if not payment_methods_enabled.PAGO_MOVIL %}disabled{% endif %}> Pago Móvil{% if not payment_methods_enabled.PAGO_MOVIL %} · pendiente de configurar{% endif %}</label>
+                <label><input type="radio" name="metodo" value="TRANSFERENCIA" onclick="toggleMetodo('TRANSFERENCIA')" {% if not payment_methods_enabled.TRANSFERENCIA %}disabled{% endif %}> Transferencia bancaria{% if not payment_methods_enabled.TRANSFERENCIA %} · pendiente de configurar{% endif %}</label>
             </div>
         </div>
-        <div id="transferenciaInfo" class="hidden">
-            <strong>Datos bancarios:</strong>
-            <p>Banco: <em>Banco Ejemplo</em> - Cuenta: <em>123456789</em> - Titular: <em>FERREELECTRI</em></p>
+        <div id="pagoMovilInfo" class="payment-destination hidden">
+            <strong>Datos de Pago Móvil</strong>
+            {% if payment_accounts.pago_movil_receptor and payment_accounts.pago_movil_banco and payment_accounts.pago_movil_telefono and payment_accounts.pago_movil_cedula %}
+            <p>{{ payment_accounts.pago_movil_receptor }} · {{ payment_accounts.pago_movil_banco }} · {{ payment_accounts.pago_movil_telefono }} · {{ payment_accounts.pago_movil_cedula }}</p>
+            {% else %}<p>Datos de Pago Móvil pendientes de configuración por el administrador.</p>{% endif %}
         </div>
-        <div id="comprobanteUpload" class="hidden">
-            <label>Comprobante de transferencia (imagen, máximo 5 MB):</label>
-            <input type="file" name="comprobante" accept="image/*" />
+        <div id="transferenciaInfo" class="payment-destination hidden">
+            <strong>Datos de transferencia</strong>
+            {% if payment_accounts.transferencia_receptor and payment_accounts.transferencia_banco and payment_accounts.transferencia_cuenta and payment_accounts.transferencia_cedula %}
+            <p>{{ payment_accounts.transferencia_receptor }} · {{ payment_accounts.transferencia_banco }} · Cuenta {{ payment_accounts.transferencia_cuenta }} · {{ payment_accounts.transferencia_cedula }}</p>
+            {% else %}<p>Datos de transferencia pendientes de configuración por el administrador.</p>{% endif %}
+        </div>
+        <div id="pagoMovilFields" class="hidden">
+            <label>Banco de origen<select name="banco"><option value="">Selecciona tu banco</option><option>Banesco</option><option>Mercantil</option><option>BBVA Provincial</option><option>Bancamiga</option><option>Banco de Venezuela</option><option>BNC</option><option>Banco del Tesoro</option><option>Otro banco</option></select></label>
+            <label>Cédula del pagador<input type="text" name="cedula_pagador" placeholder="V-12345678"></label>
         </div>
         <div class="field">
-            <label>Referencia / Nota (opcional):</label>
-            <input type="text" name="referencia" />
+            <label>Número de referencia:</label>
+            <input type="text" name="referencia" required />
         </div>
-        <div id="stripeAction" class="hidden">
-            <a id="stripeCheckoutBtn" href="{% url 'stripe_checkout' pedido.id %}" class="btn btn-secondary">Pagar con tarjeta (Stripe)</a>
+        <div id="pagoMovilCapture" class="hidden">
+            <label>Comprobante Pago Móvil (imagen, máximo 5 MB):</label>
+            <input type="file" name="capture" accept="image/*" />
+        </div>
+        <div id="transferenciaCapture" class="hidden">
+            <label>Comprobante de transferencia (imagen, máximo 5 MB):</label>
+            <input type="file" name="comprobante" accept="image/*" />
         </div>
         <div class="actions">
             <button type="button" class="btn-main" onclick="openPagoModal()">Continuar al pago</button>
@@ -38,14 +50,13 @@
     <div id="pagoModal" class="modal hidden">
         <div class="modal-content">
             <h3>Confirmar pago</h3>
-            <p>Total a pagar: <strong>${{ pedido.total|floatformat:2 }}</strong></p>
+            <p>Total: <strong>${{ pedido.total|floatformat:2 }}</strong> · Bs. {{ monto_bs|floatformat:2 }}</p>
             <form id="confirmPagoForm">
                 <label>Método:</label>
                 <select name="metodo" required class="select-method">
                     <option value="">-- Selecciona --</option>
+                    <option value="PAGO_MOVIL">Pago Móvil</option>
                     <option value="TRANSFERENCIA">Transferencia bancaria</option>
-                    <option value="COMPROBANTE">Otro pago manual</option>
-                    <option value="STRIPE">Tarjeta (Stripe)</option>
                 </select>
                 <div class="field">
                     <label>Referencia (obligatoria para transferencias y comprobantes)</label>
@@ -65,7 +76,9 @@
 
     <style>
         /* Base */
-        .hidden{display:none}
+        .hidden{display:none !important}
+        .payment-destination{margin:14px 0;padding:12px;border:1px solid #cbd5e1;border-radius:10px;background:#eff6ff}
+        .payment-card input,.payment-card select{display:block;width:100%;min-height:42px;margin:5px 0 12px;padding:8px;border:1px solid #cbd5e1;border-radius:8px}
         .payment-card{box-shadow:0 18px 50px rgba(2,6,23,0.08);border-radius:12px}
         .method-options label{display:inline-block;margin-right:12px}
         .field{margin-top:12px}
@@ -95,14 +108,31 @@
     <script>
         function toggleMetodo(m) {
             var method = m.toUpperCase();
-            var requiresProof = method === 'TRANSFERENCIA' || method === 'COMPROBANTE';
+            var isMobile = method === 'PAGO_MOVIL';
             document.getElementById('transferenciaInfo').classList.toggle('hidden', method !== 'TRANSFERENCIA');
-            document.getElementById('comprobanteUpload').classList.toggle('hidden', !requiresProof);
-            document.querySelector('#comprobanteUpload input[name="comprobante"]').required = requiresProof;
-            document.getElementById('stripeAction').classList.toggle('hidden', method !== 'STRIPE');
+            document.getElementById('pagoMovilInfo').classList.toggle('hidden', !isMobile);
+            document.getElementById('pagoMovilFields').classList.toggle('hidden', !isMobile);
+            document.getElementById('pagoMovilCapture').classList.toggle('hidden', !isMobile);
+            document.getElementById('transferenciaCapture').classList.toggle('hidden', method !== 'TRANSFERENCIA');
+            document.querySelector('#pagoMovilFields select').disabled = !isMobile;
+            document.querySelector('#pagoMovilFields input').disabled = !isMobile;
+            document.querySelector('#pagoMovilCapture input').disabled = !isMobile;
+            document.querySelector('#transferenciaCapture input').disabled = method !== 'TRANSFERENCIA';
+            document.querySelector('#pagoMovilFields select').required = isMobile;
+            document.querySelector('#pagoMovilFields input').required = isMobile;
+            document.querySelector('#pagoMovilCapture input').required = isMobile;
+            document.querySelector('#transferenciaCapture input').required = method === 'TRANSFERENCIA';
+            document.querySelector('#pagoForm input[name="referencia"]').required = true;
+            document.querySelectorAll('#pagoForm input[name="metodo"]').forEach(function(input) {
+                input.checked = input.value === method;
+            });
         }
 
-        function openPagoModal() { document.getElementById('pagoModal').classList.remove('hidden'); }
+        function openPagoModal() {
+            var selectedMethod = document.querySelector('#pagoForm input[name="metodo"]:checked')?.value || '';
+            document.querySelector('#confirmPagoForm select[name="metodo"]').value = selectedMethod;
+            document.getElementById('pagoModal').classList.remove('hidden');
+        }
         function closePagoModal(){ document.getElementById('pagoModal').classList.add('hidden'); }
 
         function submitPago(){
@@ -112,8 +142,14 @@
             var referencia = data.get('referencia') || '';
             var monto = data.get('monto');
             if(!metodo){ alert('Selecciona un método de pago'); return; }
-            if((metodo === 'TRANSFERENCIA' || metodo === 'COMPROBANTE') && !referencia){ alert('La referencia es obligatoria para este método.'); return; }
-            if((metodo === 'TRANSFERENCIA' || metodo === 'COMPROBANTE') && !document.querySelector('#pagoForm input[name="comprobante"]').files.length){ alert('Adjunta una imagen del comprobante.'); return; }
+            if(!['PAGO_MOVIL', 'TRANSFERENCIA'].includes(metodo)){ alert('Selecciona Pago Móvil o transferencia.'); return; }
+            if(!referencia){ alert('La referencia es obligatoria.'); return; }
+            var proofName = metodo === 'PAGO_MOVIL' ? 'capture' : 'comprobante';
+            var proofInput = document.querySelector('#pagoForm input[name="' + proofName + '"]');
+            if(!proofInput.files.length){ alert('Adjunta el comprobante del pago.'); return; }
+            var mobileBank = document.querySelector('#pagoMovilFields select');
+            var mobileId = document.querySelector('#pagoMovilFields input');
+            if(metodo === 'PAGO_MOVIL' && (!mobileBank.value || !mobileId.value.trim())){ alert('Selecciona el banco y escribe la cédula del pagador.'); return; }
             var mainForm = document.getElementById('pagoForm');
             var metodoInput = document.createElement('input'); metodoInput.type='hidden'; metodoInput.name='metodo'; metodoInput.value=metodo; mainForm.appendChild(metodoInput);
             var referenciaInput = document.createElement('input'); referenciaInput.type='hidden'; referenciaInput.name='referencia'; referenciaInput.value=referencia; mainForm.appendChild(referenciaInput);

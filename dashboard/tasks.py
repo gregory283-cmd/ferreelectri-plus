@@ -97,6 +97,12 @@ def send_paid_order_note_email(self, factura_id):
 
     pdf = HTML(string=html, base_url=str(settings.BASE_DIR)).write_pdf()
     customer_name = pedido.cliente.get_full_name() or pedido.cliente.username
+    try:
+        payment_snapshot = json.loads(pago.gateway_payload or '{}')
+    except (TypeError, ValueError):
+        payment_snapshot = {}
+    amount_bs = payment_snapshot.get('amount_bs')
+    bcv_rate = payment_snapshot.get('bcv_rate')
     message = EmailMultiAlternatives(
         subject=f'Nota de entrega del pedido #{pedido.pk}',
         body=(
@@ -104,7 +110,8 @@ def send_paid_order_note_email(self, factura_id):
             f'Confirmamos la recepción de tu pago para el pedido #{pedido.pk}. '
             'Adjuntamos la nota de entrega y el detalle de tu compra.\n\n'
             f'Total pagado: {factura.moneda} {pago.monto:.2f}\n'
-            f'Método: {pago.get_metodo_display()}\n'
+            + (f'Equivalente recibido: Bs. {amount_bs} a tasa BCV {bcv_rate}\n' if amount_bs and bcv_rate else '')
+            + f'Método: {pago.get_metodo_display()}\n'
             f'Referencia: {pago.numero_referencia or pago.referencia or "No informada"}\n\n'
             'Descarga la nota en tu panel de cliente, en Mis pedidos:\n'
             f"https://{get_current_site(None).domain}{reverse('cliente_panel')}\n\n"

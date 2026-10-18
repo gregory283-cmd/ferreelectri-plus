@@ -355,9 +355,11 @@
       {% if pago %}
         <strong>Pago verificado</strong> · {{ pago.get_metodo_display }} · {{ pago.monto|floatformat:2 }} {{ factura.moneda }}
         {% if pago.numero_referencia or pago.referencia %}<br>Referencia: {{ pago.numero_referencia|default:pago.referencia }}{% endif %}
+        {% if payment_amount_bs and payment_bcv_rate %}<br>Importe recibido: Bs. {{ payment_amount_bs }} · Tasa BCV aplicada: {{ payment_bcv_rate }}{% endif %}
       {% else %}
         <strong>Venta registrada</strong> · El sistema no tiene un pago verificado asociado a este documento.
       {% endif %}
+      <br><strong>Entrega:</strong> {% if envio and envio.direccion %}{{ envio.direccion }}{% else %}Por coordinar con el cliente{% endif %}
     </div>
 
     <table class="items">
