@@ -15,7 +15,9 @@ window.showAdminLoginSuccess = async function(destination) {
 
 document.addEventListener('DOMContentLoaded', function() {
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/service-worker.js', { scope: '/' }).catch(() => {});
+    window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
+      navigator.serviceWorker.register('/service-worker.js', { scope: '/' }).catch(() => {});
+    }));
   }
 
   const passwordInput = document.getElementById('password');

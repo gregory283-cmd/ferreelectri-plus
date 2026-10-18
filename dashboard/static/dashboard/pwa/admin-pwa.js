@@ -175,6 +175,8 @@
   let confirmationDeadline = 0;
   let confirmationReason = '';
   let logoutInProgress = false;
+  let activityPersistTimeout = null;
+  let lastActivityPersistedAt = 0;
   let lastActivityAt = Date.now();
   try {
     lastActivityAt = Number(sessionStorage.getItem(lastActivityKey)) || lastActivityAt;
@@ -264,13 +266,19 @@
       showSessionConfirmation('idle');
       return;
     }
-    idleTimeout = window.setTimeout(() => showSessionConfirmation('idle'), remaining);
+    idleTimeout = window.setTimeout(scheduleIdleConfirmation, remaining);
   }
 
   function recordActivity() {
     if (sessionDialog?.open || logoutInProgress) return;
-    saveLastActivity(Date.now());
-    scheduleIdleConfirmation();
+    lastActivityAt = Date.now();
+    if (activityPersistTimeout) return;
+    const delay = Math.max(0, 1000 - (lastActivityAt - lastActivityPersistedAt));
+    activityPersistTimeout = window.setTimeout(() => {
+      activityPersistTimeout = null;
+      saveLastActivity(lastActivityAt);
+      lastActivityPersistedAt = lastActivityAt;
+    }, delay);
   }
 
   continueSessionButton?.addEventListener('click', continueWorking);
@@ -302,11 +310,14 @@
   });
   scheduleIdleConfirmation();
 
-  if ('serviceWorker' in navigator) {
+  function registerServiceWorker() {
+    if (!('serviceWorker' in navigator)) return;
     navigator.serviceWorker.register('/service-worker.js', { scope: '/' })
       .then((registration) => { serviceWorkerRegistration = registration; })
       .catch(() => showStatus('No se pudo preparar la aplicación en este navegador.'));
   }
+
+  window.requestAnimationFrame(() => window.requestAnimationFrame(registerServiceWorker));
 
   const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent)
     || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
