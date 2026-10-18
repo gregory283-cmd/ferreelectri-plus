@@ -11,6 +11,9 @@
     .audit-action { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 40px; padding: 8px 12px; border: 1px solid rgba(8,127,154,.18); border-radius: 9px; color: #075b70; background: rgba(8,127,154,.08); font-size: .82rem; font-weight: 700; text-decoration: none; }
     .audit-action:hover { color: #063f51; background: rgba(8,127,154,.14); }
     .audit-action .material-symbols-outlined { font-size: 18px; }
+    .audit-device-overview { margin: 0 0 24px; padding: 16px 0 20px; border-top: 1px solid var(--audit-line); border-bottom: 1px solid var(--audit-line); }
+    .audit-device-overview-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 12px; }
+    .audit-device-overview h2 { margin: 0; color: var(--audit-text); font-size: 1.05rem; }
     .audit-count { display: flex; align-items: baseline; gap: 6px; margin: 0 0 12px; color: var(--audit-muted); font-size: .8rem; }
     .audit-count strong { color: var(--audit-text); font-size: .92rem; }
     .table-responsive { width: 100%; overflow-x: auto; border: 1px solid var(--audit-line); border-radius: 11px; background: var(--audit-card); box-shadow: 0 8px 28px rgba(16,41,76,.06); }
@@ -37,6 +40,7 @@
         .auditoria-subtitle { font-size: .82rem; }
         .auditoria-actions { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); justify-content: stretch; }
         .audit-action { min-width: 0; min-height: 42px; padding: 8px 7px; font-size: .75rem; }
+        .audit-device-overview-head { align-items: flex-start; flex-direction: column; }
         .audit-desktop-table { display: none; }
         .audit-mobile-list { display: grid; gap: 10px; }
         .audit-event { min-width: 0; padding: 13px; border: 1px solid var(--audit-line); border-radius: 10px; background: var(--audit-card); box-shadow: 0 4px 14px rgba(16,41,76,.05); }
@@ -78,6 +82,27 @@
             <a href="{% url 'admin_security_devices' %}" class="audit-action"><span class="material-symbols-outlined" aria-hidden="true">devices</span> Dispositivos y llaves</a>
         </nav>
     </div>
+    <section class="audit-device-overview" aria-labelledby="audit-devices-title">
+        <div class="audit-device-overview-head">
+            <div><span class="auditoria-eyebrow">ACCESO ACTUAL</span><h2 id="audit-devices-title">Dispositivos administrativos</h2></div>
+            <a href="{% url 'admin_security_devices' %}" class="audit-action">Gestionar dispositivos</a>
+        </div>
+        <div class="table-responsive">
+            <table class="audit-table">
+                <thead><tr><th>Cuenta</th><th>Rol</th><th>Dispositivo</th><th>IP</th><th>Última actividad</th><th>Estado</th></tr></thead>
+                <tbody>{% for device in device_sessions %}
+                    <tr>
+                        <td class="audit-user" data-label="Cuenta">{{ device.user.get_username }}</td>
+                        <td data-label="Rol">{% if device.is_primary_device %}Titular protegido{% elif device.user.is_superuser %}Superusuario{% else %}Administración{% endif %}</td>
+                        <td class="audit-device-cell" data-label="Dispositivo">{% if device.passkey %}{{ device.passkey.name }}{% else %}{{ device.user_agent|default:'Contraseña' }}{% endif %}</td>
+                        <td class="audit-ip" data-label="IP">{{ device.ip_address|default:'No disponible' }}</td>
+                        <td class="audit-date" data-label="Última actividad">{{ device.last_seen_at|date:"d/m/Y H:i" }}</td>
+                        <td data-label="Estado">{% if device.is_primary_device %}<strong>Protegido</strong>{% elif device.is_recent and device.is_active %}Conectado{% elif device.is_active %}Inactivo{% else %}Cerrado{% endif %}</td>
+                    </tr>
+                {% empty %}<tr><td class="audit-empty" colspan="6">No hay sesiones administrativas registradas.</td></tr>{% endfor %}</tbody>
+            </table>
+        </div>
+    </section>
     <p class="audit-count"><strong>{{ logs|length }}</strong> eventos recientes</p>
     <div class="table-responsive audit-desktop-table">
         <table class="audit-table">

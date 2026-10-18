@@ -2534,6 +2534,33 @@ class AdminPWASecurityTest(TestCase):
         self.assertEqual(self.client.get(reverse('dashboard')).status_code, 200)
         self.assertEqual(secondary_client.get(reverse('dashboard')).status_code, 302)
 
+    def test_primary_passkey_bypasses_login_approval(self):
+        from django.contrib.sessions.middleware import SessionMiddleware
+        from django.test import RequestFactory
+        from .views import _pending_admin_login_approval
+
+        owner = User.objects.create_superuser(
+            username='primary-passkey-login', email='primary-passkey-login@example.test', password='TestPassword123!',
+        )
+        primary_key = AdminPasskey.objects.create(
+            user=owner, credential_id='cHJpbWFyeS1ieXBhc3M', public_key=b'primary-key', name='Teléfono principal',
+        )
+        config, _ = AdminSecurityConfig.objects.get_or_create(pk=1)
+        config.owner_user = owner
+        config.primary_passkey = primary_key
+        config.save(update_fields=['owner_user', 'primary_passkey', 'updated_at'])
+        AdminDeviceSession.objects.create(
+            user=owner, passkey=primary_key, session_key='primary-active-session-000001', is_active=True,
+        )
+        request = RequestFactory().post('/admin-panel/passkeys/login/verify/')
+        SessionMiddleware(lambda response: response).process_request(request)
+        request.session.save()
+        request.session['admin_current_passkey_id'] = primary_key.pk
+        request.session.save()
+
+        self.assertIsNone(_pending_admin_login_approval(request, owner))
+        self.assertFalse(AdminLoginApproval.objects.filter(user=owner).exists())
+
     def test_primary_owner_can_revoke_and_restore_secondary_passkey(self):
         owner = User.objects.create_superuser(
             username='passkey-revoker-owner', email='passkey-revoker@example.test', password='TestPassword123!',

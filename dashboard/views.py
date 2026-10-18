@@ -238,6 +238,13 @@ def _pending_admin_login_approval(request, user):
     security_config = AdminSecurityConfig.objects.filter(pk=1).only(
         'owner_user_id', 'primary_passkey_id',
     ).first()
+    if (
+        security_config
+        and security_config.owner_user_id == user.pk
+        and security_config.primary_passkey_id
+        and str(request.session.get('admin_current_passkey_id')) == str(security_config.primary_passkey_id)
+    ):
+        return None
     primary_sessions = AdminDeviceSession.objects.none()
     if security_config and security_config.owner_user_id and security_config.primary_passkey_id:
         primary_sessions = AdminDeviceSession.objects.filter(
@@ -2464,6 +2471,26 @@ def auditoria_completa(request):
 
     include_ip = any(p['ip_address'] for p in processed)
     include_user_agent = any(p['user_agent'] for p in processed)
+    security_config = AdminSecurityConfig.objects.filter(pk=1).only(
+        'owner_user_id', 'primary_passkey_id',
+    ).first()
+    active_session_cutoff = timezone.now() - timedelta(minutes=3)
+    device_sessions = list(
+        AdminDeviceSession.objects.select_related('user', 'passkey').annotate(
+            is_primary=models.Case(
+                models.When(
+                    user_id=security_config.owner_user_id,
+                    passkey_id=security_config.primary_passkey_id,
+                    then=models.Value(True),
+                ) if security_config else models.When(pk__isnull=True, then=models.Value(True)),
+                default=models.Value(False),
+                output_field=models.BooleanField(),
+            )
+        ).order_by('-is_primary', '-is_active', '-last_seen_at')
+    )
+    for device_session in device_sessions:
+        device_session.is_primary_device = device_session.is_primary
+        device_session.is_recent = device_session.last_seen_at >= active_session_cutoff
 
     colspan = 5 + (1 if include_ip else 0) + (1 if include_user_agent else 0)
     return render(request, 'dashboard/auditoria_completa.html', {
@@ -2471,6 +2498,7 @@ def auditoria_completa(request):
         'include_ip': include_ip,
         'include_user_agent': include_user_agent,
         'colspan': colspan,
+        'device_sessions': device_sessions,
     })
 
 
