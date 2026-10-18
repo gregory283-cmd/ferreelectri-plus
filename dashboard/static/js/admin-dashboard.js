@@ -32,13 +32,32 @@
         const suffix = element.dataset.suffix || '';
         const started = performance.now() + index * 35;
         const duration = 850;
+        let animationFrame = null;
+        const renderValue = (value) => {
+          element.textContent = `${prefix}${formatter.format(value)}${suffix}`;
+        };
+        const finish = () => {
+          if (animationFrame) cancelAnimationFrame(animationFrame);
+          renderValue(target);
+        };
         const tick = (now) => {
+          if (document.visibilityState !== 'visible') {
+            finish();
+            return;
+          }
           const progress = Math.min(Math.max((now - started) / duration, 0), 1);
           const eased = 1 - ((1 - progress) ** 3);
-          element.textContent = `${prefix}${formatter.format(target * eased)}${suffix}`;
-          if (progress < 1) requestAnimationFrame(tick);
+          if (progress <= 0) {
+            animationFrame = requestAnimationFrame(tick);
+            return;
+          }
+          renderValue(target * eased);
+          if (progress < 1) animationFrame = requestAnimationFrame(tick);
         };
-        requestAnimationFrame(tick);
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState !== 'visible') finish();
+        }, { once: true });
+        animationFrame = requestAnimationFrame(tick);
       });
     }
 
