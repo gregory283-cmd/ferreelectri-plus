@@ -674,8 +674,8 @@
             <a href="{% url 'crear_categoria' %}" class="btn-registrar">
                 <span class="material-symbols-outlined">category</span> Crear categoría
             </a>
-            <a href="{% url 'reporte_productos_pdf' %}" class="boton">
-                <span class="material-symbols-outlined">picture_as_pdf</span> Descargar Reporte PDF
+            <a href="{% url 'reporte_previsualizacion' 'productos' %}" class="boton">
+                <span class="material-symbols-outlined">preview</span> Vista previa PDF
             </a>
             <button type="button" id="btn-toggle-promos-catalog" class="boton">
                 Mostrar sólo promociones <span id="promo-count-catalog" style="background:#08323a;color:#fff;padding:2px 8px;border-radius:999px;margin-left:8px;">0</span>

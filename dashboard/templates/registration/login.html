@@ -531,6 +531,29 @@
       background: #eef4ff;
       box-shadow: 0 10px 24px rgba(15, 45, 90, 0.05);
     }
+    .biometric-login-btn {
+      display: flex;
+      width: 100%;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      border: 1px solid #bfdaef;
+      background: linear-gradient(135deg, #f4fbff, #e7f4ff);
+      color: #14568e;
+      box-shadow: 0 8px 22px rgba(17, 94, 153, .10);
+    }
+    .biometric-login-btn .material-symbols-outlined {
+      display: grid;
+      width: 36px;
+      height: 36px;
+      place-items: center;
+      border-radius: 50%;
+      background: #d5ecfb;
+      color: #0878ba;
+      font-size: 25px;
+      transition: transform 180ms ease;
+    }
+    .biometric-login-btn:hover .material-symbols-outlined { transform: scale(1.08); }
     .primary-btn:hover,
     .secondary-btn:hover {
       transform: translateY(-1px);
@@ -785,6 +808,7 @@
       .remember-device input { width: 16px; height: 16px; }
       .form-footer { gap: 8px; margin-top: 10px; }
       .action-links { margin-top: 0; }
+      .action-links a { width: 100%; min-width: 0; padding: 7px 8px; border: 0; border-radius: 8px; background: transparent; box-shadow: none; color: #1765bd; font-size: .82rem; text-decoration: underline; }
       .toggle-password { right: 14px; }
     }
   </style>
@@ -869,7 +893,7 @@
           </div>
           <button type="button" class="secondary-btn biometric-login-btn" id="admin-passkey-login">
             <span class="material-symbols-outlined" aria-hidden="true">fingerprint</span>
-            Identificación biométrica
+            Iniciar con huella
           </button>
           <p id="admin-passkey-status" role="status" aria-live="polite"></p>
         </form>
@@ -892,7 +916,7 @@
         {% endif %}
         <div class="form-footer">
           <div class="action-links">
-            <a href="{% url 'recuperar_admin' %}">Recuperar contraseña</a>
+            <a href="{% url 'recuperar_admin' %}">Recuperar acceso</a>
           </div>
         </div>
       </div>

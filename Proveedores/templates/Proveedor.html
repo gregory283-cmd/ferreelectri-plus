@@ -416,7 +416,7 @@
                 {% if search_query %}<a href="{% url 'Proveedor' %}">Limpiar</a>{% endif %}
             </form>
             <a href="{% url 'addProveedor' %}" class="providers-button primary"><span class="material-symbols-outlined" aria-hidden="true">person_add</span> Nuevo proveedor</a>
-            <a href="{% url 'reporte_proveedores_pdf' %}" class="providers-button" title="Descargar reporte PDF"><span class="material-symbols-outlined" aria-hidden="true">picture_as_pdf</span> PDF</a>
+            <a href="{% url 'reporte_previsualizacion' 'proveedores' %}" class="providers-button" title="Vista previa del reporte PDF"><span class="material-symbols-outlined" aria-hidden="true">preview</span> Vista previa PDF</a>
             <a href="{% url 'reporte_proveedores_excel' %}" class="providers-button" title="Descargar reporte Excel"><span class="material-symbols-outlined" aria-hidden="true">grid_on</span> Excel</a>
         </div>
     </header>

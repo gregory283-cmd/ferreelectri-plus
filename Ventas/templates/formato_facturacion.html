@@ -979,7 +979,8 @@ function mostrarBusquedaModal(titulo, lista, callback, mostrarTexto, tipo = 'pro
         if (event.target === modal) cerrar(null);
     };
     render();
-    input.focus();
+    input.setAttribute('inputmode', 'none');
+    input.addEventListener('pointerdown', () => input.removeAttribute('inputmode'), { once: true });
     document.addEventListener('keydown', keydownHandler, true);
 }
 

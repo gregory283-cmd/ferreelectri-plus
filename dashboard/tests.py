@@ -2314,6 +2314,7 @@ class AdminPWASecurityTest(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'id="admin-sidebar-toggle"')
+        self.assertContains(response, 'class="label">E-commerce</span>')
         self.assertContains(response, 'css/admin-theme.css')
         self.assertContains(response, 'id="admin-theme-toggle"')
         self.assertContains(response, 'id="admin-auth-identity"')
@@ -2403,7 +2404,7 @@ class AdminPWASecurityTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'autocomplete="username webauthn"')
         self.assertContains(response, 'id="admin-passkey-login"')
-        self.assertContains(response, 'Identificación biométrica')
+        self.assertContains(response, 'Iniciar con huella')
         self.assertNotContains(response, 'class="auth-brand"')
         self.assertNotContains(response, 'class="auth-subtitle"')
 

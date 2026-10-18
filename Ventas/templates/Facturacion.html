@@ -634,6 +634,26 @@ html[data-theme="dark"] .btn-precios {
         background: rgba(231,76,60,0.95) !important;
         color: #ffffff !important;
     }
+    @media (max-width: 700px) {
+        .ventas-main { padding: 8px 12px; }
+        .ventas-title { justify-content: flex-start; gap: 8px; margin: 8px 0 14px; font-size: 1.35rem; line-height: 1.2; text-align: left; }
+        .ventas-summary-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; margin-bottom: 14px; }
+        .ventas-summary-card { min-width: 0; gap: 7px; padding: 10px 8px; border-left-width: 3px; border-radius: 10px; }
+        .ventas-summary-card .icon { padding: 7px; font-size: 1.15rem; }
+        .ventas-summary-card .info h5 { font-size: 1.15rem; }
+        .ventas-summary-card .info small { font-size: .66rem; letter-spacing: 0; }
+        .ventas-actions-bar { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; align-items: stretch; margin-bottom: 14px; }
+        .ventas-form-search { display: grid; width: 100%; max-width: none; min-width: 0; grid-template-columns: minmax(0, 1fr) 44px; gap: 6px; }
+        .ventas-form-search input[type="text"] { min-width: 0; height: 44px; padding: 8px 11px; font-size: .88rem; }
+        .ventas-form-search button { width: 44px; height: 44px; justify-content: center; padding: 0; font-size: 0; }
+        .ventas-form-search button .material-symbols-outlined { font-size: 1.35rem; }
+        .report-buttons { display: grid; width: 100%; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; justify-content: stretch; }
+        .report-buttons a { min-width: 0; justify-content: center; gap: 6px; padding: 10px 7px; border-radius: 9px; font-size: .78rem; line-height: 1.15; text-align: center; }
+        .ventas-btn-nuevo { width: 100%; min-width: 0; min-height: 46px; justify-content: center; margin: 0; padding: 9px 12px; border-radius: 10px; font-size: .92rem; }
+        .top-bar-precios { justify-content: stretch; margin: 10px 0; }
+        .btn-precios { width: 100%; justify-content: center; margin: 0; padding: 10px 12px; font-size: .9rem; }
+        .ventas-table-container { margin-bottom: 20px; padding: 14px 10px; border-radius: 12px; }
+    }
 </style>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -739,8 +759,8 @@ document.addEventListener('DOMContentLoaded', function() {
             </button>
         </div>
         <div class="report-buttons">
-            <a href="{% url 'reporte_facturas_pdf' %}" target="_blank">
-                <span class="material-symbols-outlined">picture_as_pdf</span> PDF ventas
+            <a href="{% url 'reporte_previsualizacion' 'facturas' %}" target="_blank">
+                <span class="material-symbols-outlined">preview</span> Vista previa PDF
             </a>
             <a href="{% url 'reporte_facturas_excel' %}">
                 <span class="material-symbols-outlined">grid_on</span> Excel ventas

@@ -19,7 +19,7 @@ Ventas canceladas/anuladas: aquí podrás ver solo facturas con estado anulada.
 
     <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
       <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
-        <a href="{% url 'reporte_facturas_pdf' %}" target="_blank" style="display:inline-flex; align-items:center; gap:8px; background:#00b2ff; color:#fff; border-radius:12px; padding:10px 14px; text-decoration:none; font-weight:700;">
+        <a href="{% url 'reporte_previsualizacion' 'facturas' %}" target="_blank" style="display:inline-flex; align-items:center; gap:8px; background:#00b2ff; color:#fff; border-radius:12px; padding:10px 14px; text-decoration:none; font-weight:700;">
           <i class="fa-solid fa-file-pdf"></i> PDF facturas
         </a>
         <a href="{% url 'reporte_facturas_excel' %}" style="display:inline-flex; align-items:center; gap:8px; background:#00b2ff; color:#fff; border-radius:12px; padding:10px 14px; text-decoration:none; font-weight:700;">

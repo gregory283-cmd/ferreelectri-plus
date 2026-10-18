@@ -87,6 +87,16 @@ class VentasCSRFTest(TestCase):
 		self.assertContains(response, '.modal-card.cost-modal { width: 100%; height: calc(100dvh - 20px);')
 		self.assertContains(response, 'grid-template-columns: minmax(0, 1fr);')
 
+	def test_barra_de_ventas_se_apila_en_movil(self):
+		client = Client()
+		client.force_login(self.user)
+		response = client.get(reverse('listar_facturas'))
+
+		self.assertEqual(response.status_code, 200)
+		self.assertContains(response, '.ventas-actions-bar { display: grid;')
+		self.assertContains(response, '.report-buttons { display: grid; width: 100%;')
+		self.assertContains(response, 'Vista previa PDF')
+
 	def test_actualizar_precio_no_permite_saltar_aprobacion_de_costo(self):
 		import json
 		from decimal import Decimal

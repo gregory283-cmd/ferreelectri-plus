@@ -29,6 +29,25 @@ class ReportesPdfPresentationTests(TestCase):
 			email='proveedor-pdf@example.com', direccion='San Cristobal',
 		)
 
+	def test_previsualizacion_de_reportes_muestra_pdf_y_descarga(self):
+		for tipo, title in (
+			('clientes', 'Reporte de clientes'),
+			('proveedores', 'Reporte de proveedores'),
+			('productos', 'Reporte de productos'),
+			('facturas', 'Reporte de ventas'),
+		):
+			response = self.client.get(reverse('reporte_previsualizacion', args=[tipo]))
+			self.assertEqual(response.status_code, 200)
+			self.assertContains(response, title)
+			self.assertContains(response, '?preview=1')
+			self.assertContains(response, 'Descargar')
+			self.assertContains(response, '<iframe')
+
+		self.assertEqual(
+			self.client.get(reverse('reporte_previsualizacion', args=['desconocido'])).status_code,
+			404,
+		)
+
 	def test_listados_pdf_incluyen_estilo_compartido_y_datos(self):
 		with patch('Reportes.views.HTML') as pdf_engine:
 			pdf_engine.return_value.write_pdf.return_value = b'%PDF-test'
@@ -36,9 +55,15 @@ class ReportesPdfPresentationTests(TestCase):
 			client_html = pdf_engine.call_args.kwargs['string']
 			provider_response = self.client.get(reverse('reporte_proveedores_pdf'))
 			provider_html = pdf_engine.call_args.kwargs['string']
+			provider_preview = self.client.get(reverse('reporte_proveedores_pdf'), {'preview': '1'})
 
 		self.assertEqual(client_response['Content-Type'], 'application/pdf')
 		self.assertEqual(provider_response['Content-Type'], 'application/pdf')
+		self.assertIn('attachment;', provider_response['Content-Disposition'])
+		self.assertIn('inline;', provider_preview['Content-Disposition'])
+		self.assertEqual(provider_preview['X-Frame-Options'], 'SAMEORIGIN')
+		self.assertIn("frame-ancestors 'self'", provider_preview['Content-Security-Policy'])
+		self.assertIn("default-src 'self'", provider_preview['Content-Security-Policy'])
 		self.assertIn('.header-bar', client_html)
 		self.assertIn('background-image: none !important', provider_html)
 		self.assertIn(self.cliente.cedula, client_html)

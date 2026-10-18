@@ -1,5 +1,9 @@
 from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse
+from django.urls import reverse
+from django.conf import settings
+from django.views.decorators.clickjacking import xframe_options_sameorigin
+from csp.decorators import csp_replace
 from django.template.loader import get_template, render_to_string
 from xhtml2pdf import pisa
 from weasyprint import HTML
@@ -17,7 +21,31 @@ from decimal import Decimal
 import pprint
 
 # Create your views here.
+REPORT_PREVIEW_CSP = {
+    **settings.CONTENT_SECURITY_POLICY['DIRECTIVES'],
+    'frame-ancestors': ["'self'"],
+}
 
+def reporte_previsualizacion(request, tipo):
+    reportes = {
+        'clientes': ('Reporte de clientes', 'reporte_clientes_pdf'),
+        'proveedores': ('Reporte de proveedores', 'reporte_proveedores_pdf'),
+        'productos': ('Reporte de productos', 'reporte_productos_pdf'),
+        'facturas': ('Reporte de ventas', 'reporte_facturas_pdf'),
+    }
+    reporte = reportes.get(tipo)
+    if not reporte:
+        return HttpResponse(status=404)
+    titulo, pdf_view_name = reporte
+    pdf_url = reverse(pdf_view_name)
+    return render(request, 'reportes/preview_report.html', {
+        'title': titulo,
+        'preview_url': f'{pdf_url}?preview=1',
+        'download_url': pdf_url,
+    })
+
+@csp_replace(REPORT_PREVIEW_CSP)
+@xframe_options_sameorigin
 def reporte_clientes_pdf(request):
     clientes = Clientes.objects.all()
     file_creation_date = datetime.now()
@@ -50,6 +78,8 @@ def reporte_clientes_excel(request):
     wb.save(response)
     return response
 
+@csp_replace(REPORT_PREVIEW_CSP)
+@xframe_options_sameorigin
 def reporte_proveedores_pdf(request):
     try:
         proveedores = Proveedores.objects.all()
@@ -68,7 +98,8 @@ def reporte_proveedores_pdf(request):
         try:
             pdf_file = HTML(string=html, base_url=request.build_absolute_uri('/')).write_pdf()
             response = HttpResponse(pdf_file, content_type='application/pdf')
-            response['Content-Disposition'] = 'attachment; filename="reporte_proveedores.pdf"'
+            disposition = 'inline' if request.GET.get('preview') == '1' else 'attachment'
+            response['Content-Disposition'] = f'{disposition}; filename="reporte_proveedores.pdf"'
             return response
         except Exception:
             import traceback
@@ -102,6 +133,8 @@ def reporte_proveedores_excel(request):
     wb.save(response)
     return response
 
+@csp_replace(REPORT_PREVIEW_CSP)
+@xframe_options_sameorigin
 def reporte_productos_pdf(request):
     try:
         productos = Productos.objects.all()
@@ -158,7 +191,8 @@ def reporte_productos_pdf(request):
         try:
             pdf_file = HTML(string=html, base_url=request.build_absolute_uri('/')).write_pdf()
             response = HttpResponse(pdf_file, content_type='application/pdf')
-            response['Content-Disposition'] = 'attachment; filename="reporte_productos.pdf"'
+            disposition = 'inline' if request.GET.get('preview') == '1' else 'attachment'
+            response['Content-Disposition'] = f'{disposition}; filename="reporte_productos.pdf"'
             return response
         except Exception:
             # si WeasyPrint falla, devolver traza para depuración
@@ -187,6 +221,8 @@ def reporte_productos_excel(request):
     wb.save(response)
     return response
 
+@csp_replace(REPORT_PREVIEW_CSP)
+@xframe_options_sameorigin
 def reporte_facturas_pdf(request):
     facturas = Factura.objects.select_related('cliente').order_by('-fecha')
     response_data = {
@@ -197,7 +233,8 @@ def reporte_facturas_pdf(request):
     html_string = render_to_string('reportes/reporte_facturas.html', response_data)
     pdf_file = HTML(string=html_string, base_url=request.build_absolute_uri('/')).write_pdf()
     response = HttpResponse(pdf_file, content_type='application/pdf')
-    response['Content-Disposition'] = 'attachment; filename="reporte_facturas.pdf"'
+    disposition = 'inline' if request.GET.get('preview') == '1' else 'attachment'
+    response['Content-Disposition'] = f'{disposition}; filename="reporte_facturas.pdf"'
     return response
 
 
