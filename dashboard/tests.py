@@ -2272,6 +2272,7 @@ class AdminPWASecurityTest(TestCase):
         self.assertEqual(manifest.status_code, 200)
         self.assertEqual(manifest['Content-Type'], 'application/manifest+json; charset=utf-8')
         self.assertEqual(manifest.json()['display'], 'standalone')
+        self.assertEqual(manifest.json()['background_color'], '#08243b')
         self.assertIn('/admin-panel/dashboard/', manifest.json()['start_url'])
         for icon in manifest.json()['icons']:
             response = self.client.get(icon['src'])
@@ -2279,6 +2280,20 @@ class AdminPWASecurityTest(TestCase):
             self.assertEqual(response['Content-Type'], 'image/png')
         self.assertEqual(worker.status_code, 200)
         self.assertContains(worker, "addEventListener('push'")
+
+    def test_admin_password_login_ajax_returns_success_destination(self):
+        staff = User.objects.create_superuser(
+            username='ajax-login-admin', email='ajax-login@example.test', password='TestPassword123!',
+        )
+
+        response = self.client.post(
+            reverse('login_admin_custom'),
+            data={'username': staff.username, 'password': 'TestPassword123!', 'next': '', 'remember_device': '0'},
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {'ok': True, 'next': reverse('dashboard')})
 
     def test_password_login_can_request_passkey_enrollment_after_validation(self):
         staff = User.objects.create_superuser(

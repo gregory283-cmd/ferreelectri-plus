@@ -180,6 +180,10 @@
     if (!credential) return;
     const result = await postJson('/admin-panel/passkeys/login/verify/', { credential: credentialToJson(credential) });
     if (installedPwa) sessionStorage.setItem(appSessionKey, '1');
+    if (typeof window.showAdminLoginSuccess === 'function') {
+      await window.showAdminLoginSuccess(result.next || '/admin-panel/dashboard/');
+      return;
+    }
     const loader = document.getElementById('loader');
     if (loader) {
       loader.classList.add('is-biometric');

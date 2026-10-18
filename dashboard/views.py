@@ -122,7 +122,7 @@ def admin_pwa_manifest(request):
         'start_url': reverse('dashboard'),
         'scope': '/',
         'display': 'standalone',
-        'background_color': '#f3f7fa',
+        'background_color': '#08243b',
         'theme_color': '#08243b',
         'icons': [
             {

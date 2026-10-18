@@ -4,6 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#08243b" />
   <title>Inicia sesión · FERREELECTRI PLUS</title>
   <style>
     :root {
@@ -721,7 +722,31 @@
     .loader-overlay.is-biometric .loader-lock { display: block; }
     .loader-overlay.is-unlocking .loader-lock-shackle { transform: translate(2px,-8px) rotate(-20deg); }
     .loader-overlay.is-unlocking .loader-lock-body { animation: lockUnlockGlow 550ms ease-out both; }
+    .loader-overlay.is-success { background: linear-gradient(145deg, rgba(5,31,58,.97), rgba(0,75,165,.96)); backdrop-filter: blur(12px); }
+    .loader-overlay.is-success .loader-card { gap: 22px; padding: 34px 38px; background: transparent; box-shadow: none; animation: successArrive 620ms cubic-bezier(.18,.82,.22,1) both; }
+    .loader-overlay.is-success .loader-ring { display: none; }
+    .loader-overlay.is-success .loader-lock { display: block; width: 112px; height: 112px; color: #fff; animation: lockArrive 620ms cubic-bezier(.18,.82,.22,1) both; }
+    .loader-overlay.is-success .loader-label { color: #fff; font-size: 1.1rem; }
+    .loader-overlay.is-success.is-unlocking .loader-lock-shackle { transform: translate(8px,-14px) rotate(28deg); }
+    .loader-overlay.is-success.is-unlocking .loader-lock-body { animation: lockUnlockGlow 700ms ease-out both; }
+    .loader-overlay.is-success.is-unlocking .loader-label { animation: successCopyIn 500ms 180ms both; }
     @keyframes lockUnlockGlow { 50% { filter: drop-shadow(0 0 14px rgba(0,178,255,.65)); } }
+    @keyframes successArrive { from { opacity: 0; transform: translateY(24px) scale(.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    @keyframes lockArrive { 0% { opacity: 0; transform: scale(.55) rotate(-18deg); } 68% { opacity: 1; transform: scale(1.08) rotate(4deg); } 100% { opacity: 1; transform: scale(1) rotate(0); } }
+    @keyframes successCopyIn { from { opacity: .35; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .login-feedback-error { margin: 0; color: #9d2929; font-size: .9rem; line-height: 1.4; }
+    .pwa-launch-splash { position: fixed; z-index: 20000; inset: 0; display: none; place-items: center; overflow: hidden; background: #08243b; opacity: 1; transition: opacity 420ms ease; }
+    html.pwa-launching .pwa-launch-splash { display: grid; }
+    html.pwa-launching body { overflow: hidden; }
+    .pwa-launch-splash.is-hiding { opacity: 0; }
+    .pwa-launch-logo { width: min(72vw, 360px); height: auto; animation: launchLogoIn 820ms cubic-bezier(.18,.82,.22,1) both; }
+    .pwa-launch-progress { position: absolute; bottom: max(12vh, 56px); width: 76px; height: 3px; overflow: hidden; border-radius: 99px; background: rgba(255,255,255,.24); }
+    .pwa-launch-progress::after { content: ''; display: block; width: 42%; height: 100%; border-radius: inherit; background: #fff; animation: launchProgress 950ms ease-in-out infinite; }
+    @keyframes launchLogoIn { from { opacity: 0; transform: translateY(12px) scale(.94); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    @keyframes launchProgress { from { transform: translateX(-110%); } to { transform: translateX(260%); } }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; }
+    }
     .loader-label {
       color: var(--text);
       font-weight: 700;
@@ -835,8 +860,25 @@
       .fingerprint-icon { width: 36px; height: 36px; }
     }
   </style>
+  <script>
+    (() => {
+      const standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+      if (!standalone) return;
+      try {
+        if (sessionStorage.getItem('ferreelectri-launch-seen')) return;
+        sessionStorage.setItem('ferreelectri-launch-seen', '1');
+      } catch (error) {
+        // Continue with the branded launch screen if storage is unavailable.
+      }
+      document.documentElement.classList.add('pwa-launching');
+    })();
+  </script>
 </head>
 <body>
+  <div class="pwa-launch-splash" aria-hidden="true">
+    <img class="pwa-launch-logo" src="{% static 'img/logo.png' %}" alt="" />
+    <span class="pwa-launch-progress"></span>
+  </div>
   <div class="page-shell">
     <section class="hero-panel">
       <div class="hero-badge">
