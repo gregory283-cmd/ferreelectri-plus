@@ -9,6 +9,30 @@
 
 Las operaciones de la aplicación se guardan en PostgreSQL al confirmar cada petición. El respaldo completo diario es un punto de recuperación, no una copia continua de cada transacción. La recuperación a un instante exacto requiere habilitar y operar archivado WAL de PostgreSQL, todavía no configurado.
 
+## Notificaciones push administrativas
+
+Las notificaciones de pedidos usan Web Push y requieren un par VAPID estable. Genéralo localmente con el entorno del proyecto:
+
+```powershell
+@'
+from base64 import urlsafe_b64encode
+from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
+from py_vapid import Vapid
+
+vapid = Vapid()
+vapid.generate_keys()
+public_key = urlsafe_b64encode(
+	vapid.public_key.public_bytes(Encoding.X962, PublicFormat.UncompressedPoint)
+).rstrip(b'=').decode('ascii')
+print('ADMIN_WEBPUSH_VAPID_PUBLIC_KEY=' + public_key)
+print('ADMIN_WEBPUSH_VAPID_PRIVATE_KEY=' + vapid.private_pem().decode('ascii'))
+'@ | .\.venv-1\Scripts\python.exe
+```
+
+Configura ambas variables en Render, junto con `ADMIN_WEBPUSH_VAPID_CONTACT=mailto:correo-administrativo@dominio.com`, y vuelve a desplegar. No publiques la clave privada ni la guardes en el repositorio. Después inicia sesión desde la aplicación instalada, activa **Notificaciones de pedidos** y acepta el permiso del navegador. Los pedidos nuevos se enviarán a las suscripciones activas de personal administrativo.
+
+El servicio web y un Background Worker de Render deben compartir `CELERY_BROKER_URL` (o `REDIS_URL`). El comando del worker es `celery -A FERREELECTRI_PLUS worker --loglevel=info`; sin ese proceso, las tareas de notificación se encolan pero no se envían.
+
 ## Formato y verificación
 
 Cada paquete `ferreelectri-backup-*.tar.gz` contiene:

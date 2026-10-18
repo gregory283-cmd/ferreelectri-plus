@@ -1,8 +1,11 @@
 (() => {
   const registrationButton = document.getElementById('admin-register-passkey');
   const revokeButton = document.getElementById('admin-revoke-passkeys');
-  const loginButton = document.getElementById('admin-passkey-login');
   const status = document.getElementById('admin-passkey-status');
+  const loginForm = document.querySelector('.login-form');
+  const usernameInput = document.getElementById('username');
+  const installedPwa = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  const appSessionKey = 'ferreelectri_admin_app_session';
 
   function showStatus(message) {
     if (status) status.textContent = message;
@@ -84,7 +87,36 @@
   function explainError(error) {
     if (error.name === 'NotAllowedError') return 'Se canceló la operación o el dispositivo no encontró una llave registrada.';
     if (error.name === 'SecurityError') return 'El dominio HTTPS no coincide con el dominio de la llave. Revisa ADMIN_WEBAUTHN_RP_ID.';
-    return error.message || 'No se pudo completar la operación con la llave de acceso.';
+    if (error.name === 'InvalidStateError') return 'Esta llave ya está registrada para este sitio en el dispositivo.';
+    if (error.message === 'No hay llaves de acceso registradas.') return 'Todavía no hay llaves de acceso registradas para el personal administrativo.';
+    return 'No se pudo completar la operación con la llave de acceso. Inténtalo nuevamente.';
+  }
+
+  loginForm?.addEventListener('submit', () => {
+    if (installedPwa) sessionStorage.setItem(appSessionKey, '1');
+  });
+
+  async function finishPasskeyLogin(credential) {
+    if (!credential) return;
+    const result = await postJson('/admin-panel/passkeys/login/verify/', { credential: credentialToJson(credential) });
+    if (installedPwa) sessionStorage.setItem(appSessionKey, '1');
+    window.location.assign(result.next || '/admin-panel/dashboard/');
+  }
+
+  async function startConditionalPasskeyLogin() {
+    if (!usernameInput || !window.PublicKeyCredential || !navigator.credentials?.get) return;
+    try {
+      const available = await window.PublicKeyCredential.isConditionalMediationAvailable?.();
+      if (!available) return;
+      const options = await postJson('/admin-panel/passkeys/login/options/', {});
+      const credential = await navigator.credentials.get({
+        publicKey: prepareRequestOptions(options),
+        mediation: 'conditional',
+      });
+      await finishPasskeyLogin(credential);
+    } catch (error) {
+      if (error.name !== 'NotAllowedError' && error.name !== 'AbortError') showStatus(explainError(error));
+    }
   }
 
   registrationButton?.addEventListener('click', async () => {
@@ -106,25 +138,6 @@
     }
   });
 
-  loginButton?.addEventListener('click', async () => {
-    if (!window.PublicKeyCredential || !navigator.credentials) {
-      showStatus('Este navegador no admite llaves de acceso. Usa tu contraseña.');
-      return;
-    }
-    loginButton.disabled = true;
-    try {
-      const options = await postJson('/admin-panel/passkeys/login/options/', {});
-      const credential = await navigator.credentials.get({ publicKey: prepareRequestOptions(options) });
-      if (!credential) throw new Error('No se seleccionó una llave de acceso.');
-      const result = await postJson('/admin-panel/passkeys/login/verify/', { credential: credentialToJson(credential) });
-      window.location.assign(result.next || '/admin-panel/dashboard/');
-    } catch (error) {
-      showStatus(explainError(error));
-    } finally {
-      loginButton.disabled = false;
-    }
-  });
-
   revokeButton?.addEventListener('click', async () => {
     if (!window.confirm('¿Revocar todas las llaves de acceso de esta cuenta? La contraseña seguirá disponible.')) return;
     revokeButton.disabled = true;
@@ -137,4 +150,6 @@
       revokeButton.disabled = false;
     }
   });
+
+  startConditionalPasskeyLogin();
 })();

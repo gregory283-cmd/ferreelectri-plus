@@ -84,6 +84,8 @@ class VentasCSRFTest(TestCase):
 		self.assertContains(response, 'Precio y rentabilidad')
 		self.assertContains(response, 'Recargo sobre costo (%)')
 		self.assertContains(response, 'Margen bruto estimado')
+		self.assertContains(response, '.modal-card.cost-modal { width: 100%; height: calc(100dvh - 20px);')
+		self.assertContains(response, 'grid-template-columns: minmax(0, 1fr);')
 
 	def test_actualizar_precio_no_permite_saltar_aprobacion_de_costo(self):
 		import json

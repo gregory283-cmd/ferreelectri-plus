@@ -1622,8 +1622,8 @@
     {% if request.user.is_authenticated and request.user.is_staff %}
     <link rel="manifest" href="{% url 'admin_pwa_manifest' %}">
     <meta name="theme-color" content="#08243b">
-    <script src="{% static 'dashboard/pwa/admin-pwa.js' %}?v=20261017-pwa-v1" defer></script>
-    <script src="{% static 'dashboard/pwa/admin-passkeys.js' %}?v=20261017-passkeys-v1" defer></script>
+    <script src="{% static 'dashboard/pwa/admin-pwa.js' %}?v=20261017-pwa-v2" defer></script>
+    <script src="{% static 'dashboard/pwa/admin-passkeys.js' %}?v=20261017-passkeys-v2" defer></script>
     {% endif %}
 </head>
 <body>
@@ -1714,7 +1714,7 @@
                 <span>Revocar todas las llaves</span>
             </button>
             <p id="admin-passkey-status" role="status" aria-live="polite"></p>
-            <button class="theme-toggle-btn" type="button" aria-label="Cambiar tema">
+            <button class="theme-toggle-btn" id="admin-theme-toggle" type="button" aria-label="Cambiar tema">
                 <span class="material-symbols-outlined theme-icon" aria-hidden="true">dark_mode</span>
                 <span class="theme-label">Modo oscuro</span>
             </button>
@@ -1802,7 +1802,7 @@
                 // ignore storage errors
             }
 
-            const btn = document.querySelector('.theme-toggle-btn');
+            const btn = document.getElementById('admin-theme-toggle');
             if (btn) {
                 const label = btn.querySelector('.theme-label');
                 const icon = btn.querySelector('.theme-icon');
@@ -1825,7 +1825,7 @@
             const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
             setTheme(saved || (prefersDark ? 'dark' : 'light'));
 
-            const btn = document.querySelector('.theme-toggle-btn');
+            const btn = document.getElementById('admin-theme-toggle');
             if (btn) {
                 // evitar listeners duplicados
                 btn.removeEventListener('click', toggleTheme);

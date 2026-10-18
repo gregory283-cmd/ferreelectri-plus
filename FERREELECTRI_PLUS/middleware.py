@@ -54,6 +54,7 @@ class AdminPanelIsolationMiddleware:
         '/admin-panel/recuperar-codigo/',
         '/admin-panel/passkeys/login/options/',
         '/admin-panel/passkeys/login/verify/',
+        '/admin-panel/app-session/lock/',
     }
 
     def __init__(self, get_response):
@@ -94,6 +95,7 @@ class LoginRequiredMiddleware:
         '/oauth/',
         '/manifest.webmanifest',
         '/service-worker.js',
+        '/admin-panel/app-session/lock/',
         '/pwa/icons/',
     ]
     

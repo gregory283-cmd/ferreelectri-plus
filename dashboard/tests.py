@@ -2286,6 +2286,24 @@ class AdminPWASecurityTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertFalse(self.client.session.get('admin_passkey_enrollment_prompt', False))
 
+    def test_pwa_session_lock_closes_administrative_session(self):
+        staff = User.objects.create_user(
+            username='pwa-session-lock-admin', password='TestPassword123!', is_staff=True,
+        )
+        self.client.force_login(staff)
+
+        response = self.client.post(reverse('admin_app_session_lock'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {'ok': True})
+        self.assertNotIn('_auth_user_id', self.client.session)
+
+    def test_pwa_session_lock_is_safe_after_session_expiration(self):
+        response = self.client.post(reverse('admin_app_session_lock'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {'ok': True})
+
     def test_staff_panel_renders_mobile_menu_install_push_and_passkey_controls(self):
         staff = User.objects.create_superuser(
             username='pwa-render-admin', email='pwa-render-admin@example.test', password='TestPassword123!',
@@ -2296,7 +2314,8 @@ class AdminPWASecurityTest(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'id="admin-sidebar-toggle"')
-        self.assertContains(response, 'admin-theme.css?v=20261017-mobile-sidebar-scroll-v1')
+        self.assertContains(response, 'css/admin-theme.css')
+        self.assertContains(response, 'id="admin-theme-toggle"')
         self.assertContains(response, 'id="admin-install-app"')
         self.assertContains(response, 'id="admin-enable-push"')
         self.assertContains(response, 'id="admin-register-passkey"')
@@ -2376,6 +2395,13 @@ class AdminPWASecurityTest(TestCase):
         self.assertIn('challenge', options)
         self.assertEqual(options['rp']['id'], 'localhost')
         self.assertEqual(options['authenticatorSelection']['residentKey'], 'required')
+
+    def test_login_offers_conditional_passkey_without_duplicate_button(self):
+        response = self.client.get(reverse('login_admin_custom'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'autocomplete="username webauthn"')
+        self.assertNotContains(response, 'id="admin-passkey-login"')
 
     @override_settings(
         ADMIN_WEBPUSH_VAPID_PUBLIC_KEY='public-key',

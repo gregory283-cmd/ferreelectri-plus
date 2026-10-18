@@ -164,6 +164,13 @@ def admin_pwa_service_worker(request):
     return response
 
 
+@require_POST
+def admin_app_session_lock(request):
+    if request.user.is_authenticated:
+        logout(request)
+    return JsonResponse({'ok': True})
+
+
 @staff_member_required(login_url='login_admin_custom')
 @require_POST
 def admin_push_subscribe(request):
