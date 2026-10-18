@@ -6,6 +6,8 @@
     || navigator.standalone === true;
   const appSessionKey = 'ferreelectri_admin_app_session';
   const lastActivityKey = 'ferreelectri_admin_last_activity';
+  const internalNavigationKey = 'ferreelectri_admin_internal_navigation_at';
+  const appExitPendingKey = 'ferreelectri_admin_exit_pending';
   let installPrompt = null;
   let serviceWorkerRegistration = null;
 
@@ -67,6 +69,92 @@
       showStatus('No se pudo cerrar la sesión de la aplicación. Comprueba tu conexión e inténtalo de nuevo.');
     }
     return false;
+  }
+
+  let appExitPending = false;
+  let appExitLockStarted = false;
+
+  function markInternalNavigation() {
+    try {
+      sessionStorage.setItem(internalNavigationKey, String(Date.now()));
+    } catch (error) {
+      // Internal navigation still follows its normal browser history path.
+    }
+  }
+
+  function isInternalNavigationPending() {
+    try {
+      const timestamp = Number(sessionStorage.getItem(internalNavigationKey));
+      if (timestamp && Date.now() - timestamp < 15000) return true;
+      sessionStorage.removeItem(internalNavigationKey);
+    } catch (error) {
+      return false;
+    }
+    return false;
+  }
+
+  function startStandaloneExit() {
+    if (!isStandalone || appExitLockStarted || isInternalNavigationPending()) return;
+    appExitLockStarted = true;
+    appExitPending = true;
+    try {
+      sessionStorage.setItem(appExitPendingKey, '1');
+    } catch (error) {
+      // The live-page flag still redirects to the fresh login when the app resumes.
+    }
+    lockAdminSession();
+  }
+
+  function returnToFreshLogin() {
+    if (!isStandalone) return false;
+    let shouldRestart = appExitPending;
+    try {
+      shouldRestart = shouldRestart || sessionStorage.getItem(appExitPendingKey) === '1';
+      if (shouldRestart) sessionStorage.removeItem(appExitPendingKey);
+      sessionStorage.removeItem(internalNavigationKey);
+    } catch (error) {
+      // The in-memory exit flag covers a suspended page without browser storage.
+    }
+    if (!shouldRestart) return false;
+    window.location.replace('/admin-panel/app-launch/');
+    return true;
+  }
+
+  if (isStandalone) {
+    try {
+      sessionStorage.removeItem(internalNavigationKey);
+    } catch (error) {
+      // Internal navigation detection is an enhancement; idle logout remains active.
+    }
+
+    document.addEventListener('click', (event) => {
+      const link = event.target.closest('a[href]');
+      if (!link || link.target === '_blank' || event.defaultPrevented || event.button !== 0) return;
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || link.hasAttribute('download')) return;
+      const destination = new URL(link.href, window.location.href);
+      if (destination.origin === window.location.origin && destination.href !== window.location.href) {
+        markInternalNavigation();
+      }
+    }, true);
+
+    document.addEventListener('submit', (event) => {
+      const form = event.target;
+      const destination = new URL(form.action || window.location.href, window.location.href);
+      if (destination.origin === window.location.origin) markInternalNavigation();
+    }, true);
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') {
+        startStandaloneExit();
+        return;
+      }
+      if (returnToFreshLogin()) return;
+    });
+
+    window.addEventListener('pagehide', startStandaloneExit);
+    window.addEventListener('pageshow', () => {
+      if (document.visibilityState === 'visible') returnToFreshLogin();
+    });
   }
 
   const sessionDialog = document.getElementById('admin-session-dialog');
@@ -201,6 +289,7 @@
         showSessionConfirmation('exit');
         return;
       }
+      markInternalNavigation();
       window.location.replace(dashboardUrl);
     });
   }
