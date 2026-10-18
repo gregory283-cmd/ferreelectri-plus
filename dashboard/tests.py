@@ -2534,6 +2534,60 @@ class AdminPWASecurityTest(TestCase):
         self.assertEqual(self.client.get(reverse('dashboard')).status_code, 200)
         self.assertEqual(secondary_client.get(reverse('dashboard')).status_code, 302)
 
+    def test_primary_owner_can_revoke_and_restore_secondary_passkey(self):
+        owner = User.objects.create_superuser(
+            username='passkey-revoker-owner', email='passkey-revoker@example.test', password='TestPassword123!',
+        )
+        primary_key = AdminPasskey.objects.create(
+            user=owner, credential_id='cHJpbWFyeS1wYXNza2V5', public_key=b'primary-key', name='Teléfono principal',
+        )
+        secondary_key = AdminPasskey.objects.create(
+            user=owner, credential_id='c2Vjb25kYXJ5LXBhc3NrZXk', public_key=b'secondary-key', name='Tableta compartida',
+        )
+        config, _ = AdminSecurityConfig.objects.get_or_create(pk=1)
+        config.owner_user = owner
+        config.primary_passkey = primary_key
+        config.save(update_fields=['owner_user', 'primary_passkey', 'updated_at'])
+        self.client.force_login(owner)
+        session = self.client.session
+        session['admin_current_passkey_id'] = primary_key.pk
+        session.save()
+
+        response = self.client.post(reverse('admin_security_devices'), {
+            'action': 'revoke_passkey', 'passkey_id': secondary_key.pk,
+        })
+        self.assertEqual(response.status_code, 302)
+        secondary_key.refresh_from_db()
+        primary_key.refresh_from_db()
+        self.assertFalse(secondary_key.is_active)
+        self.assertTrue(primary_key.is_active)
+
+        response = self.client.post(reverse('admin_security_devices'), {
+            'action': 'restore_passkey', 'passkey_id': secondary_key.pk,
+        })
+        self.assertEqual(response.status_code, 302)
+        secondary_key.refresh_from_db()
+        self.assertTrue(secondary_key.is_active)
+        self.assertTrue(AuditLog.objects.filter(action='ADMIN_PASSKEY_RESTORED_BY_OWNER').exists())
+
+    def test_revoked_passkey_is_not_offered_for_administrative_login(self):
+        staff = User.objects.create_user(
+            username='revoked-passkey-admin', email='revoked-passkey@example.test',
+            password='TestPassword123!', is_staff=True,
+        )
+        AdminPasskey.objects.create(
+            user=staff, credential_id='cmV2b2tlZC1wYXNza2V5', public_key=b'revoked-key', is_active=False,
+        )
+
+        response = self.client.post(
+            reverse('admin_passkey_login_options'),
+            data=json.dumps({'username': staff.username}),
+            content_type='application/json', HTTP_HOST='localhost', secure=True,
+        )
+
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.json()['error'], 'No hay llaves de acceso registradas para esta cuenta.')
+
     def test_staff_panel_renders_mobile_menu_install_push_and_passkey_controls(self):
         staff = User.objects.create_superuser(
             username='pwa-render-admin', email='pwa-render-admin@example.test', password='TestPassword123!',
@@ -3244,7 +3298,7 @@ class SeguridadTest(TestCase):
         self.assertRedirects(response, reverse('dashboard'))
 
     @override_settings(DEBUG=False)
-    def test_tres_claves_incorrectas_bloquean_temporalmente(self):
+    def test_tres_claves_incorrectas_bloquean_solo_la_sesion_que_falla(self):
         User.objects.create_user(
             username='admin-lockout-test',
             email='admin-lockout@test.com',
@@ -3271,10 +3325,11 @@ class SeguridadTest(TestCase):
         blocked = client.post(reverse('admin_login_unlock'), {'action': 'start'})
         self.assertEqual(blocked.status_code, 429)
         another_session = Client(HTTP_HOST='localhost')
-        blocked_again = another_session.post(
+        available_again = another_session.post(
             reverse('admin_login_unlock'), {'action': 'start'}
         )
-        self.assertEqual(blocked_again.status_code, 429)
+        self.assertEqual(available_again.status_code, 200)
+        self.assertTrue(available_again.json()['ok'])
 
     @override_settings(DEBUG=False)
     def test_desafio_admin_vencido_consume_un_intento(self):

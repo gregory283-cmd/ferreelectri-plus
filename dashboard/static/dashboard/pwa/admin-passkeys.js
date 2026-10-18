@@ -248,11 +248,11 @@
   });
 
   revokeButton?.addEventListener('click', async () => {
-    if (!window.confirm('¿Revocar todas las llaves de acceso de esta cuenta? La contraseña seguirá disponible.')) return;
+    if (!window.confirm('¿Revocar las llaves secundarias de esta cuenta? La llave principal permanece protegida y las llaves se pueden restaurar desde Seguridad.')) return;
     revokeButton.disabled = true;
     try {
       const result = await postJson('/admin-panel/passkeys/revoke-all/', {});
-      showStatus(`Se revocaron ${result.revoked} llaves. La contraseña sigue activa.`);
+      showStatus(`Se revocaron ${result.revoked} llaves secundarias. Puedes restaurarlas desde Seguridad.`);
     } catch (error) {
       showStatus(explainError(error));
     } finally {

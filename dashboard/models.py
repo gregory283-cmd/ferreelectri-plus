@@ -60,6 +60,7 @@ class AdminPasskey(models.Model):
     sign_count = models.PositiveBigIntegerField(default=0)
     name = models.CharField(max_length=80, default='Llave de acceso')
     transports = models.JSONField(default=list, blank=True)
+    is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     last_used_at = models.DateTimeField(null=True, blank=True)
 

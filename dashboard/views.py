@@ -442,11 +442,38 @@ def admin_security_devices(request):
                 messages.error(request, 'Primero designa otra llave principal antes de revocar esta llave.')
             elif not passkey.user.is_staff or not passkey.user.is_active:
                 messages.error(request, 'Solo puedes revocar llaves de cuentas administrativas activas.')
+            elif not passkey.is_active:
+                messages.info(request, 'Esta llave ya está revocada.')
             else:
-                details = f'Llave {passkey.name} revocada para {passkey.user.get_username()}.'
-                passkey.delete()
+                active_session_keys = list(
+                    AdminDeviceSession.objects.filter(passkey=passkey, is_active=True).values_list('session_key', flat=True)
+                )
+                Session.objects.filter(session_key__in=active_session_keys).delete()
+                AdminDeviceSession.objects.filter(session_key__in=active_session_keys).update(is_active=False)
+                passkey.is_active = False
+                passkey.save(update_fields=['is_active'])
+                details = f'Llave {passkey.name} revocada para {passkey.user.get_username()}; se cerraron {len(active_session_keys)} sesiones.'
                 log_auth_event(request, 'ADMIN_PASSKEY_REVOKED_BY_OWNER', user=request.user, details=details)
-                messages.success(request, 'Llave de acceso revocada.')
+                messages.success(request, 'Llave revocada y sesiones del dispositivo cerradas. Puedes restaurarla después.')
+        elif action == 'restore_passkey':
+            if not _request_is_security_owner(request):
+                return HttpResponseForbidden('Solo el teléfono principal puede restaurar llaves.')
+            passkey = get_object_or_404(
+                AdminPasskey.objects.select_related('user'),
+                pk=request.POST.get('passkey_id'),
+                user__is_staff=True,
+                user__is_active=True,
+                is_active=False,
+            )
+            passkey.is_active = True
+            passkey.save(update_fields=['is_active'])
+            log_auth_event(
+                request,
+                'ADMIN_PASSKEY_RESTORED_BY_OWNER',
+                user=request.user,
+                details=f'Llave {passkey.name} restaurada para {passkey.user.get_username()}.',
+            )
+            messages.success(request, 'Llave restaurada. El dispositivo puede iniciar sesión nuevamente con su verificación biométrica.')
         elif action == 'revoke_session':
             if not _request_is_security_owner(request):
                 return HttpResponseForbidden('Solo el teléfono principal puede cerrar sesiones secundarias.')
@@ -510,17 +537,29 @@ def admin_security_devices(request):
                 return redirect('login_admin_custom')
         return redirect('admin_security_devices')
 
-    passkeys = AdminPasskey.objects.select_related('user').order_by('user__username', '-created_at')
+    passkeys = AdminPasskey.objects.select_related('user').annotate(
+        is_primary=models.Case(
+            models.When(pk=config.primary_passkey_id, then=models.Value(True)),
+            default=models.Value(False),
+            output_field=models.BooleanField(),
+        )
+    ).order_by('-is_primary', 'user__username', '-created_at')
     active_session_cutoff = timezone.now() - timedelta(minutes=3)
     device_sessions = list(
-        AdminDeviceSession.objects.select_related('user', 'passkey').order_by('-last_seen_at')[:50]
+        AdminDeviceSession.objects.select_related('user', 'passkey').annotate(
+            is_primary=models.Case(
+                models.When(
+                    user_id=config.owner_user_id,
+                    passkey_id=config.primary_passkey_id,
+                    then=models.Value(True),
+                ),
+                default=models.Value(False),
+                output_field=models.BooleanField(),
+            )
+        ).order_by('-is_primary', '-is_active', '-last_seen_at')
     )
     for device_session in device_sessions:
-        device_session.is_primary_device = bool(
-            device_session.user_id == config.owner_user_id
-            and device_session.passkey_id == config.primary_passkey_id
-            and config.primary_passkey_id
-        )
+        device_session.is_primary_device = device_session.is_primary
         device_session.is_recent = device_session.last_seen_at >= active_session_cutoff
         device_session.can_revoke = bool(
             device_session.is_active
@@ -689,7 +728,7 @@ def admin_passkey_login_options(request):
     ).first()
     if not user:
         return JsonResponse({'error': 'No hay una cuenta administrativa con ese usuario o correo.'}, status=404)
-    passkeys = list(AdminPasskey.objects.filter(user=user))
+    passkeys = list(AdminPasskey.objects.filter(user=user, is_active=True))
     if not passkeys:
         return JsonResponse({'error': 'No hay llaves de acceso registradas para esta cuenta.'}, status=404)
     options = generate_authentication_options(
@@ -718,6 +757,7 @@ def admin_passkey_login_verify(request):
         credential_id = credential.get('id') or credential.get('rawId')
         passkey = AdminPasskey.objects.select_related('user').get(
             credential_id=credential_id,
+            is_active=True,
             user__is_active=True,
             user__is_staff=True,
         )
@@ -765,7 +805,7 @@ def admin_recovery_passkey_options(request):
         is_active=True,
         is_staff=True,
     ).first() if email else None
-    passkeys = list(AdminPasskey.objects.filter(user=user)) if user else []
+    passkeys = list(AdminPasskey.objects.filter(user=user, is_active=True)) if user else []
     if not passkeys:
         return JsonResponse({'error': 'passkey_not_registered'}, status=404)
     options = generate_authentication_options(
@@ -798,6 +838,7 @@ def admin_recovery_passkey_verify(request):
             credential_id=credential_id,
             user_id=challenge['user_id'],
             user__email__iexact=email,
+            is_active=True,
             user__is_active=True,
             user__is_staff=True,
         )
@@ -826,12 +867,23 @@ def admin_recovery_passkey_verify(request):
 @staff_member_required(login_url='login_admin_custom')
 @require_POST
 def admin_passkey_revoke_all(request):
-    deleted, _details = AdminPasskey.objects.filter(user=request.user).delete()
+    primary_passkey_id = AdminSecurityConfig.objects.filter(
+        owner_user=request.user,
+    ).values_list('primary_passkey_id', flat=True).first()
+    passkeys = AdminPasskey.objects.filter(user=request.user, is_active=True).exclude(
+        pk=primary_passkey_id,
+    )
+    active_session_keys = list(
+        AdminDeviceSession.objects.filter(passkey__in=passkeys, is_active=True).values_list('session_key', flat=True)
+    )
+    Session.objects.filter(session_key__in=active_session_keys).delete()
+    AdminDeviceSession.objects.filter(session_key__in=active_session_keys).update(is_active=False)
+    revoked = passkeys.update(is_active=False)
     log_auth_event(
         request, 'ADMIN_PASSKEYS_REVOKED', user=request.user,
-        details=f'Se revocaron {deleted} credenciales WebAuthn.',
+        details=f'Se revocaron {revoked} credenciales WebAuthn no principales y se cerraron {len(active_session_keys)} sesiones.',
     )
-    return JsonResponse({'ok': True, 'revoked': deleted})
+    return JsonResponse({'ok': True, 'revoked': revoked})
 
 
 INTENT_MATRIX = {
@@ -2729,11 +2781,12 @@ def admin_login_unlock(request):
     if request.method != 'POST':
         return JsonResponse({'ok': False}, status=405)
 
+    if request.session.session_key is None:
+        request.session.save()
     now_timestamp = timezone.now().timestamp()
-    client_ip = request.META.get('REMOTE_ADDR') or 'unknown'
-    ip_digest = hashlib.sha256(client_ip.encode('utf-8')).hexdigest()
-    attempts_cache_key = f'admin-login-attempts:{ip_digest}'
-    lock_cache_key = f'admin-login-lock:{ip_digest}'
+    session_digest = hashlib.sha256(request.session.session_key.encode('utf-8')).hexdigest()
+    attempts_cache_key = f'admin-login-attempts:{session_digest}'
+    lock_cache_key = f'admin-login-lock:{session_digest}'
     locked_until = float(request.session.get('admin_login_locked_until', 0) or 0)
     cached_locked_until = cache.get(lock_cache_key, 0) or 0
     locked_until = max(locked_until, float(cached_locked_until))

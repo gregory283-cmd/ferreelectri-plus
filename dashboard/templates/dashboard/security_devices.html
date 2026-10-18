@@ -5,7 +5,7 @@
     <div class="security-page-heading">
         <span class="security-eyebrow">CONTROL DE ACCESO</span>
         <h1>Dispositivos</h1>
-        <p>Sesiones, llaves y autoridad principal.</p>
+        <p>El teléfono principal aparece primero y está protegido contra revocación desde esta pantalla.</p>
     </div>
 
     {% if messages %}<div class="security-messages" role="status">{% for message in messages %}<p class="{{ message.tags }}">{{ message }}</p>{% endfor %}</div>{% endif %}
@@ -31,22 +31,23 @@
     <section class="security-section">
         <div class="security-section-heading"><div><span class="security-eyebrow">ACCESO</span><h2>Sesiones</h2></div><span class="security-section-count">{{ device_sessions|length }} recientes</span></div>
         <div class="security-desktop-table"><div class="security-table-wrap"><table>
-            <thead><tr><th>Cuenta</th><th>Última actividad</th><th>IP</th><th>Dispositivo</th><th>Estado</th><th>Acción</th></tr></thead>
+            <thead><tr><th>Cuenta</th><th>Rol</th><th>Última actividad</th><th>IP</th><th>Dispositivo</th><th>Estado</th><th>Acción</th></tr></thead>
             <tbody>{% for device in device_sessions %}
                 <tr>
                     <td data-label="Cuenta">{{ device.user.get_username }}</td>
+                    <td data-label="Rol">{% if device.is_primary_device %}Titular{% elif device.user.is_superuser %}Superusuario{% else %}Administración{% endif %}</td>
                     <td data-label="Última actividad">{{ device.last_seen_at|date:'d/m/Y H:i:s' }}</td>
                     <td data-label="IP">{{ device.ip_address|default:'No disponible' }}</td>
                     <td data-label="Dispositivo">{% if device.passkey %}{{ device.passkey.name }}{% else %}{{ device.user_agent|default:'Contraseña' }}{% endif %}</td>
                     <td data-label="Estado">{% if device.is_primary_device %}<span class="security-status security-status-primary">Principal</span>{% elif device.is_recent %}<span class="security-status security-status-active">Activa</span>{% else %}<span class="security-status security-status-idle">Inactiva</span>{% endif %}</td>
                     <td data-label="Acción">{% if device.can_revoke %}<form method="post">{% csrf_token %}<input type="hidden" name="action" value="revoke_session"><input type="hidden" name="session_id" value="{{ device.pk }}"><button class="security-danger-button" type="submit">Revocar sesión</button></form>{% else %}<span class="security-muted">{% if device.session_key == current_session_key %}Esta sesión{% elif not device.is_active %}Cerrada{% else %}Protegida{% endif %}</span>{% endif %}</td>
                 </tr>
-            {% empty %}<tr><td colspan="6" class="security-empty">Todavía no hay sesiones registradas.</td></tr>{% endfor %}</tbody>
+            {% empty %}<tr><td colspan="7" class="security-empty">Todavía no hay sesiones registradas.</td></tr>{% endfor %}</tbody>
         </table></div></div>
         <div class="security-mobile-list">
             {% for device in device_sessions %}
             <article class="security-record">
-                <div class="security-record-top"><strong>{{ device.user.get_username }}</strong>{% if device.is_primary_device %}<span class="security-status security-status-primary">Principal</span>{% elif device.is_recent %}<span class="security-status security-status-active">Activa</span>{% else %}<span class="security-status security-status-idle">Inactiva</span>{% endif %}</div>
+                <div class="security-record-top"><strong>{{ device.user.get_username }}</strong>{% if device.is_primary_device %}<span class="security-status security-status-primary">Titular protegido</span>{% elif device.is_recent %}<span class="security-status security-status-active">Activa</span>{% else %}<span class="security-status security-status-idle">Inactiva</span>{% endif %}</div>
                 <dl class="security-record-details">
                     <div><dt>Última actividad</dt><dd>{{ device.last_seen_at|date:'d/m/Y H:i:s' }}</dd></div>
                     <div><dt>IP</dt><dd>{{ device.ip_address|default:'No disponible' }}</dd></div>
@@ -61,24 +62,25 @@
     <section class="security-section">
         <div class="security-section-heading"><div><span class="security-eyebrow">CREDENCIALES</span><h2>Llaves de acceso</h2></div><span class="security-section-count">{{ admin_passkeys|length }} registradas</span></div>
         <div class="security-desktop-table"><div class="security-table-wrap"><table>
-            <thead><tr><th>Cuenta</th><th>Llave</th><th>Registro</th><th>Último uso</th><th>Acción</th></tr></thead>
+            <thead><tr><th>Cuenta</th><th>Llave</th><th>Registro</th><th>Último uso</th><th>Estado</th><th>Acción</th></tr></thead>
             <tbody>{% for passkey in admin_passkeys %}<tr>
                 <td data-label="Cuenta">{{ passkey.user.get_username }}</td>
                 <td data-label="Llave">{{ passkey.name }}{% if security_config.primary_passkey_id == passkey.pk %}<span class="security-status security-status-primary">Principal</span>{% endif %}</td>
                 <td data-label="Registro">{{ passkey.created_at|date:'d/m/Y H:i' }}</td>
                 <td data-label="Último uso">{{ passkey.last_used_at|date:'d/m/Y H:i'|default:'Nunca' }}</td>
-                <td data-label="Acción">{% if security_config.primary_passkey_id != passkey.pk %}<form method="post">{% csrf_token %}<input type="hidden" name="action" value="revoke_passkey"><input type="hidden" name="passkey_id" value="{{ passkey.pk }}"><button class="security-danger-button" type="submit">Revocar llave</button></form>{% else %}<span class="security-muted">Protegida</span>{% endif %}</td>
-            </tr>{% empty %}<tr><td colspan="5" class="security-empty">No hay llaves registradas.</td></tr>{% endfor %}</tbody>
+                <td data-label="Estado">{% if security_config.primary_passkey_id == passkey.pk %}<span class="security-status security-status-primary">Protegida</span>{% elif passkey.is_active %}<span class="security-status security-status-active">Disponible</span>{% else %}<span class="security-status security-status-idle">Revocada</span>{% endif %}</td>
+                <td data-label="Acción">{% if security_config.primary_passkey_id == passkey.pk %}<span class="security-muted">No bloqueable</span>{% elif passkey.is_active %}<form method="post">{% csrf_token %}<input type="hidden" name="action" value="revoke_passkey"><input type="hidden" name="passkey_id" value="{{ passkey.pk }}"><button class="security-danger-button" type="submit">Revocar llave</button></form>{% else %}<form method="post">{% csrf_token %}<input type="hidden" name="action" value="restore_passkey"><input type="hidden" name="passkey_id" value="{{ passkey.pk }}"><button class="security-primary-button" type="submit">Restaurar llave</button></form>{% endif %}</td>
+            </tr>{% empty %}<tr><td colspan="6" class="security-empty">No hay llaves registradas.</td></tr>{% endfor %}</tbody>
         </table></div></div>
         <div class="security-mobile-list">
             {% for passkey in admin_passkeys %}<article class="security-record">
-                <div class="security-record-top"><strong>{{ passkey.user.get_username }}</strong>{% if security_config.primary_passkey_id == passkey.pk %}<span class="security-status security-status-primary">Principal</span>{% endif %}</div>
+                <div class="security-record-top"><strong>{{ passkey.user.get_username }}</strong>{% if security_config.primary_passkey_id == passkey.pk %}<span class="security-status security-status-primary">Principal protegida</span>{% elif passkey.is_active %}<span class="security-status security-status-active">Disponible</span>{% else %}<span class="security-status security-status-idle">Revocada</span>{% endif %}</div>
                 <dl class="security-record-details">
                     <div class="security-record-wide"><dt>Llave</dt><dd>{{ passkey.name }}</dd></div>
                     <div><dt>Registrada</dt><dd>{{ passkey.created_at|date:'d/m/Y H:i' }}</dd></div>
                     <div><dt>Último uso</dt><dd>{{ passkey.last_used_at|date:'d/m/Y H:i'|default:'Nunca' }}</dd></div>
                 </dl>
-                {% if security_config.primary_passkey_id != passkey.pk %}<form method="post">{% csrf_token %}<input type="hidden" name="action" value="revoke_passkey"><input type="hidden" name="passkey_id" value="{{ passkey.pk }}"><button class="security-danger-button" type="submit">Revocar llave</button></form>{% endif %}
+                {% if security_config.primary_passkey_id != passkey.pk %}<form method="post">{% csrf_token %}<input type="hidden" name="action" value="{% if passkey.is_active %}revoke_passkey{% else %}restore_passkey{% endif %}"><input type="hidden" name="passkey_id" value="{{ passkey.pk }}"><button class="{% if passkey.is_active %}security-danger-button{% else %}security-primary-button{% endif %}" type="submit">{% if passkey.is_active %}Revocar llave{% else %}Restaurar llave{% endif %}</button></form>{% endif %}
             </article>{% empty %}<p class="security-empty-mobile">No hay llaves registradas.</p>{% endfor %}
         </div>
     </section>
