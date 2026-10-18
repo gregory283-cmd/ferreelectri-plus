@@ -4,8 +4,45 @@
   const status = document.getElementById('admin-passkey-status');
   const loginForm = document.querySelector('.login-form');
   const usernameInput = document.getElementById('username');
+  const usernameField = document.getElementById('admin-username-field');
+  const passwordField = document.getElementById('password');
+  const loginTitle = document.getElementById('admin-login-title');
+  const knownAdminGreeting = document.getElementById('known-admin-greeting');
+  const knownAdminName = document.getElementById('known-admin-name');
+  const switchAdminButton = document.getElementById('switch-admin-account');
+  const rememberDevice = document.querySelector('.remember-device');
+  const biometricLoginButton = document.getElementById('admin-passkey-login');
   const installedPwa = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
   const appSessionKey = 'ferreelectri_admin_app_session';
+  const identityStorageKey = 'ferreelectri_admin_identity';
+
+  function showRememberedAdmin() {
+    if (!usernameInput || !usernameField || !knownAdminGreeting || !knownAdminName) return;
+    try {
+      const identity = JSON.parse(localStorage.getItem(identityStorageKey) || 'null');
+      if (!identity || typeof identity.username !== 'string' || !identity.username) return;
+      usernameInput.value = identity.username;
+      usernameInput.required = false;
+      usernameField.hidden = true;
+      if (loginTitle) loginTitle.hidden = true;
+      knownAdminName.textContent = identity.displayName || identity.username;
+      knownAdminGreeting.hidden = false;
+      if (rememberDevice) rememberDevice.hidden = true;
+    } catch (error) {
+      localStorage.removeItem(identityStorageKey);
+    }
+  }
+
+  switchAdminButton?.addEventListener('click', () => {
+    localStorage.removeItem(identityStorageKey);
+    knownAdminGreeting.hidden = true;
+    if (loginTitle) loginTitle.hidden = false;
+    usernameField.hidden = false;
+    usernameInput.value = '';
+    usernameInput.required = true;
+    if (rememberDevice) rememberDevice.hidden = false;
+    usernameInput.focus();
+  });
 
   function showStatus(message) {
     if (status) status.textContent = message;
@@ -103,21 +140,22 @@
     window.location.assign(result.next || '/admin-panel/dashboard/');
   }
 
-  async function startConditionalPasskeyLogin() {
-    if (!usernameInput || !window.PublicKeyCredential || !navigator.credentials?.get) return;
+  biometricLoginButton?.addEventListener('click', async () => {
+    if (!window.PublicKeyCredential || !navigator.credentials?.get) {
+      showStatus('Este dispositivo no admite identificación biométrica para este sitio. Usa tu contraseña.');
+      return;
+    }
+    biometricLoginButton.disabled = true;
     try {
-      const available = await window.PublicKeyCredential.isConditionalMediationAvailable?.();
-      if (!available) return;
       const options = await postJson('/admin-panel/passkeys/login/options/', {});
-      const credential = await navigator.credentials.get({
-        publicKey: prepareRequestOptions(options),
-        mediation: 'conditional',
-      });
+      const credential = await navigator.credentials.get({ publicKey: prepareRequestOptions(options) });
       await finishPasskeyLogin(credential);
     } catch (error) {
-      if (error.name !== 'NotAllowedError' && error.name !== 'AbortError') showStatus(explainError(error));
+      showStatus(explainError(error));
+    } finally {
+      biometricLoginButton.disabled = false;
     }
-  }
+  });
 
   registrationButton?.addEventListener('click', async () => {
     if (!window.PublicKeyCredential || !navigator.credentials) {
@@ -151,5 +189,5 @@
     }
   });
 
-  startConditionalPasskeyLogin();
+  showRememberedAdmin();
 })();

@@ -2316,6 +2316,7 @@ class AdminPWASecurityTest(TestCase):
         self.assertContains(response, 'id="admin-sidebar-toggle"')
         self.assertContains(response, 'css/admin-theme.css')
         self.assertContains(response, 'id="admin-theme-toggle"')
+        self.assertContains(response, 'id="admin-auth-identity"')
         self.assertContains(response, 'id="admin-install-app"')
         self.assertContains(response, 'id="admin-enable-push"')
         self.assertContains(response, 'id="admin-register-passkey"')
@@ -2401,7 +2402,10 @@ class AdminPWASecurityTest(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'autocomplete="username webauthn"')
-        self.assertNotContains(response, 'id="admin-passkey-login"')
+        self.assertContains(response, 'id="admin-passkey-login"')
+        self.assertContains(response, 'Identificación biométrica')
+        self.assertNotContains(response, 'class="auth-brand"')
+        self.assertNotContains(response, 'class="auth-subtitle"')
 
     @override_settings(
         ADMIN_WEBPUSH_VAPID_PUBLIC_KEY='public-key',

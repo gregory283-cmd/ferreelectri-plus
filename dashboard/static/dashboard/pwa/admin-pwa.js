@@ -10,6 +10,18 @@
   let installPrompt = null;
   let serviceWorkerRegistration = null;
 
+  const authenticatedIdentity = document.getElementById('admin-auth-identity');
+  if (authenticatedIdentity) {
+    try {
+      localStorage.setItem('ferreelectri_admin_identity', JSON.stringify({
+        username: authenticatedIdentity.dataset.username,
+        displayName: authenticatedIdentity.dataset.displayName,
+      }));
+    } catch (error) {
+      // El login por contraseña sigue disponible si el navegador bloquea el almacenamiento local.
+    }
+  }
+
   function showStatus(message) {
     if (status) status.textContent = message;
   }

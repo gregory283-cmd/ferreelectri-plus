@@ -1620,10 +1620,11 @@
     </style>
     <link rel="stylesheet" href="{% static 'css/admin-theme.css' %}?v=20261017-mobile-sidebar-scroll-v3">
     {% if request.user.is_authenticated and request.user.is_staff %}
+    <meta id="admin-auth-identity" data-username="{{ request.user.get_username }}" data-display-name="{{ request.user.get_short_name|default:request.user.username }}">
     <link rel="manifest" href="{% url 'admin_pwa_manifest' %}">
     <meta name="theme-color" content="#08243b">
-    <script src="{% static 'dashboard/pwa/admin-pwa.js' %}?v=20261017-pwa-v2" defer></script>
-    <script src="{% static 'dashboard/pwa/admin-passkeys.js' %}?v=20261017-passkeys-v2" defer></script>
+    <script src="{% static 'dashboard/pwa/admin-pwa.js' %}?v=20261017-pwa-v3" defer></script>
+    <script src="{% static 'dashboard/pwa/admin-passkeys.js' %}?v=20261017-passkeys-v3" defer></script>
     {% endif %}
 </head>
 <body>
