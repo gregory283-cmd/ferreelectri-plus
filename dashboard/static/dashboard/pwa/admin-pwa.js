@@ -72,6 +72,7 @@
         if (locked) window.location.replace('/admin-panel/login/');
       });
     } else {
+      sessionStorage.removeItem(appNavigationKey);
       document.addEventListener('click', (event) => {
         const link = event.target.closest('a[href]');
         if (!link || link.target === '_blank') return;
@@ -88,7 +89,6 @@
       document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'hidden') {
           if (sessionStorage.getItem(appNavigationKey) === '1') {
-            sessionStorage.removeItem(appNavigationKey);
             return;
           }
           lockAdminSession();
@@ -102,7 +102,6 @@
 
       window.addEventListener('pagehide', () => {
         if (sessionStorage.getItem(appNavigationKey) === '1') {
-          sessionStorage.removeItem(appNavigationKey);
           return;
         }
         lockAdminSession();
