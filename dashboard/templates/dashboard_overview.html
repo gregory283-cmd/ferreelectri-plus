@@ -2,10 +2,10 @@
 {% load static l10n %}
 
 {% block arroz_con_pollo %}
-<link rel="stylesheet" href="{% static 'css/admin-dashboard.css' %}?v=20261010-compact">
+<link rel="stylesheet" href="{% static 'css/admin-dashboard.css' %}?v=20261018-mobile-actions">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 
-<main class="executive-dashboard" data-currency="{{ currency|escape }}">
+<main class="executive-dashboard{% if is_security_owner %} is-security-owner{% endif %}{% if can_setup_security_owner %} is-security-setup{% endif %}" data-currency="{{ currency|escape }}">
     <header class="executive-header">
         <div class="executive-heading">
             <span class="executive-eyebrow"><span class="material-symbols-outlined" aria-hidden="true">monitoring</span> CENTRO DE MANDO</span>
@@ -14,9 +14,12 @@
         </div>
         <div class="executive-header-actions">
             <span class="period-chip"><span class="status-dot"></span> Últimos 30 días</span>
-            <a class="quiet-action" href="{% url 'admin_historial_pedidos' %}"><span class="material-symbols-outlined" aria-hidden="true">receipt_long</span> Pedidos</a>
-            {% if perms.dashboard.view_operational_orders %}<a class="quiet-action" href="{% url 'admin_envios' %}"><span class="material-symbols-outlined" aria-hidden="true">local_shipping</span> Envíos</a>{% endif %}
-            <a class="quiet-action" href="{% url 'cierre_caja' %}"><span class="material-symbols-outlined" aria-hidden="true">point_of_sale</span> Cierre de caja</a>
+            <div class="dashboard-quick-actions">
+                <a class="quiet-action action-orders" href="{% url 'admin_historial_pedidos' %}"><span class="material-symbols-outlined" aria-hidden="true">receipt_long</span> Pedidos</a>
+                {% if perms.dashboard.view_operational_orders %}<a class="quiet-action action-shipments" href="{% url 'admin_envios' %}"><span class="material-symbols-outlined" aria-hidden="true">local_shipping</span> Envíos</a>{% endif %}
+                <a class="quiet-action action-cash" href="{% url 'cierre_caja' %}"><span class="material-symbols-outlined" aria-hidden="true">point_of_sale</span><span class="action-full-label">Cierre de caja</span><span class="action-short-label">Caja</span></a>
+                {% if is_security_owner %}<a class="quiet-action action-audit" href="{% url 'auditoria_completa' %}"><span class="material-symbols-outlined" aria-hidden="true">policy</span> Auditoría</a>{% elif can_setup_security_owner %}<a class="quiet-action action-security" href="{% url 'admin_security_devices' %}"><span class="material-symbols-outlined" aria-hidden="true">admin_panel_settings</span> Seguridad</a>{% endif %}
+            </div>
             <div class="header-currency-controls" aria-label="Moneda y tasa BCV">
                 <form class="currency-picker" method="get" action="{% url 'dashboard' %}">
                     <label for="dashboard-currency">Moneda</label>
@@ -164,24 +167,24 @@
             {% if products_cost_unknown %}<p class="data-quality-note">{{ products_cost_unknown }} productos con existencias requieren revisar su costo.</p>{% endif %}
         </article>
 
-        <article class="dashboard-panel audit-panel">
+        {% if is_security_owner %}<article class="dashboard-panel audit-panel">
             <div class="panel-heading-row">
                 <div>
                     <span class="panel-kicker">CONTROL Y TRAZABILIDAD</span>
                     <h2>Actividad del sistema</h2>
                     <p>{{ audit_total_7d }} eventos registrados en los últimos 7 días.</p>
                 </div>
-                <a class="panel-icon-link" href="{% url 'auditoria_completa' %}" aria-label="Abrir auditoría completa" title="Abrir auditoría completa"><span class="material-symbols-outlined" aria-hidden="true">arrow_outward</span></a>
+                {% if is_security_owner %}<a class="panel-icon-link" href="{% url 'auditoria_completa' %}" aria-label="Abrir auditoría completa" title="Abrir auditoría completa"><span class="material-symbols-outlined" aria-hidden="true">arrow_outward</span></a>{% endif %}
             </div>
             <div class="audit-chart-wrap"><canvas id="audit-activity-chart" aria-label="Eventos de auditoría por día"></canvas>{% if not audit_total_7d %}<div class="audit-empty-overlay">Sin eventos recientes</div>{% endif %}</div>
             <div class="audit-actions-list">
                 {% for action in audit_actions %}<span><b>{{ action.action|default:"Sin acción" }}</b><strong>{{ action.total }}</strong></span>{% empty %}<span class="audit-empty">No hay eventos recientes.</span>{% endfor %}
             </div>
-        </article>
+        </article>{% endif %}
     </section>
 
     <section class="executive-grid executive-grid-bottom">
-        <article class="dashboard-panel recent-panel">
+        {% if is_security_owner %}<article class="dashboard-panel recent-panel">
             <div class="panel-heading-row">
                 <div>
                     <span class="panel-kicker">SEGUIMIENTO</span>
@@ -200,7 +203,7 @@
                     </tbody>
                 </table>
             </div>
-        </article>
+        </article>{% endif %}
 
         <article class="dashboard-panel backup-panel">
             <div class="panel-heading-row">
@@ -232,7 +235,7 @@
 </main>
 
 {{ sales_chart|json_script:"sales-chart-data" }}
-{{ audit_chart|json_script:"audit-chart-data" }}
+{% if is_security_owner %}{{ audit_chart|json_script:"audit-chart-data" }}{% endif %}
 <script src="{% static 'js/admin-dashboard.js' %}?v=20261018-mobile-kpi-fix"></script>
 {% endblock %}
 

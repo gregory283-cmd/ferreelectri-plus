@@ -4,6 +4,7 @@ from django.contrib.auth.models import User
 from django.utils.timezone import now
 from .storage import PrivatePaymentStorage
 from decimal import Decimal
+import uuid
 
 class AuditLog(models.Model):
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
@@ -68,6 +69,69 @@ class AdminPasskey(models.Model):
 
     def __str__(self):
         return f'{self.name} · {self.user.get_username()}'
+
+
+class AdminDeviceSession(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='admin_device_sessions')
+    passkey = models.ForeignKey(
+        AdminPasskey, null=True, blank=True, on_delete=models.SET_NULL, related_name='device_sessions',
+    )
+    session_key = models.CharField(max_length=40, unique=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.TextField(blank=True)
+    last_seen_at = models.DateTimeField(default=now)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        verbose_name = 'Sesión administrativa por dispositivo'
+        verbose_name_plural = 'Sesiones administrativas por dispositivo'
+        indexes = [models.Index(fields=['user', 'is_active', 'last_seen_at'])]
+
+
+class AdminSecurityConfig(models.Model):
+    owner_user = models.ForeignKey(
+        User, null=True, blank=True, on_delete=models.SET_NULL, related_name='owned_admin_security_configs',
+    )
+    primary_passkey = models.ForeignKey(
+        AdminPasskey, null=True, blank=True, on_delete=models.SET_NULL, related_name='primary_security_configs',
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Propietario de seguridad administrativa'
+        verbose_name_plural = 'Propietario de seguridad administrativa'
+
+    def save(self, *args, **kwargs):
+        self.pk = 1
+        super().save(*args, **kwargs)
+
+
+class AdminLoginApproval(models.Model):
+    class Status(models.TextChoices):
+        PENDING = 'pending', 'Pendiente'
+        APPROVED = 'approved', 'Aprobada'
+        DENIED = 'denied', 'Denegada'
+        EXPIRED = 'expired', 'Vencida'
+        COMPLETED = 'completed', 'Completada'
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='admin_login_approvals')
+    requester_session_key = models.CharField(max_length=40)
+    active_session_key = models.CharField(max_length=40)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.TextField(blank=True)
+    status = models.CharField(max_length=12, choices=Status.choices, default=Status.PENDING)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    responded_at = models.DateTimeField(null=True, blank=True)
+    responded_by = models.ForeignKey(
+        User, null=True, blank=True, on_delete=models.SET_NULL, related_name='responded_admin_login_approvals',
+    )
+
+    class Meta:
+        verbose_name = 'Aprobación de acceso administrativo'
+        verbose_name_plural = 'Aprobaciones de acceso administrativo'
+        indexes = [models.Index(fields=['user', 'active_session_key', 'status', 'expires_at'])]
 
 
 class Customer(models.Model):

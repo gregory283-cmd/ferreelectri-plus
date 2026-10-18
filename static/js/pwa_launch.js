@@ -3,7 +3,7 @@
   const status = document.getElementById('launch-status');
   if (!form) return;
 
-  const minimumSplashMs = 1100;
+  const minimumSplashMs = 2000;
   const startedAt = performance.now();
 
   if ('serviceWorker' in navigator) {

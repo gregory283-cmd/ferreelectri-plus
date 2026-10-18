@@ -179,6 +179,10 @@
   async function finishPasskeyLogin(credential) {
     if (!credential) return;
     const result = await postJson('/admin-panel/passkeys/login/verify/', { credential: credentialToJson(credential) });
+    if (result.approval_required) {
+      await window.waitForAdminLoginApproval(result.approval_id);
+      return;
+    }
     if (installedPwa) sessionStorage.setItem(appSessionKey, '1');
     if (typeof window.showAdminLoginSuccess === 'function') {
       await window.showAdminLoginSuccess(result.next || '/admin-panel/dashboard/');
@@ -225,11 +229,17 @@
     }
     registrationButton.disabled = true;
     try {
+      const defaultDeviceName = /android|iphone|ipad|ipod/i.test(navigator.userAgent) ? 'Teléfono administrativo' : 'Equipo administrativo';
+      const deviceName = window.prompt('Asigna un nombre para identificar este dispositivo:', defaultDeviceName);
+      if (!deviceName?.trim()) return;
       const options = await postJson('/admin-panel/passkeys/register/options/', {});
       const credential = await navigator.credentials.create({ publicKey: prepareCreationOptions(options) });
       if (!credential) throw new Error('El dispositivo no devolvió una llave.');
-      await postJson('/admin-panel/passkeys/register/verify/', { credential: credentialToJson(credential) });
-      showStatus('Llave registrada. Usa la huella, rostro o PIN de tu dispositivo en el próximo acceso.');
+      await postJson('/admin-panel/passkeys/register/verify/', {
+        credential: credentialToJson(credential),
+        name: deviceName.trim().slice(0, 80),
+      });
+      showStatus(`Llave registrada como “${deviceName.trim().slice(0, 80)}”. Usa la huella, rostro o PIN de este dispositivo en el próximo acceso.`);
     } catch (error) {
       showStatus(explainError(error));
     } finally {

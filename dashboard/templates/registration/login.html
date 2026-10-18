@@ -965,7 +965,7 @@
           </div>
           <p id="admin-passkey-status" role="status" aria-live="polite"></p>
         </form>
-        <script src="{% static 'dashboard/pwa/admin-passkeys.js' %}?v=20261018-passkeys-v7" defer></script>
+        <script src="{% static 'dashboard/pwa/admin-passkeys.js' %}?v=20261018-approval-v1" defer></script>
         {% if admin_login_expires_at %}
         <script>
           (() => {
@@ -1025,6 +1025,6 @@
       </div>
     </div>
   {% endif %}
-  <script src="{% static 'js/admin_login.js' %}"></script>
+  <script src="{% static 'js/admin_login.js' %}?v=20261018-approval-v1"></script>
 </body>
 </html>

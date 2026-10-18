@@ -56,6 +56,67 @@
     return result;
   }
 
+  const approvalDialog = document.getElementById('admin-login-approval-dialog');
+  const approvalDetails = document.getElementById('admin-login-approval-details');
+  const approvalStatus = document.getElementById('admin-login-approval-status');
+  const approveLoginButton = document.getElementById('admin-approval-accept');
+  const denyLoginButton = document.getElementById('admin-approval-deny');
+  let currentApprovalId = '';
+  let approvalPollInProgress = false;
+
+  async function checkPendingAdminLogin() {
+    if (!authenticatedIdentity || !approvalDialog || approvalDialog.open || approvalPollInProgress
+      || document.visibilityState !== 'visible') return;
+    approvalPollInProgress = true;
+    try {
+      const response = await fetch('/admin-panel/session-approval/pending/', {
+        credentials: 'same-origin',
+        headers: { 'Accept': 'application/json' },
+      });
+      if (response.redirected || !response.headers.get('content-type')?.includes('application/json')) {
+        window.location.replace('/admin-panel/login/');
+        return;
+      }
+      if (!response.ok) return;
+      const result = await response.json();
+      const approval = result.approvals?.[0];
+      if (!approval) return;
+      currentApprovalId = approval.id;
+      approvalDetails.textContent = `${approval.username} intenta iniciar sesión. IP: ${approval.ip_address}. Dispositivo: ${approval.user_agent}. Si apruebas, esta sesión se cerrará y el acceso se transferirá al nuevo dispositivo.`;
+      approvalStatus.textContent = 'La solicitud vence en dos minutos.';
+      approveLoginButton.disabled = false;
+      denyLoginButton.disabled = false;
+      approvalDialog.showModal();
+    } catch (error) {
+      // A temporary network error should not interrupt the active session.
+    } finally {
+      approvalPollInProgress = false;
+    }
+  }
+
+  async function respondToAdminLogin(decision) {
+    if (!currentApprovalId) return;
+    approveLoginButton.disabled = true;
+    denyLoginButton.disabled = true;
+    approvalStatus.textContent = decision === 'approve' ? 'Aprobando y transfiriendo la sesión…' : 'Denegando el acceso…';
+    try {
+      await postJson(`/admin-panel/session-approval/${encodeURIComponent(currentApprovalId)}/respond/`, { decision });
+      currentApprovalId = '';
+      approvalDialog.close();
+    } catch (error) {
+      approvalStatus.textContent = 'No se pudo guardar la decisión. Comprueba la conexión e inténtalo de nuevo.';
+      approveLoginButton.disabled = false;
+      denyLoginButton.disabled = false;
+    }
+  }
+
+  approveLoginButton?.addEventListener('click', () => respondToAdminLogin('approve'));
+  denyLoginButton?.addEventListener('click', () => respondToAdminLogin('deny'));
+  if (authenticatedIdentity && approvalDialog) {
+    window.setInterval(checkPendingAdminLogin, 5000);
+    document.addEventListener('visibilitychange', checkPendingAdminLogin);
+  }
+
   async function lockAdminSession() {
     try {
       sessionStorage.removeItem(appSessionKey);

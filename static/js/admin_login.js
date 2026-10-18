@@ -13,6 +13,47 @@ window.showAdminLoginSuccess = async function(destination) {
   window.location.assign(destination);
 };
 
+window.waitForAdminLoginApproval = async function(approvalId) {
+  const form = document.querySelector('.login-form');
+  const loader = document.getElementById('loader');
+  const status = document.getElementById('admin-passkey-status');
+  const expiresAt = Date.now() + 125000;
+  if (loader) loader.style.display = 'none';
+  if (status) {
+    status.textContent = 'Solicitud enviada. Aprueba el acceso desde el dispositivo que ya tiene la sesión abierta.';
+    status.classList.remove('login-feedback-error');
+  }
+
+  while (Date.now() < expiresAt) {
+    try {
+      const response = await fetch(`/admin-panel/session-approval/status/${encodeURIComponent(approvalId)}/`, {
+        credentials: 'same-origin',
+        headers: { 'Accept': 'application/json' },
+      });
+      const result = await response.json().catch(() => ({}));
+      if (result.complete) {
+        await window.showAdminLoginSuccess(result.next || '/admin-panel/dashboard/');
+        return;
+      }
+      if (!response.ok || !result.ok) throw new Error(result.error || 'approval_expired');
+    } catch (error) {
+      if (status) {
+        status.textContent = error.message || 'No se pudo confirmar la aprobación. Inténtalo nuevamente.';
+        status.classList.add('login-feedback-error');
+      }
+      if (form) delete form.dataset.submitting;
+      return;
+    }
+    await new Promise((resolve) => window.setTimeout(resolve, 2500));
+  }
+
+  if (status) {
+    status.textContent = 'La solicitud venció. Inicia sesión nuevamente.';
+    status.classList.add('login-feedback-error');
+  }
+  if (form) delete form.dataset.submitting;
+};
+
 document.addEventListener('DOMContentLoaded', function() {
   if ('serviceWorker' in navigator) {
     window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
@@ -76,6 +117,10 @@ document.addEventListener('DOMContentLoaded', function() {
           body: new FormData(form),
         });
         const result = await response.json().catch(() => ({}));
+        if (response.ok && result.approval_required) {
+          await window.waitForAdminLoginApproval(result.approval_id);
+          return;
+        }
         if (!response.ok || !result.ok) {
           const messages = Object.values(result.errors || {}).flat();
           if (status) {

@@ -75,6 +75,8 @@
   gap: 9px;
   flex-wrap: wrap;
 }
+.dashboard-quick-actions { display: contents; }
+.action-short-label { display: none; }
 .period-chip, .quiet-action {
   display: inline-flex;
   align-items: center;
@@ -191,6 +193,8 @@
 .executive-grid-primary { grid-template-columns: minmax(0, 1.65fr) minmax(300px, .85fr); }
 .executive-grid-secondary { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
 .executive-grid-bottom { grid-template-columns: minmax(0, 1.35fr) minmax(320px, .85fr); }
+.executive-dashboard:not(.is-security-owner) .executive-grid-secondary,
+.executive-dashboard:not(.is-security-owner) .executive-grid-bottom { grid-template-columns: minmax(0, 1fr); }
 .dashboard-panel { padding: 19px; }
 .panel-heading-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; margin-bottom: 15px; }
 .panel-kicker { margin-bottom: 7px; font-size: .65rem; }
@@ -316,7 +320,22 @@
 @media (max-width: 700px) {
   .executive-dashboard { padding: 10px 0 28px; }
   .executive-header { align-items: flex-start; flex-direction: column; gap: 15px; margin-bottom: 16px; }
-  .executive-header-actions { justify-content: flex-start; }
+  .executive-header-actions { display: grid; grid-template-columns: minmax(0, 1fr); justify-content: stretch; gap: 8px; width: 100%; }
+  .executive-header-actions > .period-chip, .currency-rate-note { display: none; }
+  .dashboard-quick-actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; width: 100%; }
+  .dashboard-quick-actions .quiet-action { min-width: 0; min-height: 39px; gap: 4px; padding: 6px 4px; font-size: .72rem; }
+  .dashboard-quick-actions .quiet-action .material-symbols-outlined { font-size: 16px; }
+  .is-security-owner .dashboard-quick-actions .action-cash { display: none; }
+  .is-security-setup .dashboard-quick-actions .action-cash { display: none; }
+  .dashboard-quick-actions .action-cash .action-full-label { display: none; }
+  .dashboard-quick-actions .action-cash .action-short-label { display: inline; }
+  .header-currency-controls { flex-wrap: nowrap; justify-content: space-between; gap: 4px; width: 100%; min-width: 0; padding: 4px; }
+  .currency-picker, .bcv-rate-form { flex-wrap: nowrap; gap: 4px; min-width: 0; }
+  .currency-picker label, .bcv-rate-form label { font-size: .64rem; }
+  .currency-picker select { width: 62px; padding: 5px 4px; }
+  .bcv-unit { display: none; }
+  .bcv-rate-form input { width: clamp(64px, 21vw, 84px); padding: 5px 4px; }
+  .currency-apply, .bcv-rate-form button { width: 30px; flex: 0 0 30px; }
   .executive-kpis { gap: 9px; }
   .executive-kpi { min-height: 132px; padding: 14px; }
   .kpi-topline { font-size: .72rem; }

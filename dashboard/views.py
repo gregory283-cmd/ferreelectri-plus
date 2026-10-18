@@ -45,6 +45,7 @@ from django.contrib.auth.decorators import user_passes_test
 from .decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.models import User, Permission
+from django.contrib.sessions.models import Session
 from django.contrib.auth.views import LoginView
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.signing import BadSignature, SignatureExpired
@@ -63,6 +64,7 @@ from datetime import date, datetime, timedelta
 from decimal import Decimal, ROUND_HALF_UP
 from django.views.decorators.csrf import csrf_exempt, csrf_protect, ensure_csrf_cookie
 from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_GET
 from django.views.decorators.http import require_POST
 import urllib.request as urllib_request
 import urllib.parse as urllib_parse
@@ -77,7 +79,7 @@ from Ventas.models import DetalleFactura
 from .forms import ClienteRegistroForm, ClienteAuthenticationForm, EnvioAdminForm, PagoManualForm, PagoMovilCheckoutForm
 from .decorators import cliente_required, log_view_access
 from .models import AdminDashboardConfig, AuditLog, Carrito, CarritoItem, ChatMessage, ChatSession, Cliente, Customer, Envio, EnvioEvento, Pedido, PedidoItem, PerfilCliente
-from .models import AdminPasskey, AdminPushSubscription, Pago, PedidoArchivado
+from .models import AdminDeviceSession, AdminLoginApproval, AdminPasskey, AdminPushSubscription, AdminSecurityConfig, Pago, PedidoArchivado
 from .customer_auth import (
     get_customer_from_request,
     login_customer as login_customer_cookie,
@@ -86,6 +88,7 @@ from .customer_auth import (
 from .cache_utils import CATALOG_TIMEOUT, catalog_cache_key
 from .services import send_telegram_order_alert, sync_admin_cliente_record
 from .ferrebot import build_assistant_reply, search_catalog
+from FERREELECTRI_PLUS.middleware import get_client_ip
 from django.core.files.storage import default_storage
 from django.urls import reverse
 from django.contrib.admin.views.decorators import staff_member_required
@@ -111,6 +114,55 @@ try:
 except Exception:
     id_token = None
     google_requests = None
+
+
+def _request_is_security_owner(request):
+    user = getattr(request, 'user', None)
+    if not getattr(user, 'is_authenticated', False) or not getattr(user, 'is_staff', False):
+        return False
+    config = AdminSecurityConfig.objects.filter(pk=1).only('owner_user_id', 'primary_passkey_id').first()
+    if not config or config.owner_user_id != user.pk or not config.primary_passkey_id:
+        return False
+    active_primary = request.session.get('admin_current_passkey_id')
+    return str(config.primary_passkey_id) == str(active_primary)
+
+
+def admin_security_owner_required(view_func):
+    @wraps(view_func)
+    def wrapped(request, *args, **kwargs):
+        if not getattr(request.user, 'is_authenticated', False):
+            return redirect('login_admin_custom')
+        if not _request_is_security_owner(request):
+            return HttpResponseForbidden('Esta acción requiere el dispositivo principal de seguridad.')
+        return view_func(request, *args, **kwargs)
+    return wrapped
+
+
+def admin_security_devices_required(view_func):
+    @wraps(view_func)
+    def wrapped(request, *args, **kwargs):
+        if not getattr(request.user, 'is_authenticated', False):
+            return redirect('login_admin_custom')
+        if _request_is_security_owner(request):
+            return view_func(request, *args, **kwargs)
+        config = AdminSecurityConfig.objects.filter(pk=1).only('owner_user_id', 'primary_passkey_id').first()
+        current_passkey_id = request.session.get('admin_current_passkey_id')
+        setup_session = bool(
+            config
+            and config.owner_user_id == request.user.pk
+            and config.primary_passkey_id is None
+            and current_passkey_id
+            and AdminPasskey.objects.filter(pk=current_passkey_id, user=request.user).exists()
+        )
+        if not setup_session:
+            if config and config.owner_user_id == request.user.pk and config.primary_passkey_id is None:
+                return HttpResponseForbidden(
+                    'Para designar el teléfono principal, registra primero una passkey en Herramientas, '
+                    'cierra sesión y vuelve a entrar con huella, rostro o PIN desde ese teléfono.'
+                )
+            return HttpResponseForbidden('Esta acción requiere el teléfono principal de seguridad.')
+        return view_func(request, *args, **kwargs)
+    return wrapped
 
 
 def admin_pwa_manifest(request):
@@ -174,8 +226,263 @@ def admin_pwa_service_worker(request):
 @require_POST
 def admin_app_session_lock(request):
     if request.user.is_authenticated:
+        if request.user.is_staff:
+            log_auth_event(request, 'ADMIN_LOGOUT', user=request.user, details='Cierre de sesión administrativa.')
+            AdminDeviceSession.objects.filter(session_key=request.session.session_key).update(is_active=False)
         logout(request)
     return JsonResponse({'ok': True})
+
+
+def _pending_admin_login_approval(request, user):
+    now = timezone.now()
+    stale_sessions = AdminDeviceSession.objects.filter(
+        user__is_active=True,
+        user__is_staff=True,
+        is_active=True,
+        last_seen_at__lt=now - timedelta(minutes=3),
+    )
+    stale_session_keys = list(stale_sessions.values_list('session_key', flat=True))
+    if stale_session_keys:
+        Session.objects.filter(session_key__in=stale_session_keys).delete()
+        stale_sessions.update(is_active=False)
+    active_device = AdminDeviceSession.objects.filter(
+        user__is_active=True,
+        user__is_staff=True,
+        is_active=True,
+    ).exclude(session_key=request.session.session_key).order_by('-last_seen_at').first()
+    if active_device is None:
+        return None
+
+    if request.session.session_key is None:
+        request.session.save()
+    approval_id = request.session.get('admin_login_approval_id')
+    if approval_id:
+        existing = AdminLoginApproval.objects.filter(
+            pk=approval_id,
+            user=user,
+            requester_session_key=request.session.session_key,
+            active_session_key=active_device.session_key,
+            status=AdminLoginApproval.Status.PENDING,
+            expires_at__gt=now,
+        ).first()
+        if existing:
+            return existing
+
+    approval = AdminLoginApproval.objects.create(
+        user=user,
+        requester_session_key=request.session.session_key,
+        active_session_key=active_device.session_key,
+        ip_address=get_client_ip(request),
+        user_agent=request.META.get('HTTP_USER_AGENT', '')[:1000],
+        expires_at=now + timedelta(minutes=2),
+    )
+    request.session['admin_login_approval_id'] = str(approval.pk)
+    return approval
+
+
+def _start_admin_session(request, user, login_method):
+    if login_method == 'PASSWORD':
+        request.session.pop('admin_current_passkey_id', None)
+    authentication_backend = getattr(user, 'backend', settings.AUTHENTICATION_BACKENDS[0])
+    with transaction.atomic():
+        AdminSecurityConfig.objects.select_for_update().get_or_create(pk=1)
+        user = User.objects.select_for_update().get(pk=user.pk)
+        user.backend = authentication_backend
+        approval = _pending_admin_login_approval(request, user)
+        if approval:
+            return approval
+        login(request, user)
+        AdminDeviceSession.objects.update_or_create(
+            session_key=request.session.session_key,
+            defaults={
+                'user': user,
+                'passkey_id': request.session.get('admin_current_passkey_id'),
+                'ip_address': get_client_ip(request),
+                'user_agent': request.META.get('HTTP_USER_AGENT', '')[:1000],
+                'last_seen_at': timezone.now(),
+                'is_active': True,
+            },
+        )
+        log_auth_event(request, f'ADMIN_{login_method}_LOGIN', user=user, details=f'Acceso administrativo mediante {login_method.lower()}.')
+    return None
+
+
+@require_GET
+def admin_login_approval_status(request, approval_id):
+    approval = get_object_or_404(
+        AdminLoginApproval,
+        pk=approval_id,
+        requester_session_key=request.session.session_key,
+    )
+    if approval.status == AdminLoginApproval.Status.PENDING and approval.expires_at <= timezone.now():
+        approval.status = AdminLoginApproval.Status.EXPIRED
+        approval.save(update_fields=['status'])
+    if approval.status == AdminLoginApproval.Status.APPROVED:
+        with transaction.atomic():
+            approval = AdminLoginApproval.objects.select_for_update().get(pk=approval.pk)
+            if approval.status == AdminLoginApproval.Status.APPROVED:
+                user = User.objects.select_for_update().get(pk=approval.user_id)
+                if not user.is_active or not user.is_staff:
+                    approval.status = AdminLoginApproval.Status.DENIED
+                    approval.responded_at = timezone.now()
+                    approval.save(update_fields=['status', 'responded_at'])
+                    return JsonResponse({'ok': False, 'status': approval.status, 'error': 'La cuenta administrativa ya no está activa.'})
+                active_session_keys = list(AdminDeviceSession.objects.filter(
+                    user__is_active=True,
+                    user__is_staff=True,
+                    is_active=True,
+                ).exclude(session_key=approval.requester_session_key).values_list('session_key', flat=True))
+                Session.objects.filter(session_key__in=active_session_keys).delete()
+                AdminDeviceSession.objects.filter(session_key__in=active_session_keys).update(is_active=False)
+                user.backend = settings.AUTHENTICATION_BACKENDS[0]
+                login(request, user)
+                request.session.pop('admin_login_approval_id', None)
+                AdminDeviceSession.objects.update_or_create(
+                    session_key=request.session.session_key,
+                    defaults={
+                        'user': user,
+                        'passkey_id': request.session.get('admin_current_passkey_id'),
+                        'ip_address': get_client_ip(request),
+                        'user_agent': request.META.get('HTTP_USER_AGENT', '')[:1000],
+                        'last_seen_at': timezone.now(),
+                        'is_active': True,
+                    },
+                )
+                approval.status = AdminLoginApproval.Status.COMPLETED
+                approval.responded_at = timezone.now()
+                approval.save(update_fields=['status', 'responded_at'])
+                log_auth_event(request, 'ADMIN_SESSION_TRANSFER', user=user, details='Acceso aprobado desde el dispositivo administrativo activo.')
+                return JsonResponse({'ok': True, 'complete': True, 'next': reverse('dashboard')})
+    if approval.status == AdminLoginApproval.Status.PENDING:
+        return JsonResponse({'ok': True, 'status': 'pending'})
+    message = 'El inicio fue rechazado desde la sesión activa.' if approval.status == AdminLoginApproval.Status.DENIED else 'La solicitud de acceso venció. Inicia sesión nuevamente.'
+    return JsonResponse({'ok': False, 'status': approval.status, 'error': message})
+
+
+@user_passes_test(lambda user: user.is_staff, login_url='login_admin_custom')
+@require_GET
+def admin_login_approval_pending(request):
+    now = timezone.now()
+    approvals = AdminLoginApproval.objects.filter(
+        active_session_key=request.session.session_key,
+        status=AdminLoginApproval.Status.PENDING,
+        expires_at__gt=now,
+    ).order_by('created_at')
+    return JsonResponse({'approvals': [{
+        'id': str(item.pk),
+        'username': item.user.get_username(),
+        'ip_address': item.ip_address or 'IP no disponible',
+        'user_agent': item.user_agent[:180] or 'Navegador no identificado',
+        'expires_at': item.expires_at.isoformat(),
+    } for item in approvals]})
+
+
+@user_passes_test(lambda user: user.is_staff, login_url='login_admin_custom')
+@require_POST
+def admin_login_approval_respond(request, approval_id):
+    try:
+        payload = json.loads(request.body or b'{}')
+    except (TypeError, ValueError):
+        return JsonResponse({'ok': False, 'error': 'invalid_json'}, status=400)
+    decision = payload.get('decision')
+    if decision not in {'approve', 'deny'}:
+        return JsonResponse({'ok': False, 'error': 'invalid_decision'}, status=400)
+    with transaction.atomic():
+        approval = get_object_or_404(
+            AdminLoginApproval.objects.select_for_update(),
+            pk=approval_id,
+            active_session_key=request.session.session_key,
+            status=AdminLoginApproval.Status.PENDING,
+            expires_at__gt=timezone.now(),
+        )
+        approval.status = AdminLoginApproval.Status.APPROVED if decision == 'approve' else AdminLoginApproval.Status.DENIED
+        approval.responded_at = timezone.now()
+        approval.responded_by = request.user
+        approval.save(update_fields=['status', 'responded_at', 'responded_by'])
+        log_auth_event(
+            request,
+            'ADMIN_LOGIN_APPROVED' if decision == 'approve' else 'ADMIN_LOGIN_DENIED',
+            user=request.user,
+            details=f"Solicitud de inicio desde IP {approval.ip_address or 'no disponible'}.",
+        )
+    return JsonResponse({'ok': True, 'status': approval.status})
+
+
+@admin_security_devices_required
+def admin_security_devices(request):
+    config = AdminSecurityConfig.objects.select_related('owner_user', 'primary_passkey').get(pk=1)
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'set_primary':
+            passkey = get_object_or_404(AdminPasskey, pk=request.POST.get('passkey_id'), user=request.user)
+            if (
+                config.primary_passkey_id is None
+                and str(request.session.get('admin_current_passkey_id')) != str(passkey.pk)
+            ):
+                return HttpResponseForbidden('Inicia sesión con la llave que vas a designar como teléfono principal.')
+            config.primary_passkey = passkey
+            config.save(update_fields=['primary_passkey', 'updated_at'])
+            log_auth_event(request, 'ADMIN_PRIMARY_DEVICE_SET', user=request.user, details=f'Llave principal configurada: {passkey.name}.')
+            messages.success(request, 'Llave principal actualizada. Inicia de nuevo con esa llave desde el teléfono elegido.')
+        elif action == 'revoke_passkey':
+            if not _request_is_security_owner(request):
+                return HttpResponseForbidden('Designa primero el teléfono principal de seguridad.')
+            passkey = get_object_or_404(AdminPasskey.objects.select_related('user'), pk=request.POST.get('passkey_id'))
+            if passkey.pk == config.primary_passkey_id:
+                messages.error(request, 'Primero designa otra llave principal antes de revocar esta llave.')
+            elif not passkey.user.is_staff or not passkey.user.is_active:
+                messages.error(request, 'Solo puedes revocar llaves de cuentas administrativas activas.')
+            else:
+                details = f'Llave {passkey.name} revocada para {passkey.user.get_username()}.'
+                passkey.delete()
+                log_auth_event(request, 'ADMIN_PASSKEY_REVOKED_BY_OWNER', user=request.user, details=details)
+                messages.success(request, 'Llave de acceso revocada.')
+        elif action == 'transfer_owner':
+            if not _request_is_security_owner(request):
+                return HttpResponseForbidden('Designa primero el teléfono principal de seguridad.')
+            new_owner = get_object_or_404(
+                User, pk=request.POST.get('user_id'), is_staff=True, is_active=True,
+            )
+            if new_owner.pk == request.user.pk:
+                messages.error(request, 'Selecciona otra cuenta administrativa para transferir el rol.')
+            else:
+                with transaction.atomic():
+                    old_owner = User.objects.select_for_update().get(pk=request.user.pk)
+                    new_owner = User.objects.select_for_update().get(pk=new_owner.pk)
+                    old_owner.is_superuser = False
+                    old_owner.is_staff = True
+                    old_owner.save(update_fields=['is_superuser', 'is_staff'])
+                    new_owner.is_superuser = True
+                    new_owner.is_staff = True
+                    new_owner.save(update_fields=['is_superuser', 'is_staff'])
+                    config.owner_user = new_owner
+                    config.primary_passkey = None
+                    config.save(update_fields=['owner_user', 'primary_passkey', 'updated_at'])
+                    log_auth_event(
+                        request,
+                        'ADMIN_SECURITY_OWNER_TRANSFER',
+                        user=old_owner,
+                        details=f'Rol titular transferido a {new_owner.get_username()}.',
+                    )
+                    active_session_keys = list(
+                        AdminDeviceSession.objects.filter(is_active=True).values_list('session_key', flat=True)
+                    )
+                    Session.objects.filter(session_key__in=active_session_keys).delete()
+                    AdminDeviceSession.objects.filter(session_key__in=active_session_keys).update(is_active=False)
+                logout(request)
+                messages.success(request, 'Titular transferido. La nueva cuenta deberá iniciar sesión y designar su teléfono principal.')
+                return redirect('login_admin_custom')
+        return redirect('admin_security_devices')
+
+    passkeys = AdminPasskey.objects.select_related('user').order_by('user__username', '-created_at')
+    device_sessions = AdminDeviceSession.objects.select_related('user', 'passkey').order_by('-last_seen_at')[:50]
+    administrators = User.objects.filter(is_staff=True, is_active=True).order_by('username')
+    return render(request, 'dashboard/security_devices.html', {
+        'security_config': config,
+        'admin_passkeys': passkeys,
+        'device_sessions': device_sessions,
+        'administrators': administrators,
+    })
 
 
 @staff_member_required(login_url='login_admin_custom')
@@ -298,13 +605,14 @@ def admin_passkey_registration_verify(request):
 
     credential_id = bytes_to_base64url(verified.credential_id)
     transports = ((payload.get('credential') or {}).get('response') or {}).get('transports') or []
+    device_name = str(payload.get('name') or 'Llave de acceso móvil').strip()[:80]
     AdminPasskey.objects.create(
         user=request.user,
         credential_id=credential_id,
         public_key=verified.credential_public_key,
         sign_count=verified.sign_count,
         transports=transports,
-        name='Llave de acceso móvil',
+        name=device_name or 'Llave de acceso',
     )
     request.session.pop('admin_passkey_enrollment_prompt', None)
     return JsonResponse({'ok': True})
@@ -376,9 +684,15 @@ def admin_passkey_login_verify(request):
     passkey.last_used_at = timezone.now()
     passkey.save(update_fields=['sign_count', 'last_used_at'])
     user = passkey.user
+    request.session['admin_current_passkey_id'] = passkey.pk
     user.backend = settings.AUTHENTICATION_BACKENDS[0]
-    login(request, user)
-    log_auth_event(request, 'ADMIN_PASSKEY_LOGIN', user=user, details='Acceso administrativo mediante llave de acceso.')
+    approval = _start_admin_session(request, user, 'PASSKEY')
+    if approval:
+        return JsonResponse({
+            'ok': True,
+            'approval_required': True,
+            'approval_id': str(approval.pk),
+        }, status=202)
     return JsonResponse({'ok': True, 'next': reverse('dashboard')})
 
 
@@ -1314,10 +1628,10 @@ def log_auth_event(request, action, user=None, details=''):
         AuditLog.objects.create(
             user=user if user is not None else (request.user if hasattr(request, 'user') and request.user.is_authenticated else None),
             action=action,
-            model_name='Customer',
-            object_id=None,
+            model_name='AdminAuth' if action.startswith('ADMIN_') else 'Customer',
+            object_id=str(user.pk) if user is not None else None,
             details=details,
-            ip_address=request.META.get('REMOTE_ADDR'),
+            ip_address=get_client_ip(request),
             user_agent=request.META.get('HTTP_USER_AGENT', ''),
         )
     except Exception:
@@ -1792,6 +2106,10 @@ def _dashboard_overview(request):
 
     context = {
         'racismo': 'Panel administrativo | FerreElectri PLUS',
+        'is_security_owner': _request_is_security_owner(request),
+        'can_setup_security_owner': bool(
+            AdminSecurityConfig.objects.filter(pk=1, owner_user=request.user, primary_passkey__isnull=True).exists()
+        ),
         'total_clientes': UsuarioClientes.objects.count(),
         'total_proveedores': Proveedores.objects.count(),
         'total_productos': Productos.objects.count(),
@@ -1981,13 +2299,13 @@ def inventario(request):
     return render(request, 'inventario.html', context)
 
 
-@user_passes_test(lambda u: u.is_staff, login_url='login_admin_custom')
-@permission_required('dashboard.view_auditlog')
+@admin_security_owner_required
 def audit_logs(request):
     logs = AuditLog.objects.all().order_by('-timestamp')
     return render(request, 'audit_logs.html', {'logs': logs})
 
 
+@admin_security_owner_required
 def descargar_auditoria_csv(request):
     logs = AuditLog.objects.all().order_by('-timestamp')
 
@@ -2009,6 +2327,7 @@ def descargar_auditoria_csv(request):
     return response
 
 
+@admin_security_owner_required
 def auditoria_completa(request):
     hace_7_dias = timezone.now() - timedelta(days=7)
     logs = AuditLog.objects.filter(timestamp__gte=hace_7_dias).order_by('-timestamp')
@@ -2303,7 +2622,13 @@ def login_view(request):
 
             if user.is_staff or user.is_superuser:
                 request.session.pop('admin_login_unlocked_until', None)
-                login(request, user)
+                approval = _start_admin_session(request, user, 'PASSWORD')
+                if approval:
+                    return JsonResponse({
+                        'ok': True,
+                        'approval_required': True,
+                        'approval_id': str(approval.pk),
+                    }, status=202)
                 if request.POST.get('remember_device') == '1' and not AdminPasskey.objects.filter(user=user).exists():
                     request.session['admin_passkey_enrollment_prompt'] = True
                 else:
@@ -2314,6 +2639,12 @@ def login_view(request):
                 return redirect(redirect_url)
 
             messages.error(request, 'Esta cuenta no tiene acceso administrativo. Usa el login de cliente.')
+            log_auth_event(
+                request,
+                'ADMIN_LOGIN_DENIED',
+                user=user,
+                details='Una cuenta sin permisos administrativos intentó iniciar sesión en el panel.',
+            )
             if is_ajax:
                 return JsonResponse(
                     {'ok': False, 'errors': {'__all__': ['Esta cuenta no tiene acceso administrativo. Usa el login de cliente.']}},
@@ -2323,6 +2654,11 @@ def login_view(request):
                 'form': form,
                 'next': next_value,
             })
+        log_auth_event(
+            request,
+            'ADMIN_PASSWORD_LOGIN_FAILED',
+            details=f"Credenciales administrativas rechazadas para {(request.POST.get('username') or '')[:80]}.",
+        )
         if is_ajax:
             return JsonResponse({'ok': False, 'errors': form.errors}, status=400)
     else:
@@ -2819,11 +3155,12 @@ def inventario(request):
     return render(request, 'inventario.html', context)
 
 @user_passes_test(lambda u: u.is_staff, login_url='login_admin_custom')
-@permission_required('dashboard.view_auditlog')
+@admin_security_owner_required
 def audit_logs(request):
     logs = AuditLog.objects.all().order_by('-timestamp')
     return render(request, 'audit_logs.html', {'logs': logs})
 
+@admin_security_owner_required
 def descargar_auditoria_csv(request):
     logs = AuditLog.objects.all().order_by('-timestamp')
 
@@ -2844,6 +3181,7 @@ def descargar_auditoria_csv(request):
 
     return response
 
+@admin_security_owner_required
 def auditoria_completa(request):
     hace_7_dias = timezone.now() - timedelta(days=7)
     logs = AuditLog.objects.filter(timestamp__gte=hace_7_dias).order_by('-timestamp')
@@ -5540,6 +5878,9 @@ def cliente_login(request):
 
 @require_POST
 def cliente_logout(request):
+    if request.user.is_authenticated and request.user.is_staff:
+        log_auth_event(request, 'ADMIN_LOGOUT', user=request.user, details='Cierre de sesión administrativa.')
+        AdminDeviceSession.objects.filter(session_key=request.session.session_key).update(is_active=False)
     cliente = get_current_cliente(request)
     if cliente is None and isinstance(request.user, User):
         cliente = Cliente.objects.filter(user=request.user).first()

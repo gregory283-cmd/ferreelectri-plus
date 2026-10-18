@@ -1647,11 +1647,19 @@
         #admin-session-dialog button { min-height: 44px; padding: 10px 16px; border: 1px solid #cbd9e6; border-radius: 10px; color: #174266; background: #f4f8fc; font: inherit; font-weight: 700; cursor: pointer; }
         #admin-session-dialog #admin-session-close { border-color: #0759a8; color: #fff; background: #0759a8; }
         #admin-session-dialog button:disabled { opacity: .6; cursor: wait; }
+        #admin-login-approval-dialog { width: min(460px, calc(100vw - 32px)); border: 1px solid #cbd9e6; border-radius: 16px; padding: 26px; color: #15283c; background: #fff; box-shadow: 0 24px 80px rgba(0,18,42,.28); }
+        #admin-login-approval-dialog::backdrop { background: rgba(3,18,38,.68); backdrop-filter: blur(5px); }
+        #admin-login-approval-dialog h2 { margin: 0 0 10px; font-size: 1.2rem; }
+        #admin-login-approval-dialog p { margin: 0 0 10px; color: #526a7e; line-height: 1.45; overflow-wrap: anywhere; }
+        #admin-login-approval-dialog .approval-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+        #admin-login-approval-dialog button { min-height: 42px; padding: 8px 12px; border: 1px solid #cbd9e6; border-radius: 9px; color: #174266; background: #f4f8fc; font: inherit; font-weight: 700; cursor: pointer; }
+        #admin-login-approval-dialog #admin-approval-accept { border-color: #0759a8; color: #fff; background: #0759a8; }
+        #admin-login-approval-dialog button:disabled { opacity: .6; cursor: wait; }
         @keyframes adminSessionDialogIn { from { opacity: 0; transform: translateY(12px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
         @media (max-width: 520px) { #admin-session-dialog { padding: 22px 18px; } #admin-session-dialog .admin-session-actions { display: grid; grid-template-columns: 1fr 1fr; } }
         @media (prefers-reduced-motion: reduce) { #admin-session-dialog[open] { animation: none; } }
     </style>
-    <script src="{% static 'dashboard/pwa/admin-pwa.js' %}?v=20261018-session-guard-v3" defer></script>
+    <script src="{% static 'dashboard/pwa/admin-pwa.js' %}?v=20261018-session-approval-v1" defer></script>
     <script src="{% static 'dashboard/pwa/admin-passkeys.js' %}?v=20261017-passkeys-v3" defer></script>
     {% endif %}
 </head>
@@ -1670,6 +1678,15 @@
         <div class="admin-session-actions">
             <button type="button" id="admin-session-continue">Seguir trabajando</button>
             <button type="button" id="admin-session-close">Cerrar sesión</button>
+        </div>
+    </dialog>
+    <dialog id="admin-login-approval-dialog" aria-labelledby="admin-login-approval-title" aria-describedby="admin-login-approval-details">
+        <h2 id="admin-login-approval-title">Solicitud de acceso administrativo</h2>
+        <p id="admin-login-approval-details"></p>
+        <p id="admin-login-approval-status" role="status" aria-live="polite"></p>
+        <div class="approval-actions">
+            <button type="button" id="admin-approval-deny">Denegar</button>
+            <button type="button" id="admin-approval-accept">Aprobar y transferir</button>
         </div>
     </dialog>
     {% endif %}

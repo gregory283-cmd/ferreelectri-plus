@@ -1,0 +1,84 @@
+{% extends 'base/pan_con_queso.html' %}
+{% block title %}Seguridad de dispositivos | FerreElectri PLUS{% endblock %}
+{% block arroz_con_pollo %}
+<main class="admin-security-page">
+    <header>
+        <span class="panel-kicker">CONTROL DE ACCESO</span>
+        <h1>Dispositivos administrativos</h1>
+        <p>Sesiones, llaves de acceso y titular de seguridad.</p>
+    </header>
+
+    {% if messages %}<div class="security-messages">{% for message in messages %}<p class="{{ message.tags }}">{{ message }}</p>{% endfor %}</div>{% endif %}
+
+    <section class="security-section">
+        <h2>Teléfono principal</h2>
+        {% if security_config.primary_passkey %}
+            <p>Llave principal: <strong>{{ security_config.primary_passkey.name }}</strong> · registrada {{ security_config.primary_passkey.created_at|date:'d/m/Y H:i' }}.</p>
+        {% else %}
+            <p>Aún no hay un teléfono principal. Registra una llave passkey en este teléfono e inicia sesión con ella antes de designarla.</p>
+        {% endif %}
+        <form method="post" class="security-inline-form">
+            {% csrf_token %}<input type="hidden" name="action" value="set_primary">
+            <label for="primary-passkey">Llave registrada en esta cuenta</label>
+            <select id="primary-passkey" name="passkey_id" required>
+                {% for passkey in admin_passkeys %}{% if passkey.user_id == request.user.id %}<option value="{{ passkey.pk }}" {% if security_config.primary_passkey_id == passkey.pk %}selected{% endif %}>{{ passkey.name }} · {{ passkey.created_at|date:'d/m/Y' }}</option>{% endif %}{% endfor %}
+            </select>
+            <button type="submit">Designar como principal</button>
+        </form>
+    </section>
+
+    <section class="security-section">
+        <h2>Sesiones recientes</h2>
+        <div class="security-table-wrap"><table>
+            <thead><tr><th>Cuenta</th><th>Última actividad</th><th>IP</th><th>Dispositivo / llave</th><th>Estado</th></tr></thead>
+            <tbody>{% for device in device_sessions %}
+                <tr><td>{{ device.user.get_username }}</td><td>{{ device.last_seen_at|date:'d/m/Y H:i:s' }}</td><td>{{ device.ip_address|default:'No disponible' }}</td><td>{{ device.passkey.name|default:device.user_agent|default:'Contraseña' }}</td><td>{% if device.is_active %}Activa{% else %}Cerrada{% endif %}</td></tr>
+            {% empty %}<tr><td colspan="5">Todavía no hay sesiones registradas.</td></tr>{% endfor %}</tbody>
+        </table></div>
+    </section>
+
+    <section class="security-section">
+        <h2>Llaves registradas</h2>
+        <div class="security-table-wrap"><table>
+            <thead><tr><th>Cuenta</th><th>Nombre de llave</th><th>Registrada</th><th>Último uso</th><th>Acción</th></tr></thead>
+            <tbody>{% for passkey in admin_passkeys %}
+                <tr><td>{{ passkey.user.get_username }}</td><td>{{ passkey.name }}{% if security_config.primary_passkey_id == passkey.pk %} · Principal{% endif %}</td><td>{{ passkey.created_at|date:'d/m/Y H:i' }}</td><td>{{ passkey.last_used_at|date:'d/m/Y H:i'|default:'Nunca' }}</td><td>
+                    {% if security_config.primary_passkey_id != passkey.pk %}<form method="post">{% csrf_token %}<input type="hidden" name="action" value="revoke_passkey"><input type="hidden" name="passkey_id" value="{{ passkey.pk }}"><button type="submit" aria-label="Revocar llave {{ passkey.name }} de {{ passkey.user.get_username }}">Revocar</button></form>{% else %}<span>Protegida</span>{% endif %}
+                </td></tr>
+            {% empty %}<tr><td colspan="5">No hay llaves registradas.</td></tr>{% endfor %}</tbody>
+        </table></div>
+    </section>
+
+    <section class="security-section security-transfer">
+        <h2>Transferir titularidad</h2>
+        <p>El cambio eleva la cuenta seleccionada a superusuario y deja esta cuenta como administradora estándar. La nueva cuenta deberá designar su teléfono principal.</p>
+        <form method="post" class="security-inline-form" onsubmit="return confirm('¿Transferir de forma permanente el rol titular a esta cuenta?');">
+            {% csrf_token %}<input type="hidden" name="action" value="transfer_owner">
+            <label for="new-security-owner">Nueva cuenta titular</label>
+            <select id="new-security-owner" name="user_id" required>
+                {% for administrator in administrators %}{% if administrator.pk != request.user.pk %}<option value="{{ administrator.pk }}">{{ administrator.get_username }}</option>{% endif %}{% endfor %}
+            </select>
+            <button type="submit">Transferir titularidad</button>
+        </form>
+    </section>
+</main>
+<style>
+    .admin-security-page { max-width: 1200px; margin: 0 auto; padding: 22px 10px 48px; color: var(--text-primary); }
+    .admin-security-page > header { margin-bottom: 22px; }
+    .admin-security-page h1 { margin: 6px 0; font-size: 1.8rem; }
+    .admin-security-page h2 { margin: 0 0 14px; font-size: 1.1rem; }
+    .admin-security-page p { color: var(--text-secondary); }
+    .security-section { margin: 0 0 20px; padding: 18px 0; border-top: 1px solid var(--panel-border); }
+    .security-inline-form { display: flex; align-items: center; flex-wrap: wrap; gap: 9px; }
+    .security-inline-form label { font-weight: 700; }
+    .security-inline-form select, .security-inline-form button, .security-table-wrap button { min-height: 40px; padding: 8px 11px; border: 1px solid var(--panel-border); border-radius: 8px; font: inherit; }
+    .security-inline-form button, .security-table-wrap button { color: #fff; background: #0759a8; cursor: pointer; }
+    .security-table-wrap { width: 100%; overflow-x: auto; border: 1px solid var(--panel-border); border-radius: 9px; }
+    .security-table-wrap table { width: 100%; min-width: 680px; border-collapse: collapse; }
+    .security-table-wrap th, .security-table-wrap td { padding: 10px; border-bottom: 1px solid var(--panel-border); text-align: left; vertical-align: top; }
+    .security-table-wrap form { margin: 0; }
+    .security-transfer { border-bottom: 1px solid var(--panel-border); }
+    .security-messages p { padding: 10px; border-radius: 8px; background: var(--surface); }
+    @media (max-width: 600px) { .admin-security-page { padding: 16px 4px 34px; } .security-inline-form { align-items: stretch; flex-direction: column; } }
+</style>
+{% endblock %}

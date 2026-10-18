@@ -163,6 +163,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'FERREELECTRI_PLUS.middleware.AdminDeviceSessionMiddleware',
     'FERREELECTRI_PLUS.middleware.CustomerSessionMiddleware',
     'FERREELECTRI_PLUS.middleware.AdminPanelIsolationMiddleware',
     'allauth.account.middleware.AccountMiddleware',

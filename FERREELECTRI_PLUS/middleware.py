@@ -1,5 +1,6 @@
 import threading
 import logging
+import ipaddress
 from django.shortcuts import redirect, render
 from django.conf import settings
 from django.urls import resolve
@@ -9,6 +10,22 @@ from urllib.parse import urlencode
 from django.conf import settings
 
 logger = logging.getLogger(__name__)
+
+
+def get_client_ip(request):
+    if getattr(settings, 'RENDER_EXTERNAL_HOSTNAME', ''):
+        forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR', '')
+        if forwarded_for:
+            candidate = forwarded_for.split(',')[0].strip()
+            try:
+                return str(ipaddress.ip_address(candidate))
+            except ValueError:
+                pass
+    candidate = request.META.get('REMOTE_ADDR', '')
+    try:
+        return str(ipaddress.ip_address(candidate)) if candidate else None
+    except ValueError:
+        return None
 
 _thread_locals = threading.local()
 
@@ -64,12 +81,52 @@ class AdminPanelIsolationMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        if request.path.startswith('/admin-panel/') and request.path not in self.PUBLIC_PATHS:
+        public_session_status = request.path.startswith('/admin-panel/session-approval/status/')
+        if request.path.startswith('/admin-panel/') and request.path not in self.PUBLIC_PATHS and not public_session_status:
             user = getattr(request, 'user', None)
             if not getattr(user, 'is_authenticated', False) or not getattr(user, 'is_staff', False):
                 query = urlencode({'next': request.get_full_path()})
                 return redirect('/admin-panel/login/?' + query)
         return self.get_response(request)
+
+
+class AdminDeviceSessionMiddleware:
+    """Keeps a short-lived record of each authenticated administrative session."""
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        response = self.get_response(request)
+        user = getattr(request, 'user', None)
+        if (
+            request.path.startswith('/admin-panel/')
+            and getattr(user, 'is_authenticated', False)
+            and getattr(user, 'is_staff', False)
+            and request.session.session_key
+        ):
+            from django.utils import timezone
+            from dashboard.models import AdminDeviceSession
+
+            session_key = request.session.session_key
+            last_refresh = timezone.now() - timezone.timedelta(seconds=30)
+            defaults = {
+                'user': user,
+                'passkey_id': request.session.get('admin_current_passkey_id'),
+                'ip_address': get_client_ip(request),
+                'user_agent': request.META.get('HTTP_USER_AGENT', '')[:1000],
+                'last_seen_at': timezone.now(),
+                'is_active': True,
+            }
+            device_session = AdminDeviceSession.objects.filter(session_key=session_key).first()
+            if device_session is None:
+                AdminDeviceSession.objects.create(session_key=session_key, **defaults)
+            elif (
+                device_session.last_seen_at < last_refresh
+                or not device_session.is_active
+                or device_session.passkey_id != defaults['passkey_id']
+            ):
+                AdminDeviceSession.objects.filter(pk=device_session.pk).update(**defaults)
+        return response
 
 class LoginRequiredMiddleware:
     """
@@ -99,6 +156,7 @@ class LoginRequiredMiddleware:
         '/manifest.webmanifest',
         '/service-worker.js',
         '/admin-panel/app-session/lock/',
+        '/admin-panel/session-approval/status/',
         '/admin-panel/app-launch/',
         '/pwa/icons/',
     ]
