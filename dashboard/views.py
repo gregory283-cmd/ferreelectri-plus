@@ -375,6 +375,80 @@ def admin_passkey_login_verify(request):
     return JsonResponse({'ok': True, 'next': reverse('dashboard')})
 
 
+@ratelimit(key='ip', rate='5/m', method='POST', block=True)
+@require_POST
+def admin_recovery_passkey_options(request):
+    rp_id, origin = _admin_webauthn_origin(request)
+    if not rp_id or not origin:
+        return JsonResponse({'error': 'La verificación biométrica requiere HTTPS.'}, status=400)
+    try:
+        payload = json.loads(request.body or b'{}')
+    except (TypeError, ValueError):
+        return JsonResponse({'error': 'No se pudo leer el correo de recuperación.'}, status=400)
+    email = str(payload.get('email') or '').strip().lower()
+    user = User.objects.filter(
+        email__iexact=email,
+        is_active=True,
+        is_staff=True,
+    ).first() if email else None
+    passkeys = list(AdminPasskey.objects.filter(user=user)) if user else []
+    if not passkeys:
+        return JsonResponse({'error': 'passkey_not_registered'}, status=404)
+    options = generate_authentication_options(
+        rp_id=rp_id,
+        user_verification=UserVerificationRequirement.REQUIRED,
+        allow_credentials=[
+            PublicKeyCredentialDescriptor(id=base64url_to_bytes(item.credential_id))
+            for item in passkeys
+        ],
+    )
+    _store_admin_webauthn_challenge(
+        request, 'admin_recovery_passkey_challenge', options.challenge, rp_id, origin,
+    )
+    request.session['admin_recovery_passkey_challenge']['user_id'] = user.pk
+    return JsonResponse(json.loads(options_to_json(options)))
+
+
+@ratelimit(key='ip', rate='5/m', method='POST', block=True)
+@require_POST
+def admin_recovery_passkey_verify(request):
+    challenge = _consume_admin_webauthn_challenge(request, 'admin_recovery_passkey_challenge')
+    if not challenge:
+        return JsonResponse({'error': 'La verificación biométrica venció. Inténtalo de nuevo.'}, status=400)
+    try:
+        payload = json.loads(request.body or b'{}')
+        credential = payload.get('credential') or {}
+        credential_id = credential.get('id') or credential.get('rawId')
+        email = str(payload.get('email') or '').strip().lower()
+        passkey = AdminPasskey.objects.select_related('user').get(
+            credential_id=credential_id,
+            user_id=challenge['user_id'],
+            user__email__iexact=email,
+            user__is_active=True,
+            user__is_staff=True,
+        )
+        verified = verify_authentication_response(
+            credential=credential,
+            expected_challenge=challenge['challenge'],
+            expected_rp_id=challenge['rp_id'],
+            expected_origin=challenge['origin'],
+            credential_public_key=bytes(passkey.public_key),
+            credential_current_sign_count=passkey.sign_count,
+            require_user_verification=True,
+        )
+    except Exception:
+        return JsonResponse({'error': 'No se pudo verificar la huella de esta cuenta.'}, status=400)
+
+    passkey.sign_count = verified.new_sign_count
+    passkey.last_used_at = timezone.now()
+    passkey.save(update_fields=['sign_count', 'last_used_at'])
+    request.session['admin_recovery_passkey_authorization'] = {
+        'user_id': passkey.user_id,
+        'expires_at': (timezone.now() + timedelta(minutes=2)).timestamp(),
+    }
+    return JsonResponse({'ok': True})
+
+
 @staff_member_required(login_url='login_admin_custom')
 @require_POST
 def admin_passkey_revoke_all(request):
@@ -2023,11 +2097,33 @@ def solicitar_recuperacion_admin(request):
             email__iexact=email,
             is_active=True,
         ).filter(models.Q(is_staff=True) | models.Q(is_superuser=True)).first()
-        _clear_recovery_session(request)
         if not usuario:
+            _clear_recovery_session(request)
             return render(request, 'recuperar.html', {
                 'error': 'No existe una cuenta administrativa con ese correo. Verifica el dato o contacta al administrador del sistema.',
             })
+
+        if not AdminPasskey.objects.filter(user=usuario).exists():
+            return render(request, 'recuperar.html', {
+                'error': 'Esta cuenta no tiene una huella registrada. Contacta al administrador para recuperar el acceso.',
+                'email_value': email,
+                'requires_passkey': True,
+            })
+
+        authorization = request.session.pop('admin_recovery_passkey_authorization', None)
+        try:
+            authorized_user_id = int((authorization or {}).get('user_id', 0))
+            authorization_expires_at = float((authorization or {}).get('expires_at', 0))
+        except (TypeError, ValueError):
+            authorized_user_id, authorization_expires_at = 0, 0
+        if authorized_user_id != usuario.pk or authorization_expires_at <= timezone.now().timestamp():
+            return render(request, 'recuperar.html', {
+                'error': 'Verifica la huella registrada en esta cuenta antes de enviar el código.',
+                'email_value': email,
+                'requires_passkey': True,
+            })
+
+        _clear_recovery_session(request)
 
         request.session['recupera_scope'] = 'admin'
         request.session['codigo_enviado'] = True
@@ -2140,6 +2236,7 @@ def _clear_recovery_session(request):
         'recupera_codigo', 'recupera_codigo_hash', 'recupera_email',
         'recupera_usuario', 'recupera_scope', 'recupera_expira_en',
         'recupera_intentos', 'codigo_enviado', 'cliente_codigo_enviado',
+        'admin_recovery_passkey_authorization', 'admin_recovery_passkey_challenge',
     ):
         request.session.pop(key, None)
 

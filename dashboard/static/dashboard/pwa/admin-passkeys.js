@@ -2,6 +2,9 @@
   const registrationButton = document.getElementById('admin-register-passkey');
   const revokeButton = document.getElementById('admin-revoke-passkeys');
   const status = document.getElementById('admin-passkey-status');
+  const recoveryStatus = document.getElementById('admin-recovery-passkey-status');
+  const recoveryForm = document.getElementById('admin-recovery-form');
+  const recoveryEmail = document.getElementById('rx-email');
   const loginForm = document.querySelector('.login-form');
   const usernameInput = document.getElementById('username');
   const usernameField = document.getElementById('admin-username-field');
@@ -46,6 +49,7 @@
 
   function showStatus(message) {
     if (status) status.textContent = message;
+    if (recoveryStatus) recoveryStatus.textContent = message;
   }
 
   function fromBase64Url(value) {
@@ -126,6 +130,7 @@
     if (error.name === 'SecurityError') return 'El dominio HTTPS no coincide con el dominio de la llave. Revisa ADMIN_WEBAUTHN_RP_ID.';
     if (error.name === 'InvalidStateError') return 'Esta llave ya está registrada para este sitio en el dispositivo.';
     if (error.message === 'No hay llaves de acceso registradas para esta cuenta.') return 'Esta cuenta todavía no tiene una huella registrada.';
+    if (error.message === 'passkey_not_registered') return 'Esta cuenta no tiene una huella registrada. Contacta al administrador para recuperar el acceso.';
     if (error.message === 'Escribe tu usuario o correo para usar la llave de acceso.') return 'Escribe tu usuario o correo una vez para identificar la cuenta de la huella.';
     return 'No se pudo completar la operación con la llave de acceso. Inténtalo nuevamente.';
   }
@@ -134,10 +139,56 @@
     if (installedPwa) sessionStorage.setItem(appSessionKey, '1');
   });
 
+  recoveryForm?.addEventListener('submit', async (event) => {
+    if (recoveryForm.dataset.passkeyComplete === 'true') {
+      delete recoveryForm.dataset.passkeyComplete;
+      return;
+    }
+    event.preventDefault();
+    const email = recoveryEmail?.value.trim().toLowerCase() || '';
+    const submitButton = recoveryForm.querySelector('[type="submit"]');
+    if (!email) {
+      showStatus('Escribe el correo de la cuenta administrativa.');
+      recoveryEmail?.focus();
+      return;
+    }
+    if (submitButton) submitButton.disabled = true;
+    showStatus('Verificando la huella registrada…');
+    try {
+      const options = await postJson('/admin-panel/passkeys/recovery/options/', { email });
+      if (!window.PublicKeyCredential || !navigator.credentials?.get) {
+        throw new Error('Este dispositivo no admite verificación biométrica para esta cuenta.');
+      }
+      const credential = await navigator.credentials.get({ publicKey: prepareRequestOptions(options) });
+      if (!credential) throw new Error('No se recibió la confirmación del dispositivo.');
+      await postJson('/admin-panel/passkeys/recovery/verify/', {
+        email,
+        credential: credentialToJson(credential),
+      });
+      showStatus('Huella verificada. Enviando el código al correo…');
+      recoveryForm.dataset.passkeyComplete = 'true';
+      if (submitButton) submitButton.disabled = false;
+      recoveryForm.requestSubmit(submitButton || undefined);
+    } catch (error) {
+      showStatus(explainError(error));
+    } finally {
+      if (submitButton) submitButton.disabled = false;
+    }
+  });
+
   async function finishPasskeyLogin(credential) {
     if (!credential) return;
     const result = await postJson('/admin-panel/passkeys/login/verify/', { credential: credentialToJson(credential) });
     if (installedPwa) sessionStorage.setItem(appSessionKey, '1');
+    const loader = document.getElementById('loader');
+    if (loader) {
+      loader.classList.add('is-biometric');
+      loader.style.display = 'flex';
+      const label = loader.querySelector('.loader-label');
+      if (label) label.textContent = 'Huella verificada. Desbloqueando…';
+      requestAnimationFrame(() => loader.classList.add('is-unlocking'));
+      await new Promise((resolve) => window.setTimeout(resolve, 520));
+    }
     window.location.assign(result.next || '/admin-panel/dashboard/');
   }
 

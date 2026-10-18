@@ -54,6 +54,8 @@ class AdminPanelIsolationMiddleware:
         '/admin-panel/recuperar-codigo/',
         '/admin-panel/passkeys/login/options/',
         '/admin-panel/passkeys/login/verify/',
+        '/admin-panel/passkeys/recovery/options/',
+        '/admin-panel/passkeys/recovery/verify/',
         '/admin-panel/app-session/lock/',
     }
 

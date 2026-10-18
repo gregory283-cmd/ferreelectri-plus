@@ -36,6 +36,7 @@
                 </form>
             </div>
             <span class="currency-rate-note" title="{% if bcv_updated_at %}Actualizada {{ bcv_updated_at|date:'d/m/Y H:i' }}{% else %}Tasa BCV pendiente{% endif %}{% if currency_converted %} · Equivalencia referencial, no modifica facturas emitidas{% endif %}">{% if bcv_updated_at %}BCV {{ bcv_rate|floatformat:4 }}{% else %}Configurar BCV{% endif %}</span>
+            <a class="quiet-action ecommerce-action" href="{% url 'index' %}"><span class="material-symbols-outlined" aria-hidden="true">storefront</span> E-commerce</a>
         </div>
     </header>
 

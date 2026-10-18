@@ -3,10 +3,12 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Restablecer contraseña</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <style>
+        *, *::before, *::after { box-sizing: border-box; }
         html, body {
             height: 100%;
             margin: 0;
@@ -328,6 +330,32 @@
             .info-content, .recup-card { padding: 22px 8vw 18px 8vw; }
             .info-logo { width: 110px;}
         }
+        @media (max-width: 700px) {
+            html, body { width: 100%; height: auto; min-height: 100%; overflow-x: hidden; overflow-y: auto; }
+            body { display: block; padding: 14px; }
+            .animated-bg, .info-panel { display: none; }
+            .split-container { display: block; width: 100%; min-width: 0; min-height: 100svh; border-radius: 0; overflow: visible; box-shadow: none; background: transparent; animation: none; }
+            .form-panel { width: 100%; min-width: 0; min-height: 100svh; padding: 0; background: transparent; backdrop-filter: none; }
+            .recup-card { width: min(100%, 440px); max-width: 440px; margin: auto; padding: 22px 18px; border-radius: 18px; gap: 8px; }
+            .recup-title { margin-bottom: 10px; font-size: 1rem; flex-wrap: wrap; }
+            .recovery-email-notice { margin: 0 0 8px; overflow-wrap: anywhere; }
+            .recup-label { margin-top: 8px; font-size: .92rem; }
+            .recup-input { min-height: 46px; margin-bottom: 4px; padding: 11px 12px; border-radius: 10px; }
+            .recup-btn { min-height: 48px; margin-top: 8px; padding: 11px 14px; border-radius: 10px; font-size: .98rem; }
+        }
+        html, body { width: 100%; min-height: 100%; overflow-x: hidden; }
+        body { display: grid; min-height: 100svh; place-items: center; overflow-y: auto; padding: 20px; background: #edf4f8; }
+        .animated-bg, .info-panel { display: none; }
+        .split-container { display: block; width: min(100%, 440px); min-width: 0; max-width: 440px; margin: auto; overflow: visible; border-radius: 18px; background: transparent; box-shadow: none; animation: none; }
+        .form-panel { width: 100%; min-width: 0; min-height: 0; padding: 0; background: transparent; backdrop-filter: none; }
+        .recup-card { width: 100%; max-width: none; padding: 24px 22px; border: 1px solid #e1edf4; border-radius: 18px; background: #fff; box-shadow: 0 16px 46px rgba(18,56,82,.11); backdrop-filter: none; }
+        .recup-title { font-size: 1.2rem; letter-spacing: 0; }
+        @media (max-width: 560px) {
+            body { padding: 14px; }
+            .recup-card { padding: 20px 17px; }
+            .recup-input { min-height: 46px; margin-bottom: 5px; }
+            .recup-btn { min-height: 48px; }
+        }
     </style>
 </head>
 
@@ -365,11 +393,7 @@
     <div class="form-panel">
         <form method="post" class="recup-card" autocomplete="off">
             {% csrf_token %}
-            <div class="recup-title">
-                <span class="material-icons">person</span>
-                Cambiando la contraseña de:
-                <span class="recup-user">{{ usuario_nombre|default:"Usuario desconocido" }}</span>
-            </div>
+            <div class="recup-title">Restablece tu acceso</div>
             {% if email_enmascarado %}
             <p class="recovery-email-notice">Código enviado al correo <strong>{{ email_enmascarado }}</strong></p>
             {% endif %}

@@ -1642,12 +1642,6 @@
         <ul class="sidebar-menu">
             <li class="sidebar-caption" aria-hidden="true">OPERACIONES</li>
             <li>
-                <a href="{% url 'index' %}"{% if request.resolver_match.url_name == 'index' or request.resolver_match.url_name == 'productos' or request.resolver_match.url_name == 'catalogo' %} class="active" aria-current="page"{% endif %}>
-                    <span class="material-symbols-outlined" aria-hidden="true">storefront</span>
-                    <span class="label">E-commerce</span>
-                </a>
-            </li>
-            <li>
                 <a href="{% url 'clientes' %}"{% if request.resolver_match.url_name == 'clientes' %} class="active" aria-current="page"{% endif %}>
                     <span class="material-symbols-outlined">group</span>
                     <span class="label">Clientes</span>

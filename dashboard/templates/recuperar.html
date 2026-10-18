@@ -3,9 +3,11 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Recuperar acceso</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet"/>
     <style>
+        *, *::before, *::after { box-sizing: border-box; }
         :root {
             --mainGrad1: #00b2ff;
             --mainGrad2: #0071d1;
@@ -257,6 +259,32 @@
             gap: 18px; /* Espacio entre input y botón */
             margin-top: 8px;
         }
+        .recuperar-card-sub {
+            width: 100%;
+            margin: 0;
+            color: #4e6678;
+            font-size: .95rem;
+            line-height: 1.55;
+        }
+        .recovery-label {
+            color: #284b63;
+            font-size: .88rem;
+            font-weight: 700;
+        }
+        .recovery-error, .recovery-status {
+            width: 100%;
+            margin: 0;
+            border-radius: 10px;
+            font-size: .86rem;
+            line-height: 1.45;
+        }
+        .recovery-error {
+            padding: 10px 12px;
+            border: 1px solid #f2c4bb;
+            background: #fff4f1;
+            color: #8a3529;
+        }
+        .recovery-status { min-height: 1.4em; color: #315e78; }
 
         .input-group {
             position: relative;
@@ -338,6 +366,34 @@
             .recuperar-card-title { font-size: 1.15em;}
             .frm-inpbox { font-size: 1em; padding: 11px 12px 11px 40px;}
         }
+        @media (max-width: 700px) {
+            html, body { width: 100%; min-height: 100%; overflow-x: hidden; }
+            body { background: #edf4f8; }
+            .recuperar-hero { display: block; width: 100%; height: auto; min-height: 100svh; background: #edf4f8; }
+            .recTrozo-left { display: none; }
+            .recTrozo-right { width: 100%; min-height: 100svh; height: auto; padding: 24px 14px; overflow: visible; background: #edf4f8; animation: none; }
+            .recuperar-card { width: min(100%, 420px); max-width: 420px; margin: auto; gap: 16px; padding: 24px 20px; border-radius: 18px; box-shadow: 0 14px 40px rgba(15, 48, 75, .1); }
+            .recuperar-card-icon { display: none; }
+            .recuperar-card-title { width: 100%; justify-content: flex-start; gap: 10px; font-size: 1.2rem; letter-spacing: 0; }
+            .icon-title { width: 38px; height: 38px; flex: 0 0 38px; font-size: 1rem; }
+            .recuperar-card-sub { margin: 0; font-size: .9rem; line-height: 1.45; }
+            .recuperar-form { gap: 12px; margin-top: 0; }
+            .frm-inpbox { min-height: 48px; padding: 11px 12px 11px 42px; border-radius: 10px; font-size: 1rem; }
+            .recup-send { min-height: 48px; padding: 11px 14px; border-radius: 10px; font-size: .96rem; }
+        }
+        html, body { width: 100%; min-height: 100%; overflow-x: hidden; }
+        body { background: #edf4f8; }
+        .recuperar-hero { display: grid; width: 100%; min-height: 100svh; height: auto; place-items: center; padding: 24px; background: #edf4f8; }
+        .recTrozo-left { display: none; }
+        .recTrozo-right { width: 100%; min-height: 0; height: auto; padding: 0; overflow: visible; background: transparent; animation: none; }
+        .logo, .recuperar-card-icon { display: none; }
+        .recuperar-card { width: min(100%, 420px); max-width: 420px; margin: auto; padding: 26px 24px; gap: 18px; border-radius: 18px; box-shadow: 0 16px 46px rgba(18, 56, 82, .11); backdrop-filter: none; }
+        .recuperar-card-title { justify-content: flex-start; gap: 10px; margin: 0; font-size: 1.25rem; letter-spacing: 0; }
+        .recuperar-form { gap: 12px; margin: 0; }
+        @media (max-width: 600px) {
+            .recuperar-hero { min-height: 100svh; padding: 16px; }
+            .recuperar-card { width: 100%; padding: 22px 18px; gap: 16px; }
+        }
     </style>
 </head>
 
@@ -361,134 +417,28 @@
     </div>
     <div class="recTrozo-right">
         <div class="recuperar-card">
-            <div class="recuperar-card-icon">
-                <i class="fa-solid fa-envelope-circle-check"></i>
-            </div>
             <div class="recuperar-card-title">
                 <span class="icon-title"><i class="fa-solid fa-unlock-keyhole"></i></span>
                 Recupera tu acceso
             </div>
-            <div class="recuperar-card-sub">
-                <div class="icon-info"><i class="fa-solid fa-info-circle"></i></div>
-                <div>
-                    Ingresa tu <span class="resaltado">correo electrónico</span><br>
-                    y te enviaremos un <span class="resaltado">código seguro</span> para restablecer tu cuenta.
-                </div>
-            </div>
-            <form method="post" action="{% url 'solicitar_recuperacion_admin' %}" class="recuperar-form">
+            <p class="recuperar-card-sub">Ingresa el correo de tu cuenta. Antes de enviar el código, confirma tu identidad con la huella registrada.</p>
+            {% if error %}<p class="recovery-error" role="alert">{{ error }}</p>{% endif %}
+            <form method="post" action="{% url 'solicitar_recuperacion_admin' %}" class="recuperar-form" id="admin-recovery-form">
                 {% csrf_token %}
+                <label class="recovery-label" for="rx-email">Correo electrónico</label>
                 <div class="input-group">
                     <span class="input-icon"><i class="fa-regular fa-envelope"></i></span>
-                    <input class="frm-inpbox" type="email" name="email" id="rx-email" maxlength="65" autocomplete="username" required placeholder="ejemplo@correo.com">
+                    <input class="frm-inpbox" type="email" name="email" id="rx-email" value="{{ email_value|default:'' }}" maxlength="65" autocomplete="email" required placeholder="Correo electrónico">
                 </div>
-                <button class="recup-send" type="submit">
-                    <i class="fa-solid fa-paper-plane"></i> Enviar código
+                <button class="recup-send" id="admin-recovery-send" type="submit">
+                    <i class="fa-solid fa-fingerprint" aria-hidden="true"></i> Confirmar huella y enviar código
                 </button>
+                <p id="admin-recovery-passkey-status" class="recovery-status" role="status" aria-live="polite"></p>
             </form>
             <div id="msg-confirm" class="msg-confirmacion"></div>
         </div>
     </div>
 </div>
-<script>
-    // animaciones, fade, slide on steps
-
-    function anim_pc(e) {
-        e.preventDefault();
-        const bloque1 = document.getElementById('parte-correodiv');
-        const bloque2 = document.getElementById('parte-chequediv');
-        if (!bloque1 || !bloque2) {
-            return;
-        }
-        bloque1.classList.add('fadeHiding');
-        setTimeout(() => {
-            bloque1.style.display = "none";
-            bloque2.style.display = 'flex';
-            setTimeout(() => {
-                bloque2.classList.add("fadeAppearing");
-                const rxCodigo = document.getElementById('rx-codigo');
-                if (rxCodigo && document.activeElement !== rxCodigo && typeof rxCodigo.focus === 'function') {
-                    rxCodigo.focus();
-                }
-            }, 65);
-        }, 400);
-    }
-
-    function fuerzaClav() {
-        var password = document.getElementById('xclave1').value;
-        var boxed = document.getElementById('ps_bar1');
-        boxed.classList.remove('str-weak','str-medium','str-very');
-        boxed.style.width = "0%";
-        if(!password||password.length<1){return}
-        let lvl = 0;
-        if(password.length >= 8) lvl++;
-        if(/[A-Z]/.test(password)) lvl++;
-        if(/[0-9]/.test(password)) lvl++;
-        if(/[^A-Za-z0-9]/.test(password)) lvl++;
-        if(lvl<=1){boxed.classList.add("str-weak");} else if(lvl==2||lvl==3){boxed.classList.add("str-medium");}else {boxed.classList.add("str-very");}
-    }
-
-    function valida_iguas(){
-        const alerta=document.getElementById('xalert');
-        let c1=document.getElementById('xclave1').value;
-        let c2=document.getElementById('xclave2').value;
-        alerta.style.opacity=c1&&c2?1:0;
-        if(c1&&c2&&c1!==c2){
-            alerta.innerHTML="Las contraseñas no coinciden";
-            alerta.style.color="#ff5252";
-        }else{
-            alerta.innerHTML=""; alerta.style.opacity=0;
-        }
-    }
-
-    const parteChequediv = document.getElementById('parte-chequediv');
-    if (parteChequediv) {
-        parteChequediv.addEventListener('submit', function(e) {
-            e.preventDefault();
-            let c1 = document.getElementById('xclave1').value.trim();
-            let c2 = document.getElementById('xclave2').value.trim();
-            let ps_del = document.getElementById('ps_bar1');
-            if (!c1 || !c2 || c1 !== c2) {
-                pctShow(false, "Corrige las contraseñas antes de continuar.");
-                return false;
-            }
-            pctShow(true, "¡Contraseña restablecida! 💚<br>Puedes iniciar sesión.");
-            setTimeout(() => location.reload(), 2300);
-        });
-    }
-    function pctShow(success, txt) {
-        let mc = document.getElementById('msg-confirm');
-        if (mc) {
-            mc.innerHTML = txt || "";
-            mc.style.opacity = 1;
-        }
-        if (parteChequediv) {
-            parteChequediv.classList.add("fadeHiding");
-        }
-        setTimeout(() => {
-            if (mc) mc.style.opacity = 0;
-        }, 2200);
-    }
-</script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    {% if error %}
-    Swal.fire({
-        icon: 'error',
-        title: 'Error en recuperación',
-        text: '{{ error|escapejs }}',
-        confirmButtonColor: '#1976d2'
-    });
-    {% endif %}
-    {% if codigo_enviado %}
-    Swal.fire({
-        icon: 'success',
-        title: '¡Código enviado!',
-        text: 'Revisa tu correo electrónico para continuar.',
-        confirmButtonColor: '#1976d2'
-    });
-    {% endif %}
-});
-</script>
+<script src="{% static 'dashboard/pwa/admin-passkeys.js' %}?v=20261018-passkeys-recovery-v2" defer></script>
 </body>
 </html>

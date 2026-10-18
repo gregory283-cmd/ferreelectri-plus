@@ -2314,7 +2314,8 @@ class AdminPWASecurityTest(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'id="admin-sidebar-toggle"')
-        self.assertContains(response, 'class="label">E-commerce</span>')
+        self.assertContains(response, 'class="quiet-action ecommerce-action"')
+        self.assertNotContains(response, 'class="label">E-commerce</span>')
         self.assertContains(response, 'css/admin-theme.css')
         self.assertContains(response, 'id="admin-theme-toggle"')
         self.assertContains(response, 'id="admin-auth-identity"')
@@ -2403,6 +2404,60 @@ class AdminPWASecurityTest(TestCase):
         self.assertEqual(response.json()['allowCredentials'][0]['id'], 'YWJj')
         self.assertEqual(len(response.json()['allowCredentials']), 1)
 
+    def test_admin_recovery_requires_registered_passkey_before_sending_email_code(self):
+        from .models import AdminPasskey
+
+        staff = User.objects.create_user(
+            username='recovery-passkey-admin', email='recovery-passkey@example.test',
+            password='TestPassword123!', is_staff=True,
+        )
+        AdminPasskey.objects.create(user=staff, credential_id='YWJj', public_key=b'recovery-key')
+
+        response = self.client.post(
+            reverse('solicitar_recuperacion_admin'),
+            {'email': staff.email},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Verifica la huella registrada en esta cuenta')
+        self.assertNotIn('recupera_codigo_hash', self.client.session)
+
+    def test_admin_recovery_cannot_skip_missing_passkey(self):
+        staff = User.objects.create_user(
+            username='recovery-no-passkey-admin', email='recovery-no-passkey@example.test',
+            password='TestPassword123!', is_staff=True,
+        )
+
+        response = self.client.post(
+            reverse('solicitar_recuperacion_admin'),
+            {'email': staff.email},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'no tiene una huella registrada')
+        self.assertNotIn('recupera_codigo_hash', self.client.session)
+
+    def test_recovery_passkey_options_are_bound_to_the_account(self):
+        from .models import AdminPasskey
+
+        staff = User.objects.create_user(
+            username='recovery-options-admin', email='recovery-options@example.test',
+            password='TestPassword123!', is_staff=True,
+        )
+        AdminPasskey.objects.create(user=staff, credential_id='YWJj', public_key=b'recovery-key')
+
+        response = self.client.post(
+            reverse('admin_recovery_passkey_options'),
+            data=json.dumps({'email': staff.email}),
+            content_type='application/json',
+            HTTP_HOST='localhost',
+            secure=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['allowCredentials'][0]['id'], 'YWJj')
+        self.assertEqual(self.client.session['admin_recovery_passkey_challenge']['user_id'], staff.pk)
+
     def test_staff_gets_passkey_registration_options_for_https_origin(self):
         staff = User.objects.create_user(
             username='passkey-admin', email='passkey-admin@example.test',
@@ -2431,6 +2486,8 @@ class AdminPWASecurityTest(TestCase):
         self.assertContains(response, 'autocomplete="username webauthn"')
         self.assertContains(response, 'id="admin-passkey-login"')
         self.assertContains(response, 'Iniciar con huella')
+        self.assertContains(response, 'viewBox="0 0 32 32"')
+        self.assertNotContains(response, 'fingerprint</span>')
         self.assertNotContains(response, 'class="auth-brand"')
         self.assertNotContains(response, 'class="auth-subtitle"')
 
@@ -2847,12 +2904,21 @@ class SeguridadTest(TestCase):
         EMAIL_HOST_USER='tests@example.com',
     )
     def test_recuperacion_admin_usa_otp_corto_hasheado_y_valida_nueva_clave(self):
+        from .models import AdminPasskey
+
         user = User.objects.create_user(
             username='admin-recovery-test',
             email='admin-recovery@test.com',
             password='OldAdmin123!',
             is_staff=True,
         )
+        AdminPasskey.objects.create(user=user, credential_id='cmVjb3Zlcnk', public_key=b'test-key')
+        session = self.client.session
+        session['admin_recovery_passkey_authorization'] = {
+            'user_id': user.pk,
+            'expires_at': time.time() + 60,
+        }
+        session.save()
         with patch('dashboard.views.get_random_string', return_value='87654321'):
             response = self.client.post(
                 reverse('solicitar_recuperacion_admin'),
