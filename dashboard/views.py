@@ -119,7 +119,7 @@ def admin_pwa_manifest(request):
         'name': 'FerreElectri PLUS · Administración',
         'short_name': 'FerreAdmin',
         'description': 'Panel administrativo de FerreElectri PLUS',
-        'start_url': reverse('dashboard'),
+        'start_url': reverse('login_admin_custom'),
         'scope': '/',
         'display': 'standalone',
         'background_color': '#08243b',
@@ -140,6 +140,7 @@ def admin_pwa_manifest(request):
         ],
     })
     response['Content-Type'] = 'application/manifest+json; charset=utf-8'
+    response['Cache-Control'] = 'no-cache'
     return response
 
 

@@ -864,12 +864,6 @@
     (() => {
       const standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
       if (!standalone) return;
-      try {
-        if (sessionStorage.getItem('ferreelectri-launch-seen')) return;
-        sessionStorage.setItem('ferreelectri-launch-seen', '1');
-      } catch (error) {
-        // Continue with the branded launch screen if storage is unavailable.
-      }
       document.documentElement.classList.add('pwa-launching');
     })();
   </script>

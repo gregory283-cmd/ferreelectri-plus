@@ -2273,13 +2273,21 @@ class AdminPWASecurityTest(TestCase):
         self.assertEqual(manifest['Content-Type'], 'application/manifest+json; charset=utf-8')
         self.assertEqual(manifest.json()['display'], 'standalone')
         self.assertEqual(manifest.json()['background_color'], '#08243b')
-        self.assertIn('/admin-panel/dashboard/', manifest.json()['start_url'])
+        self.assertEqual(manifest.json()['start_url'], reverse('login_admin_custom'))
+        self.assertIn('no-cache', manifest['Cache-Control'])
         for icon in manifest.json()['icons']:
             response = self.client.get(icon['src'])
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response['Content-Type'], 'image/png')
         self.assertEqual(worker.status_code, 200)
         self.assertContains(worker, "addEventListener('push'")
+
+    def test_admin_login_includes_branded_pwa_launch_screen(self):
+        response = self.client.get(reverse('login_admin_custom'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'class="pwa-launch-splash"')
+        self.assertContains(response, 'class="pwa-launch-logo"')
 
     def test_admin_password_login_ajax_returns_success_destination(self):
         staff = User.objects.create_superuser(
