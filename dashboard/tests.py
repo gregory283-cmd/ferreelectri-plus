@@ -2288,6 +2288,7 @@ class AdminPWASecurityTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'class="pwa-launch-splash"')
         self.assertContains(response, 'class="pwa-launch-logo"')
+        self.assertContains(response, 'rel="manifest"')
 
     def test_pwa_launch_is_public_and_renders_progress_before_login(self):
         response = self.client.get(reverse('admin_pwa_launch'))
@@ -2295,6 +2296,7 @@ class AdminPWASecurityTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'class="launch-progress"')
         self.assertContains(response, reverse('admin_app_session_lock'))
+        self.assertContains(response, 'rel="manifest"')
 
     def test_admin_password_login_ajax_returns_success_destination(self):
         staff = User.objects.create_superuser(

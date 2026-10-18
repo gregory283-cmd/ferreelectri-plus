@@ -6,6 +6,10 @@
   const minimumSplashMs = 1100;
   const startedAt = performance.now();
 
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/service-worker.js', { scope: '/' }).catch(() => {});
+  }
+
   function csrfToken() {
     return form.querySelector('[name="csrfmiddlewaretoken"]')?.value || '';
   }

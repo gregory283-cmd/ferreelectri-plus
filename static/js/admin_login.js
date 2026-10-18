@@ -14,6 +14,10 @@ window.showAdminLoginSuccess = async function(destination) {
 };
 
 document.addEventListener('DOMContentLoaded', function() {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/service-worker.js', { scope: '/' }).catch(() => {});
+  }
+
   const passwordInput = document.getElementById('password');
   const toggleEye = document.querySelector('.toggle-password');
   const loader = document.getElementById('loader');
