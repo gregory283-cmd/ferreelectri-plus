@@ -235,21 +235,38 @@ def admin_app_session_lock(request):
 
 def _pending_admin_login_approval(request, user):
     now = timezone.now()
+    security_config = AdminSecurityConfig.objects.filter(pk=1).only(
+        'owner_user_id', 'primary_passkey_id',
+    ).first()
+    primary_sessions = AdminDeviceSession.objects.none()
+    if security_config and security_config.owner_user_id and security_config.primary_passkey_id:
+        primary_sessions = AdminDeviceSession.objects.filter(
+            user_id=security_config.owner_user_id,
+            passkey_id=security_config.primary_passkey_id,
+            user__is_active=True,
+            user__is_staff=True,
+            is_active=True,
+        )
     stale_sessions = AdminDeviceSession.objects.filter(
         user__is_active=True,
         user__is_staff=True,
         is_active=True,
         last_seen_at__lt=now - timedelta(minutes=3),
-    )
+    ).exclude(pk__in=primary_sessions.values('pk'))
     stale_session_keys = list(stale_sessions.values_list('session_key', flat=True))
     if stale_session_keys:
         Session.objects.filter(session_key__in=stale_session_keys).delete()
         stale_sessions.update(is_active=False)
-    active_device = AdminDeviceSession.objects.filter(
-        user__is_active=True,
-        user__is_staff=True,
-        is_active=True,
-    ).exclude(session_key=request.session.session_key).order_by('-last_seen_at').first()
+    active_device = primary_sessions.exclude(
+        session_key=request.session.session_key,
+    ).order_by('-last_seen_at').first()
+    if active_device is None:
+        active_device = AdminDeviceSession.objects.filter(
+            user__is_active=True,
+            user__is_staff=True,
+            is_active=True,
+            last_seen_at__gte=now - timedelta(minutes=3),
+        ).exclude(session_key=request.session.session_key).order_by('-last_seen_at').first()
     if active_device is None:
         return None
 
@@ -327,13 +344,6 @@ def admin_login_approval_status(request, approval_id):
                     approval.responded_at = timezone.now()
                     approval.save(update_fields=['status', 'responded_at'])
                     return JsonResponse({'ok': False, 'status': approval.status, 'error': 'La cuenta administrativa ya no está activa.'})
-                active_session_keys = list(AdminDeviceSession.objects.filter(
-                    user__is_active=True,
-                    user__is_staff=True,
-                    is_active=True,
-                ).exclude(session_key=approval.requester_session_key).values_list('session_key', flat=True))
-                Session.objects.filter(session_key__in=active_session_keys).delete()
-                AdminDeviceSession.objects.filter(session_key__in=active_session_keys).update(is_active=False)
                 user.backend = settings.AUTHENTICATION_BACKENDS[0]
                 login(request, user)
                 request.session.pop('admin_login_approval_id', None)
@@ -351,7 +361,7 @@ def admin_login_approval_status(request, approval_id):
                 approval.status = AdminLoginApproval.Status.COMPLETED
                 approval.responded_at = timezone.now()
                 approval.save(update_fields=['status', 'responded_at'])
-                log_auth_event(request, 'ADMIN_SESSION_TRANSFER', user=user, details='Acceso aprobado desde el dispositivo administrativo activo.')
+                log_auth_event(request, 'ADMIN_SESSION_APPROVED', user=user, details='Acceso aprobado desde el dispositivo principal; la sesión aprobadora permanece activa.')
                 return JsonResponse({'ok': True, 'complete': True, 'next': reverse('dashboard')})
     if approval.status == AdminLoginApproval.Status.PENDING:
         return JsonResponse({'ok': True, 'status': 'pending'})
@@ -437,6 +447,32 @@ def admin_security_devices(request):
                 passkey.delete()
                 log_auth_event(request, 'ADMIN_PASSKEY_REVOKED_BY_OWNER', user=request.user, details=details)
                 messages.success(request, 'Llave de acceso revocada.')
+        elif action == 'revoke_session':
+            if not _request_is_security_owner(request):
+                return HttpResponseForbidden('Solo el teléfono principal puede cerrar sesiones secundarias.')
+            device_session = get_object_or_404(
+                AdminDeviceSession.objects.select_related('user', 'passkey'),
+                pk=request.POST.get('session_id'),
+                is_active=True,
+            )
+            if device_session.session_key == request.session.session_key:
+                messages.error(request, 'No puedes revocar la sesión del teléfono principal desde ese mismo teléfono.')
+            elif (
+                device_session.passkey_id == config.primary_passkey_id
+                and device_session.user_id == config.owner_user_id
+            ):
+                messages.error(request, 'Esta es otra sesión del teléfono principal; ciérrala desde ese dispositivo.')
+            else:
+                Session.objects.filter(session_key=device_session.session_key).delete()
+                device_session.is_active = False
+                device_session.save(update_fields=['is_active'])
+                log_auth_event(
+                    request,
+                    'ADMIN_DEVICE_SESSION_REVOKED',
+                    user=request.user,
+                    details=f'Sesión de {device_session.user.get_username()} revocada por el teléfono principal.',
+                )
+                messages.success(request, 'Sesión secundaria cerrada.')
         elif action == 'transfer_owner':
             if not _request_is_security_owner(request):
                 return HttpResponseForbidden('Designa primero el teléfono principal de seguridad.')
@@ -475,13 +511,30 @@ def admin_security_devices(request):
         return redirect('admin_security_devices')
 
     passkeys = AdminPasskey.objects.select_related('user').order_by('user__username', '-created_at')
-    device_sessions = AdminDeviceSession.objects.select_related('user', 'passkey').order_by('-last_seen_at')[:50]
+    active_session_cutoff = timezone.now() - timedelta(minutes=3)
+    device_sessions = list(
+        AdminDeviceSession.objects.select_related('user', 'passkey').order_by('-last_seen_at')[:50]
+    )
+    for device_session in device_sessions:
+        device_session.is_primary_device = bool(
+            device_session.user_id == config.owner_user_id
+            and device_session.passkey_id == config.primary_passkey_id
+            and config.primary_passkey_id
+        )
+        device_session.is_recent = device_session.last_seen_at >= active_session_cutoff
+        device_session.can_revoke = bool(
+            device_session.is_active
+            and device_session.session_key != request.session.session_key
+            and not device_session.is_primary_device
+        )
     administrators = User.objects.filter(is_staff=True, is_active=True).order_by('username')
     return render(request, 'dashboard/security_devices.html', {
         'security_config': config,
         'admin_passkeys': passkeys,
         'device_sessions': device_sessions,
         'administrators': administrators,
+        'current_session_key': request.session.session_key,
+        'active_session_cutoff': active_session_cutoff,
     })
 
 

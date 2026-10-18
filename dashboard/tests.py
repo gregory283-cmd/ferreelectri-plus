@@ -2379,7 +2379,8 @@ class AdminPWASecurityTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), {'ok': True})
 
-    def test_second_admin_login_requires_approval_and_transfers_the_session(self):
+    def test_second_admin_login_requires_approval_and_keeps_approving_session(self):
+        cache.clear()
         active_admin = User.objects.create_user(
             username='session-transfer-active', password='TestPassword123!', is_staff=True,
         )
@@ -2425,10 +2426,12 @@ class AdminPWASecurityTest(TestCase):
         self.assertEqual(approval.__class__.objects.get(pk=approval.pk).status, AdminLoginApproval.Status.COMPLETED)
         self.assertIn('_auth_user_id', requesting_client.session)
         self.assertEqual(int(requesting_client.session['_auth_user_id']), requesting_admin.pk)
-        self.assertFalse(AdminDeviceSession.objects.get(session_key=active_session_key).is_active)
-        self.assertEqual(self.client.get(reverse('dashboard')).status_code, 302)
+        self.assertTrue(AdminDeviceSession.objects.get(session_key=active_session_key).is_active)
+        self.assertEqual(self.client.get(reverse('dashboard')).status_code, 200)
+        self.assertTrue(AuditLog.objects.filter(action='ADMIN_SESSION_APPROVED', user=requesting_admin).exists())
 
     def test_active_admin_can_deny_a_second_login(self):
+        cache.clear()
         active_admin = User.objects.create_user(
             username='session-denial-active', password='TestPassword123!', is_staff=True,
         )
@@ -2459,6 +2462,77 @@ class AdminPWASecurityTest(TestCase):
         self.assertEqual(status_response.json()['status'], AdminLoginApproval.Status.DENIED)
         self.assertNotIn('_auth_user_id', requesting_client.session)
         self.assertEqual(self.client.get(reverse('dashboard')).status_code, 200)
+
+    def test_primary_device_remains_approval_authority_after_inactivity(self):
+        owner = User.objects.create_superuser(
+            username='persistent-primary-owner', email='persistent-primary@example.test', password='TestPassword123!',
+        )
+        requester = User.objects.create_user(
+            username='persistent-primary-requester', password='TestPassword123!', is_staff=True,
+        )
+        primary_key = AdminPasskey.objects.create(
+            user=owner, credential_id='cGVyc2lzdGVudC1wcmltYXJ5', public_key=b'primary-key', name='Teléfono principal',
+        )
+        config, _ = AdminSecurityConfig.objects.get_or_create(pk=1)
+        config.owner_user = owner
+        config.primary_passkey = primary_key
+        config.save(update_fields=['owner_user', 'primary_passkey', 'updated_at'])
+        self.client.force_login(owner)
+        owner_session = self.client.session
+        owner_session['admin_current_passkey_id'] = primary_key.pk
+        owner_session.save()
+        self.client.get(reverse('dashboard'))
+        primary_device = AdminDeviceSession.objects.get(session_key=self.client.session.session_key)
+        primary_device.last_seen_at = timezone.now() - timedelta(minutes=8)
+        primary_device.save(update_fields=['last_seen_at'])
+
+        requesting_client = Client(HTTP_HOST='localhost')
+        response = requesting_client.post(
+            reverse('login_admin_custom'),
+            {'username': requester.username, 'password': 'TestPassword123!', 'remember_device': '0'},
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+        )
+
+        self.assertEqual(response.status_code, 202)
+        approval = AdminLoginApproval.objects.get(pk=response.json()['approval_id'])
+        self.assertEqual(approval.active_session_key, primary_device.session_key)
+        self.assertTrue(AdminDeviceSession.objects.get(pk=primary_device.pk).is_active)
+
+    def test_primary_owner_can_revoke_secondary_session_without_revoking_itself(self):
+        owner = User.objects.create_superuser(
+            username='session-revoker-owner', email='session-revoker@example.test', password='TestPassword123!',
+        )
+        secondary = User.objects.create_user(
+            username='secondary-device-user', password='TestPassword123!', is_staff=True,
+        )
+        primary_key = AdminPasskey.objects.create(
+            user=owner, credential_id='c2Vzc2lvbi1yZXZva2Vy', public_key=b'revoker-key', name='Teléfono principal',
+        )
+        config, _ = AdminSecurityConfig.objects.get_or_create(pk=1)
+        config.owner_user = owner
+        config.primary_passkey = primary_key
+        config.save(update_fields=['owner_user', 'primary_passkey', 'updated_at'])
+        self.client.force_login(owner)
+        primary_session = self.client.session
+        primary_session['admin_current_passkey_id'] = primary_key.pk
+        primary_session.save()
+        self.client.get(reverse('dashboard'))
+
+        secondary_client = Client(HTTP_HOST='localhost')
+        secondary_client.force_login(secondary)
+        secondary_client.get(reverse('dashboard'))
+        secondary_key = secondary_client.session.session_key
+        secondary_device = AdminDeviceSession.objects.get(session_key=secondary_key)
+
+        response = self.client.post(reverse('admin_security_devices'), {
+            'action': 'revoke_session',
+            'session_id': secondary_device.pk,
+        })
+
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(AdminDeviceSession.objects.get(pk=secondary_device.pk).is_active)
+        self.assertEqual(self.client.get(reverse('dashboard')).status_code, 200)
+        self.assertEqual(secondary_client.get(reverse('dashboard')).status_code, 302)
 
     def test_staff_panel_renders_mobile_menu_install_push_and_passkey_controls(self):
         staff = User.objects.create_superuser(
@@ -2539,6 +2613,8 @@ class AdminPWASecurityTest(TestCase):
         self.assertContains(owner_dashboard, 'audit-chart-data')
         audit_page = self.client.get(reverse('auditoria_completa'))
         self.assertEqual(audit_page.status_code, 200)
+        self.assertContains(audit_page, 'audit-mobile-list')
+        self.assertContains(audit_page, 'audit-event-device')
         self.assertContains(audit_page, 'data-label="Usuario"')
         self.assertContains(audit_page, 'data-label="Acción"')
         self.assertContains(audit_page, 'data-label="Detalles"')
@@ -2586,7 +2662,20 @@ class AdminPWASecurityTest(TestCase):
         session = self.client.session
         session['admin_current_passkey_id'] = owner_passkey.pk
         session.save()
-        self.assertEqual(self.client.get(reverse('admin_security_devices')).status_code, 200)
+        AdminDeviceSession.objects.create(
+            user=another_admin,
+            passkey=other_passkey,
+            session_key='secondary-device-session-test-0001',
+            ip_address='203.0.113.25',
+            user_agent='Secondary device test',
+            last_seen_at=timezone.now(),
+            is_active=True,
+        )
+        security_page = self.client.get(reverse('admin_security_devices'))
+        self.assertEqual(security_page.status_code, 200)
+        self.assertContains(security_page, 'security-page-heading')
+        self.assertContains(security_page, 'security-mobile-list')
+        self.assertContains(security_page, 'Revocar sesión')
         self.assertEqual(self.client.get(reverse('auditoria_completa')).status_code, 200)
 
     def test_security_owner_can_transfer_superuser_role_to_another_admin(self):

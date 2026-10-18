@@ -2,83 +2,157 @@
 {% block title %}Seguridad de dispositivos | FerreElectri PLUS{% endblock %}
 {% block arroz_con_pollo %}
 <main class="admin-security-page">
-    <header>
-        <span class="panel-kicker">CONTROL DE ACCESO</span>
-        <h1>Dispositivos administrativos</h1>
-        <p>Sesiones, llaves de acceso y titular de seguridad.</p>
-    </header>
+    <div class="security-page-heading">
+        <span class="security-eyebrow">CONTROL DE ACCESO</span>
+        <h1>Dispositivos</h1>
+        <p>Sesiones, llaves y autoridad principal.</p>
+    </div>
 
-    {% if messages %}<div class="security-messages">{% for message in messages %}<p class="{{ message.tags }}">{{ message }}</p>{% endfor %}</div>{% endif %}
+    {% if messages %}<div class="security-messages" role="status">{% for message in messages %}<p class="{{ message.tags }}">{{ message }}</p>{% endfor %}</div>{% endif %}
 
-    <section class="security-section">
-        <h2>Teléfono principal</h2>
+    <section class="security-section primary-device-section">
+        <div class="security-section-heading"><div><span class="security-eyebrow">AUTORIDAD PRINCIPAL</span><h2>Teléfono principal</h2></div><span class="security-badge">{{ security_config.owner_user.get_username }}</span></div>
         {% if security_config.primary_passkey %}
-            <p>Llave principal: <strong>{{ security_config.primary_passkey.name }}</strong> · registrada {{ security_config.primary_passkey.created_at|date:'d/m/Y H:i' }}.</p>
+            <p class="security-copy">La auditoría y la gestión de acceso están vinculadas a <strong>{{ security_config.primary_passkey.name }}</strong>.</p>
+            <p class="security-copy security-last-used">Registrado {{ security_config.primary_passkey.created_at|date:'d/m/Y H:i' }}{% if security_config.primary_passkey.last_used_at %} · Último uso {{ security_config.primary_passkey.last_used_at|date:'d/m/Y H:i' }}{% endif %}</p>
         {% else %}
-            <p>Aún no hay un teléfono principal. Registra una llave passkey en este teléfono e inicia sesión con ella antes de designarla.</p>
+            <p class="security-copy">Aún no se ha elegido una llave principal. Usa este teléfono para iniciar con una passkey y designarla aquí.</p>
         {% endif %}
         <form method="post" class="security-inline-form">
             {% csrf_token %}<input type="hidden" name="action" value="set_primary">
-            <label for="primary-passkey">Llave registrada en esta cuenta</label>
+            <label for="primary-passkey">Llave de este teléfono</label>
             <select id="primary-passkey" name="passkey_id" required>
                 {% for passkey in admin_passkeys %}{% if passkey.user_id == request.user.id %}<option value="{{ passkey.pk }}" {% if security_config.primary_passkey_id == passkey.pk %}selected{% endif %}>{{ passkey.name }} · {{ passkey.created_at|date:'d/m/Y' }}</option>{% endif %}{% endfor %}
             </select>
-            <button type="submit">Designar como principal</button>
+            <button type="submit" class="security-primary-button">{% if security_config.primary_passkey_id %}Actualizar teléfono principal{% else %}Designar este teléfono{% endif %}</button>
         </form>
     </section>
 
     <section class="security-section">
-        <h2>Sesiones recientes</h2>
-        <div class="security-table-wrap"><table>
-            <thead><tr><th>Cuenta</th><th>Última actividad</th><th>IP</th><th>Dispositivo / llave</th><th>Estado</th></tr></thead>
+        <div class="security-section-heading"><div><span class="security-eyebrow">ACCESO</span><h2>Sesiones</h2></div><span class="security-section-count">{{ device_sessions|length }} recientes</span></div>
+        <div class="security-desktop-table"><div class="security-table-wrap"><table>
+            <thead><tr><th>Cuenta</th><th>Última actividad</th><th>IP</th><th>Dispositivo</th><th>Estado</th><th>Acción</th></tr></thead>
             <tbody>{% for device in device_sessions %}
-                <tr><td>{{ device.user.get_username }}</td><td>{{ device.last_seen_at|date:'d/m/Y H:i:s' }}</td><td>{{ device.ip_address|default:'No disponible' }}</td><td>{{ device.passkey.name|default:device.user_agent|default:'Contraseña' }}</td><td>{% if device.is_active %}Activa{% else %}Cerrada{% endif %}</td></tr>
-            {% empty %}<tr><td colspan="5">Todavía no hay sesiones registradas.</td></tr>{% endfor %}</tbody>
-        </table></div>
+                <tr>
+                    <td data-label="Cuenta">{{ device.user.get_username }}</td>
+                    <td data-label="Última actividad">{{ device.last_seen_at|date:'d/m/Y H:i:s' }}</td>
+                    <td data-label="IP">{{ device.ip_address|default:'No disponible' }}</td>
+                    <td data-label="Dispositivo">{% if device.passkey %}{{ device.passkey.name }}{% else %}{{ device.user_agent|default:'Contraseña' }}{% endif %}</td>
+                    <td data-label="Estado">{% if device.is_primary_device %}<span class="security-status security-status-primary">Principal</span>{% elif device.is_recent %}<span class="security-status security-status-active">Activa</span>{% else %}<span class="security-status security-status-idle">Inactiva</span>{% endif %}</td>
+                    <td data-label="Acción">{% if device.can_revoke %}<form method="post">{% csrf_token %}<input type="hidden" name="action" value="revoke_session"><input type="hidden" name="session_id" value="{{ device.pk }}"><button class="security-danger-button" type="submit">Revocar sesión</button></form>{% else %}<span class="security-muted">{% if device.session_key == current_session_key %}Esta sesión{% elif not device.is_active %}Cerrada{% else %}Protegida{% endif %}</span>{% endif %}</td>
+                </tr>
+            {% empty %}<tr><td colspan="6" class="security-empty">Todavía no hay sesiones registradas.</td></tr>{% endfor %}</tbody>
+        </table></div></div>
+        <div class="security-mobile-list">
+            {% for device in device_sessions %}
+            <article class="security-record">
+                <div class="security-record-top"><strong>{{ device.user.get_username }}</strong>{% if device.is_primary_device %}<span class="security-status security-status-primary">Principal</span>{% elif device.is_recent %}<span class="security-status security-status-active">Activa</span>{% else %}<span class="security-status security-status-idle">Inactiva</span>{% endif %}</div>
+                <dl class="security-record-details">
+                    <div><dt>Última actividad</dt><dd>{{ device.last_seen_at|date:'d/m/Y H:i:s' }}</dd></div>
+                    <div><dt>IP</dt><dd>{{ device.ip_address|default:'No disponible' }}</dd></div>
+                    <div class="security-record-wide"><dt>Dispositivo</dt><dd>{% if device.passkey %}{{ device.passkey.name }}{% else %}{{ device.user_agent|default:'Contraseña' }}{% endif %}</dd></div>
+                </dl>
+                {% if device.can_revoke %}<form method="post">{% csrf_token %}<input type="hidden" name="action" value="revoke_session"><input type="hidden" name="session_id" value="{{ device.pk }}"><button class="security-danger-button" type="submit">Revocar sesión</button></form>{% endif %}
+            </article>
+            {% empty %}<p class="security-empty-mobile">Todavía no hay sesiones registradas.</p>{% endfor %}
+        </div>
     </section>
 
     <section class="security-section">
-        <h2>Llaves registradas</h2>
-        <div class="security-table-wrap"><table>
-            <thead><tr><th>Cuenta</th><th>Nombre de llave</th><th>Registrada</th><th>Último uso</th><th>Acción</th></tr></thead>
-            <tbody>{% for passkey in admin_passkeys %}
-                <tr><td>{{ passkey.user.get_username }}</td><td>{{ passkey.name }}{% if security_config.primary_passkey_id == passkey.pk %} · Principal{% endif %}</td><td>{{ passkey.created_at|date:'d/m/Y H:i' }}</td><td>{{ passkey.last_used_at|date:'d/m/Y H:i'|default:'Nunca' }}</td><td>
-                    {% if security_config.primary_passkey_id != passkey.pk %}<form method="post">{% csrf_token %}<input type="hidden" name="action" value="revoke_passkey"><input type="hidden" name="passkey_id" value="{{ passkey.pk }}"><button type="submit" aria-label="Revocar llave {{ passkey.name }} de {{ passkey.user.get_username }}">Revocar</button></form>{% else %}<span>Protegida</span>{% endif %}
-                </td></tr>
-            {% empty %}<tr><td colspan="5">No hay llaves registradas.</td></tr>{% endfor %}</tbody>
-        </table></div>
+        <div class="security-section-heading"><div><span class="security-eyebrow">CREDENCIALES</span><h2>Llaves de acceso</h2></div><span class="security-section-count">{{ admin_passkeys|length }} registradas</span></div>
+        <div class="security-desktop-table"><div class="security-table-wrap"><table>
+            <thead><tr><th>Cuenta</th><th>Llave</th><th>Registro</th><th>Último uso</th><th>Acción</th></tr></thead>
+            <tbody>{% for passkey in admin_passkeys %}<tr>
+                <td data-label="Cuenta">{{ passkey.user.get_username }}</td>
+                <td data-label="Llave">{{ passkey.name }}{% if security_config.primary_passkey_id == passkey.pk %}<span class="security-status security-status-primary">Principal</span>{% endif %}</td>
+                <td data-label="Registro">{{ passkey.created_at|date:'d/m/Y H:i' }}</td>
+                <td data-label="Último uso">{{ passkey.last_used_at|date:'d/m/Y H:i'|default:'Nunca' }}</td>
+                <td data-label="Acción">{% if security_config.primary_passkey_id != passkey.pk %}<form method="post">{% csrf_token %}<input type="hidden" name="action" value="revoke_passkey"><input type="hidden" name="passkey_id" value="{{ passkey.pk }}"><button class="security-danger-button" type="submit">Revocar llave</button></form>{% else %}<span class="security-muted">Protegida</span>{% endif %}</td>
+            </tr>{% empty %}<tr><td colspan="5" class="security-empty">No hay llaves registradas.</td></tr>{% endfor %}</tbody>
+        </table></div></div>
+        <div class="security-mobile-list">
+            {% for passkey in admin_passkeys %}<article class="security-record">
+                <div class="security-record-top"><strong>{{ passkey.user.get_username }}</strong>{% if security_config.primary_passkey_id == passkey.pk %}<span class="security-status security-status-primary">Principal</span>{% endif %}</div>
+                <dl class="security-record-details">
+                    <div class="security-record-wide"><dt>Llave</dt><dd>{{ passkey.name }}</dd></div>
+                    <div><dt>Registrada</dt><dd>{{ passkey.created_at|date:'d/m/Y H:i' }}</dd></div>
+                    <div><dt>Último uso</dt><dd>{{ passkey.last_used_at|date:'d/m/Y H:i'|default:'Nunca' }}</dd></div>
+                </dl>
+                {% if security_config.primary_passkey_id != passkey.pk %}<form method="post">{% csrf_token %}<input type="hidden" name="action" value="revoke_passkey"><input type="hidden" name="passkey_id" value="{{ passkey.pk }}"><button class="security-danger-button" type="submit">Revocar llave</button></form>{% endif %}
+            </article>{% empty %}<p class="security-empty-mobile">No hay llaves registradas.</p>{% endfor %}
+        </div>
     </section>
 
-    <section class="security-section security-transfer">
-        <h2>Transferir titularidad</h2>
-        <p>El cambio eleva la cuenta seleccionada a superusuario y deja esta cuenta como administradora estándar. La nueva cuenta deberá designar su teléfono principal.</p>
-        <form method="post" class="security-inline-form" onsubmit="return confirm('¿Transferir de forma permanente el rol titular a esta cuenta?');">
+    <details class="security-transfer">
+        <summary>Transferir autoridad principal a otra cuenta</summary>
+        <p>La cuenta elegida pasará a ser superusuario. Las sesiones actuales se cerrarán y el nuevo titular deberá registrar su propia passkey principal.</p>
+        <form method="post" class="security-inline-form" onsubmit="return confirm('¿Transferir la autoridad principal a esta cuenta?');">
             {% csrf_token %}<input type="hidden" name="action" value="transfer_owner">
-            <label for="new-security-owner">Nueva cuenta titular</label>
+            <label for="new-security-owner">Cuenta administrativa</label>
             <select id="new-security-owner" name="user_id" required>
                 {% for administrator in administrators %}{% if administrator.pk != request.user.pk %}<option value="{{ administrator.pk }}">{{ administrator.get_username }}</option>{% endif %}{% endfor %}
             </select>
-            <button type="submit">Transferir titularidad</button>
+            <button class="security-danger-button" type="submit">Transferir autoridad</button>
         </form>
-    </section>
+    </details>
 </main>
 <style>
-    .admin-security-page { max-width: 1200px; margin: 0 auto; padding: 22px 10px 48px; color: var(--text-primary); }
-    .admin-security-page > header { margin-bottom: 22px; }
-    .admin-security-page h1 { margin: 6px 0; font-size: 1.8rem; }
-    .admin-security-page h2 { margin: 0 0 14px; font-size: 1.1rem; }
-    .admin-security-page p { color: var(--text-secondary); }
-    .security-section { margin: 0 0 20px; padding: 18px 0; border-top: 1px solid var(--panel-border); }
-    .security-inline-form { display: flex; align-items: center; flex-wrap: wrap; gap: 9px; }
-    .security-inline-form label { font-weight: 700; }
-    .security-inline-form select, .security-inline-form button, .security-table-wrap button { min-height: 40px; padding: 8px 11px; border: 1px solid var(--panel-border); border-radius: 8px; font: inherit; }
-    .security-inline-form button, .security-table-wrap button { color: #fff; background: #0759a8; cursor: pointer; }
-    .security-table-wrap { width: 100%; overflow-x: auto; border: 1px solid var(--panel-border); border-radius: 9px; }
-    .security-table-wrap table { width: 100%; min-width: 680px; border-collapse: collapse; }
-    .security-table-wrap th, .security-table-wrap td { padding: 10px; border-bottom: 1px solid var(--panel-border); text-align: left; vertical-align: top; }
-    .security-table-wrap form { margin: 0; }
-    .security-transfer { border-bottom: 1px solid var(--panel-border); }
-    .security-messages p { padding: 10px; border-radius: 8px; background: var(--surface); }
-    @media (max-width: 600px) { .admin-security-page { padding: 16px 4px 34px; } .security-inline-form { align-items: stretch; flex-direction: column; } }
+    .admin-security-page { --sec-card:#fff; --sec-line:#dce5ec; --sec-text:#172b3c; --sec-muted:#62758a; --sec-accent:#087f9a; --sec-soft:#eef5f8; max-width:1180px; margin:0 auto; padding:20px 12px 48px; color:var(--sec-text); }
+    :root[data-theme="dark"] .admin-security-page { --sec-card:#111b2a; --sec-line:rgba(148,163,184,.2); --sec-text:#edf4fb; --sec-muted:#9aabbd; --sec-accent:#48c9df; --sec-soft:#1a2939; }
+    .security-page-heading { margin:0 0 22px; padding:0; background:transparent!important; box-shadow:none!important; }
+    .security-page-heading h1 { margin:4px 0; color:var(--sec-text); font-size:1.7rem; font-weight:800; line-height:1.15; }
+    .security-page-heading p,.security-copy { margin:5px 0 0; color:var(--sec-muted); font-size:.88rem; line-height:1.45; }
+    .security-eyebrow { display:block; margin-bottom:4px; color:var(--sec-accent); font-size:.66rem; font-weight:800; }
+    .security-section { margin:0 0 18px; padding:17px 0; border-top:1px solid var(--sec-line); }
+    .security-section-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; }
+    .security-section-heading h2 { margin:0; color:var(--sec-text); font-size:1.05rem; font-weight:750; }
+    .security-badge,.security-section-count { display:inline-flex; align-items:center; min-height:28px; padding:4px 9px; border:1px solid var(--sec-line); border-radius:99px; color:var(--sec-muted); background:var(--sec-soft); font-size:.7rem; font-weight:750; }
+    .security-last-used { font-size:.74rem; }
+    .security-inline-form { display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin-top:12px; }
+    .security-inline-form label { color:var(--sec-text); font-size:.78rem; font-weight:700; }
+    .security-inline-form select { flex:1 1 220px; min-width:0; min-height:40px; padding:7px 10px; border:1px solid var(--sec-line); border-radius:8px; color:var(--sec-text); background:var(--sec-card); font:inherit; font-size:.8rem; }
+    .security-primary-button,.security-danger-button { min-height:38px; padding:8px 11px; border:1px solid transparent; border-radius:8px; color:#fff; background:#0759a8; font:inherit; font-size:.76rem; font-weight:750; cursor:pointer; }
+    .security-danger-button { border-color:rgba(173,51,62,.2); color:#a22e3c; background:#fff4f4; }
+    :root[data-theme="dark"] .security-danger-button { color:#ffadb4; background:rgba(189,57,72,.12); }
+    .security-table-wrap { width:100%; overflow-x:auto; border:1px solid var(--sec-line); border-radius:9px; background:var(--sec-card); }
+    .security-table-wrap table { width:100%; min-width:740px; border-collapse:collapse; color:var(--sec-text); font-size:.75rem; }
+    .security-table-wrap th,.security-table-wrap td { padding:10px; border-bottom:1px solid var(--sec-line); text-align:left; vertical-align:top; }
+    .security-table-wrap th { color:var(--sec-muted); background:var(--sec-soft); font-size:.67rem; font-weight:800; white-space:nowrap; }
+    .security-table-wrap tr:last-child td { border-bottom:0; }
+    .security-table-wrap form,.security-record form { margin:0; }
+    .security-status { display:inline-flex; align-items:center; min-height:22px; margin-left:5px; padding:3px 7px; border-radius:99px; font-size:.62rem; font-weight:800; white-space:nowrap; }
+    .security-status-primary { color:#075b70; background:#e5f5f7; }
+    .security-status-active { color:#16724c; background:#e8f6ef; }
+    .security-status-idle { color:#8a6418; background:#fbf3dc; }
+    :root[data-theme="dark"] .security-status-primary { color:#80dce8; background:rgba(72,201,223,.12); }
+    :root[data-theme="dark"] .security-status-active { color:#8be0b0; background:rgba(121,215,163,.12); }
+    :root[data-theme="dark"] .security-status-idle { color:#f3c96b; background:rgba(243,201,107,.12); }
+    .security-muted { color:var(--sec-muted); font-size:.72rem; }
+    .security-empty,.security-empty-mobile { padding:18px!important; color:var(--sec-muted); text-align:center!important; }
+    .security-mobile-list { display:none; }
+    .security-messages p { padding:10px 12px; border:1px solid var(--sec-line); border-radius:8px; color:var(--sec-text); background:var(--sec-card); font-size:.82rem; }
+    .security-transfer { padding:14px 0; border-top:1px solid var(--sec-line); border-bottom:1px solid var(--sec-line); color:var(--sec-text); }
+    .security-transfer summary { color:var(--sec-accent); font-size:.82rem; font-weight:750; cursor:pointer; }
+    .security-transfer p { color:var(--sec-muted); font-size:.78rem; line-height:1.45; }
+    @media (max-width:700px) {
+        .admin-security-page { padding:14px 12px 36px; }
+        .security-page-heading { margin-bottom:17px; }
+        .security-page-heading h1 { font-size:1.45rem; }
+        .security-section { margin-bottom:12px; padding:14px 0; }
+        .security-section-heading { align-items:flex-start; }
+        .security-inline-form { align-items:stretch; flex-direction:column; }
+        .security-inline-form select,.security-inline-form button { width:100%; flex:0 0 auto; min-height:42px; }
+        .security-desktop-table { display:none; }
+        .security-mobile-list { display:grid; gap:9px; }
+        .security-record { min-width:0; padding:12px; border:1px solid var(--sec-line); border-radius:9px; color:var(--sec-text); background:var(--sec-card); }
+        .security-record-top { display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:.82rem; }
+        .security-record-details { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px 12px; margin:12px 0; }
+        .security-record-details div { min-width:0; }
+        .security-record-details .security-record-wide { grid-column:1 / -1; }
+        .security-record-details dt { margin-bottom:3px; color:var(--sec-muted); font-size:.64rem; font-weight:750; }
+        .security-record-details dd { margin:0; color:var(--sec-text); font-size:.75rem; line-height:1.4; font-variant-numeric:tabular-nums; overflow-wrap:anywhere; }
+        .security-record .security-danger-button { width:100%; min-height:40px; }
+        .security-empty-mobile { margin:0; padding:18px; border:1px solid var(--sec-line); border-radius:9px; background:var(--sec-card); font-size:.78rem; }
+    }
 </style>
 {% endblock %}

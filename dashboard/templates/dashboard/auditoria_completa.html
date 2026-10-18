@@ -1,32 +1,35 @@
 {% extends "base/pan_con_queso.html" %}
 {% block arroz_con_pollo %}
 <style>
-    .auditoria-wrapper { width: 100%; max-width: 1440px; min-height: 100vh; margin: 0 auto; padding: 28px 24px 40px; box-sizing: border-box; }
+    .auditoria-wrapper { --audit-card: #fff; --audit-line: #dce5ec; --audit-text: #172b3c; --audit-muted: #62758a; --audit-accent: #087f9a; width: 100%; max-width: 1440px; min-height: 100vh; margin: 0 auto; padding: 28px 24px 40px; box-sizing: border-box; color: var(--audit-text); }
+    :root[data-theme="dark"] .auditoria-wrapper { --audit-card: #111b2a; --audit-line: rgba(148,163,184,.2); --audit-text: #edf4fb; --audit-muted: #9aabbd; --audit-accent: #48c9df; }
     .auditoria-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; margin-bottom: 22px; }
-    .auditoria-eyebrow { display: block; margin-bottom: 7px; color: #087f9a; font-size: .72rem; font-weight: 800; }
-    .auditoria-title { margin: 0; color: var(--text-primary, #15283c); font-size: 1.8rem; font-weight: 800; line-height: 1.15; }
-    .auditoria-subtitle { margin: 7px 0 0; color: var(--text-secondary, #65798d); font-size: .9rem; }
+    .auditoria-eyebrow { display: block; margin-bottom: 7px; color: var(--audit-accent); font-size: .72rem; font-weight: 800; }
+    .auditoria-title { margin: 0; color: var(--audit-text); font-size: 1.8rem; font-weight: 800; line-height: 1.15; }
+    .auditoria-subtitle { margin: 7px 0 0; color: var(--audit-muted); font-size: .9rem; }
     .auditoria-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
     .audit-action { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 40px; padding: 8px 12px; border: 1px solid rgba(8,127,154,.18); border-radius: 9px; color: #075b70; background: rgba(8,127,154,.08); font-size: .82rem; font-weight: 700; text-decoration: none; }
     .audit-action:hover { color: #063f51; background: rgba(8,127,154,.14); }
     .audit-action .material-symbols-outlined { font-size: 18px; }
-    .audit-count { display: flex; align-items: baseline; gap: 6px; margin: 0 0 12px; color: var(--text-secondary, #65798d); font-size: .8rem; }
-    .audit-count strong { color: var(--text-primary, #15283c); font-size: .92rem; }
-    .table-responsive { width: 100%; overflow-x: auto; border: 1px solid rgba(51,75,102,.14); border-radius: 11px; background: #fff; box-shadow: 0 8px 28px rgba(16,41,76,.06); }
+    .audit-count { display: flex; align-items: baseline; gap: 6px; margin: 0 0 12px; color: var(--audit-muted); font-size: .8rem; }
+    .audit-count strong { color: var(--audit-text); font-size: .92rem; }
+    .table-responsive { width: 100%; overflow-x: auto; border: 1px solid var(--audit-line); border-radius: 11px; background: var(--audit-card); box-shadow: 0 8px 28px rgba(16,41,76,.06); }
     .audit-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: .82rem; }
-    .audit-table thead tr { color: #35516a; background: #edf5fa; }
-    .audit-table th, .audit-table td { padding: 12px 13px; border-bottom: 1px solid #e4edf3; text-align: left; vertical-align: top; }
+    .audit-table thead tr { color: var(--audit-text); background: #edf3f7; }
+    :root[data-theme="dark"] .audit-table thead tr { background: #1a2939; }
+    .audit-table th, .audit-table td { padding: 12px 13px; border-bottom: 1px solid var(--audit-line); text-align: left; vertical-align: top; }
     .audit-table th { position: sticky; top: 0; z-index: 2; font-size: .72rem; font-weight: 800; white-space: nowrap; }
     .audit-table tbody tr:last-child td { border-bottom: 0; }
     .audit-table tbody tr:hover { background: #f6fbfd; }
-    .audit-user { min-width: 105px; color: #15283c; font-weight: 750; overflow-wrap: anywhere; }
-    .audit-action-name { min-width: 155px; color: #075b70; font-weight: 750; overflow-wrap: anywhere; }
-    .audit-model { min-width: 100px; color: #526a7e; }
-    .td-details { min-width: 180px; max-width: 380px; color: #354d61; overflow-wrap: anywhere; }
-    .audit-date { min-width: 112px; color: #526a7e; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .audit-user { min-width: 105px; color: var(--audit-text); font-weight: 750; overflow-wrap: anywhere; }
+    .audit-action-name { min-width: 155px; color: var(--audit-accent); font-weight: 750; overflow-wrap: anywhere; }
+    .audit-model { min-width: 100px; color: var(--audit-muted); }
+    .td-details { min-width: 180px; max-width: 380px; color: var(--audit-text); overflow-wrap: anywhere; }
+    .audit-date { min-width: 112px; color: var(--audit-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
     .audit-ip { min-width: 110px; font-variant-numeric: tabular-nums; white-space: nowrap; }
-    .td-useragent { min-width: 160px; max-width: 300px; color: #526a7e; overflow-wrap: anywhere; }
-    .audit-empty { padding: 28px !important; color: #65798d; text-align: center !important; }
+    .td-useragent { min-width: 160px; max-width: 300px; color: var(--audit-muted); overflow-wrap: anywhere; }
+    .audit-empty { padding: 28px !important; color: var(--audit-muted); text-align: center !important; }
+    .audit-mobile-list { display: none; }
     @media (max-width: 760px) {
         .auditoria-wrapper { padding: 16px 14px 34px; }
         .auditoria-header { align-items: stretch; flex-direction: column; gap: 14px; margin-bottom: 18px; }
@@ -34,7 +37,19 @@
         .auditoria-subtitle { font-size: .82rem; }
         .auditoria-actions { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); justify-content: stretch; }
         .audit-action { min-width: 0; min-height: 42px; padding: 8px 7px; font-size: .75rem; }
-        .table-responsive { overflow: visible; border: 0; background: transparent; box-shadow: none; }
+        .audit-desktop-table { display: none; }
+        .audit-mobile-list { display: grid; gap: 10px; }
+        .audit-event { min-width: 0; padding: 13px; border: 1px solid var(--audit-line); border-radius: 10px; background: var(--audit-card); box-shadow: 0 4px 14px rgba(16,41,76,.05); }
+        .audit-event-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; color: var(--audit-text); }
+        .audit-event-top strong { min-width: 0; overflow-wrap: anywhere; font-size: .88rem; }
+        .audit-event-top time { flex: 0 0 auto; color: var(--audit-muted); font-size: .7rem; font-variant-numeric: tabular-nums; }
+        .audit-event-action { display: inline-block; max-width: 100%; margin-top: 8px; color: var(--audit-accent); font-size: .8rem; font-weight: 800; overflow-wrap: anywhere; }
+        .audit-event-area { display: block; margin-top: 3px; color: var(--audit-muted); font-size: .72rem; }
+        .audit-event p { margin: 10px 0 0; color: var(--audit-text); font-size: .8rem; line-height: 1.45; overflow-wrap: anywhere; }
+        .audit-event-device { display: grid; gap: 7px; margin-top: 11px; padding-top: 10px; border-top: 1px solid var(--audit-line); }
+        .audit-event-device span { display: grid; gap: 3px; color: var(--audit-muted); font-size: .72rem; overflow-wrap: anywhere; }
+        .audit-event-device b { color: var(--audit-text); font-size: .65rem; }
+        .audit-mobile-empty { padding: 20px; border: 1px solid var(--audit-line); border-radius: 10px; color: var(--audit-muted); background: var(--audit-card); text-align: center; }
         .audit-table, .audit-table tbody { display: block; width: 100%; }
         .audit-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; clip-path: inset(50%); }
         .audit-table tbody { display: grid; gap: 11px; }
@@ -52,7 +67,7 @@
     @media (max-width: 360px) { .auditoria-wrapper { padding-right: 10px; padding-left: 10px; } .audit-action { font-size: .7rem; } }
 </style>
 <div class="auditoria-wrapper">
-    <header class="auditoria-header">
+    <div class="auditoria-header">
         <div>
             <span class="auditoria-eyebrow">CONTROL Y TRAZABILIDAD</span>
             <h1 class="auditoria-title">Auditoría administrativa</h1>
@@ -62,9 +77,9 @@
             <a href="{% url 'dashboard' %}" class="audit-action"><span class="material-symbols-outlined" aria-hidden="true">arrow_back</span> Volver al panel</a>
             <a href="{% url 'admin_security_devices' %}" class="audit-action"><span class="material-symbols-outlined" aria-hidden="true">devices</span> Dispositivos y llaves</a>
         </nav>
-    </header>
+    </div>
     <p class="audit-count"><strong>{{ logs|length }}</strong> eventos recientes</p>
-    <div class="table-responsive">
+    <div class="table-responsive audit-desktop-table">
         <table class="audit-table">
             <thead>
                 <tr>
@@ -95,6 +110,22 @@
                 {% endfor %}
             </tbody>
         </table>
+    </div>
+    <div class="audit-mobile-list" aria-label="Eventos de auditoría">
+        {% for log in logs %}
+        <article class="audit-event">
+            <div class="audit-event-top"><strong>{{ log.username }}</strong><time>{{ log.timestamp|date:"d/m/Y H:i" }}</time></div>
+            <span class="audit-event-action">{{ log.action }}</span>
+            <span class="audit-event-area">{{ log.model_name }}</span>
+            <p>{{ log.details }}</p>
+            {% if log.ip_address or log.user_agent %}
+            <div class="audit-event-device">
+                {% if log.ip_address %}<span><b>IP</b>{{ log.ip_address }}</span>{% endif %}
+                {% if log.user_agent %}<span><b>Dispositivo</b>{{ log.user_agent }}</span>{% endif %}
+            </div>
+            {% endif %}
+        </article>
+        {% empty %}<p class="audit-mobile-empty">No hay registros de auditoría en los últimos 7 días.</p>{% endfor %}
     </div>
 </div>
 {% endblock %}
