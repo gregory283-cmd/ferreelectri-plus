@@ -737,6 +737,40 @@ class ClienteRegistroPersistenceTest(TestCase):
             self.assertTrue(form.is_valid(), form.errors)
             self.assertEqual(form.cleaned_data['cedula'], f'{document_type}-1234500{index}')
 
+    def test_registration_does_not_disclose_admin_or_existing_document(self):
+        admin = User.objects.create_user(
+            username='protected-admin-email',
+            email='protected-admin@example.test',
+            password='AdminSecret123!',
+            is_staff=True,
+        )
+        Customer.objects.create(
+            nombre='Cuenta privada',
+            email='private-customer@example.test',
+            cedula='V-76543210',
+            password='!disabled!',
+        )
+
+        response = self.client.post(reverse('cliente_registro'), {
+            'nombre': 'Cliente de prueba',
+            'email': admin.email,
+            'tipo_documento': 'V',
+            'numero_documento': '76543210',
+            'cedula': '',
+            'telefono': '+58 414 000 0000',
+            'direccion': 'Dirección de prueba',
+            'password1': 'Strong!Password-2026',
+            'password2': 'Strong!Password-2026',
+        }, HTTP_HOST='localhost')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'No se pudo validar este correo.')
+        self.assertContains(response, 'No se pudo validar esta identificación.')
+        form_errors = response.context['form'].errors.as_text().lower()
+        self.assertNotIn('administrador', form_errors)
+        self.assertNotIn('reservado', form_errors)
+        self.assertNotIn('ya está registrada', form_errors)
+
     def test_registration_persists_identification_and_delivery_data(self):
         response = self.client.post(reverse('cliente_registro'), {
             'nombre': 'María Pérez',

@@ -5504,7 +5504,7 @@ def cliente_registro(request):
             password = form.cleaned_data['password1']
             customer = Customer.objects.filter(email__iexact=email).first()
             if customer:
-                messages.error(request, 'Ya existe una cuenta con ese correo. Inicia sesión.')
+                messages.error(request, 'No se pudo completar el registro con esos datos. Revisa la información e intenta nuevamente.')
             else:
                 customer = Customer.objects.create(
                     nombre=form.cleaned_data['nombre'],

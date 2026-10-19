@@ -196,9 +196,9 @@ class ClienteRegistroForm(forms.ModelForm):
             raise forms.ValidationError("Ingrese un correo electrónico válido.")
         existing_customer = Customer.objects.filter(email__iexact=email).first()
         if existing_customer and existing_customer.email_verified:
-            raise forms.ValidationError("Este correo ya está registrado como cliente.")
+            raise forms.ValidationError('No se pudo validar este correo. Revisa los datos e intenta nuevamente.')
         if User.objects.filter(email__iexact=email, is_staff=True).exists():
-            raise forms.ValidationError("Este correo está reservado para administradores.")
+            raise forms.ValidationError('No se pudo validar este correo. Revisa los datos e intenta nuevamente.')
         return email
 
     def clean_cedula(self):
@@ -218,9 +218,9 @@ class ClienteRegistroForm(forms.ModelForm):
         if len(cedula) < 5 or not re.fullmatch(r'^[A-Z0-9-]+$', cedula):
             raise forms.ValidationError('Ingresa una cédula o RIF válido, sin espacios.')
         if Customer.objects.filter(cedula__iexact=cedula).exists():
-            raise forms.ValidationError('Esta cédula ya está registrada.')
+            raise forms.ValidationError('No se pudo validar esta identificación. Revisa los datos e intenta nuevamente.')
         if Cliente.objects.filter(cedula__iexact=cedula).exists():
-            raise forms.ValidationError('Esta cédula ya está registrada.')
+            raise forms.ValidationError('No se pudo validar esta identificación. Revisa los datos e intenta nuevamente.')
         return cedula
 
     def clean_password2(self):
