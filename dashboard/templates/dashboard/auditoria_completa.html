@@ -94,10 +94,10 @@
                     <tr>
                         <td class="audit-user" data-label="Cuenta">{{ device.user.get_username }}</td>
                         <td data-label="Rol">{% if device.is_primary_device %}Titular protegido{% elif device.user.is_superuser %}Superusuario{% else %}Administración{% endif %}</td>
-                        <td class="audit-device-cell" data-label="Dispositivo">{% if device.passkey %}{{ device.passkey.name }}{% else %}{{ device.user_agent|default:'Contraseña' }}{% endif %}</td>
+                        <td class="audit-device-cell" data-label="Dispositivo">{% if device.name %}<strong>{{ device.name }}</strong><br>{% endif %}{% if device.passkey %}{{ device.passkey.name }}{% else %}{{ device.user_agent|default:'Contraseña' }}{% endif %}</td>
                         <td class="audit-ip" data-label="IP">{{ device.ip_address|default:'No disponible' }}</td>
                         <td class="audit-date" data-label="Última actividad">{{ device.last_seen_at|date:"d/m/Y H:i" }}</td>
-                        <td data-label="Estado">{% if device.is_primary_device %}<strong>Protegido</strong>{% elif device.is_recent and device.is_active %}Conectado{% elif device.is_active %}Inactivo{% else %}Cerrado{% endif %}</td>
+                        <td data-label="Estado">{% if device.is_primary_device %}<strong>Protegido</strong>{% elif device.awaiting_completion %}Pendiente de completar{% elif device.is_recent and device.is_active %}Conectado{% elif device.is_active %}Inactivo{% else %}Cerrado{% endif %}</td>
                     </tr>
                 {% empty %}<tr><td class="audit-empty" colspan="6">No hay sesiones administrativas registradas.</td></tr>{% endfor %}</tbody>
             </table>

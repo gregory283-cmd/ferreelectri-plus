@@ -78,6 +78,7 @@ class AdminDeviceSession(models.Model):
         AdminPasskey, null=True, blank=True, on_delete=models.SET_NULL, related_name='device_sessions',
     )
     session_key = models.CharField(max_length=40, unique=True)
+    name = models.CharField(max_length=80, blank=True)
     ip_address = models.GenericIPAddressField(null=True, blank=True)
     user_agent = models.TextField(blank=True)
     last_seen_at = models.DateTimeField(default=now)

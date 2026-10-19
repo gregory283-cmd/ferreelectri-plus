@@ -416,6 +416,18 @@ def admin_login_approval_respond(request, approval_id):
         approval.responded_at = timezone.now()
         approval.responded_by = request.user
         approval.save(update_fields=['status', 'responded_at', 'responded_by'])
+        if approval.status == AdminLoginApproval.Status.APPROVED:
+            AdminDeviceSession.objects.update_or_create(
+                session_key=approval.requester_session_key,
+                defaults={
+                    'user_id': approval.user_id,
+                    'passkey_id': None,
+                    'ip_address': approval.ip_address,
+                    'user_agent': approval.user_agent,
+                    'last_seen_at': timezone.now(),
+                    'is_active': False,
+                },
+            )
         log_auth_event(
             request,
             'ADMIN_LOGIN_APPROVED' if decision == 'approve' else 'ADMIN_LOGIN_DENIED',
@@ -507,6 +519,23 @@ def admin_security_devices(request):
                     details=f'Sesión de {device_session.user.get_username()} revocada por el teléfono principal.',
                 )
                 messages.success(request, 'Sesión secundaria cerrada.')
+        elif action == 'rename_session':
+            if not _request_is_security_owner(request):
+                return HttpResponseForbidden('Solo el teléfono principal puede identificar dispositivos.')
+            device_session = get_object_or_404(AdminDeviceSession, pk=request.POST.get('session_id'))
+            device_name = (request.POST.get('device_name') or '').strip()[:80]
+            if not device_name:
+                messages.error(request, 'Escribe un nombre para identificar el dispositivo.')
+            else:
+                device_session.name = device_name
+                device_session.save(update_fields=['name'])
+                log_auth_event(
+                    request,
+                    'ADMIN_DEVICE_SESSION_NAMED',
+                    user=request.user,
+                    details=f'Dispositivo {device_session.pk} identificado como {device_name}.',
+                )
+                messages.success(request, 'Nombre del dispositivo actualizado.')
         elif action == 'transfer_owner':
             if not _request_is_security_owner(request):
                 return HttpResponseForbidden('Designa primero el teléfono principal de seguridad.')
@@ -565,9 +594,14 @@ def admin_security_devices(request):
             )
         ).order_by('-is_primary', '-is_active', '-last_seen_at')
     )
+    pending_session_keys = set(AdminLoginApproval.objects.filter(
+        status=AdminLoginApproval.Status.APPROVED,
+        expires_at__gt=timezone.now(),
+    ).values_list('requester_session_key', flat=True))
     for device_session in device_sessions:
         device_session.is_primary_device = device_session.is_primary
         device_session.is_recent = device_session.last_seen_at >= active_session_cutoff
+        device_session.awaiting_completion = device_session.session_key in pending_session_keys
         device_session.can_revoke = bool(
             device_session.is_active
             and device_session.session_key != request.session.session_key
@@ -2488,9 +2522,14 @@ def auditoria_completa(request):
             )
         ).order_by('-is_primary', '-is_active', '-last_seen_at')
     )
+    pending_session_keys = set(AdminLoginApproval.objects.filter(
+        status=AdminLoginApproval.Status.APPROVED,
+        expires_at__gt=timezone.now(),
+    ).values_list('requester_session_key', flat=True))
     for device_session in device_sessions:
         device_session.is_primary_device = device_session.is_primary
         device_session.is_recent = device_session.last_seen_at >= active_session_cutoff
+        device_session.awaiting_completion = device_session.session_key in pending_session_keys
 
     colspan = 5 + (1 if include_ip else 0) + (1 if include_user_agent else 0)
     return render(request, 'dashboard/auditoria_completa.html', {

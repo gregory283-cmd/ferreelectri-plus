@@ -2399,6 +2399,7 @@ class AdminPWASecurityTest(TestCase):
             HTTP_X_REQUESTED_WITH='XMLHttpRequest',
             HTTP_USER_AGENT='Approval test phone',
         )
+        requesting_session_key = requesting_client.session.session_key
 
         self.assertEqual(login_response.status_code, 202)
         self.assertTrue(login_response.json()['approval_required'])
@@ -2417,6 +2418,10 @@ class AdminPWASecurityTest(TestCase):
             content_type='application/json',
         )
         self.assertEqual(decision_response.status_code, 200)
+        pending_device = AdminDeviceSession.objects.get(session_key=requesting_session_key)
+        self.assertEqual(pending_device.user_id, requesting_admin.pk)
+        self.assertFalse(pending_device.is_active)
+        self.assertEqual(pending_device.user_agent, 'Approval test phone')
 
         completion_response = requesting_client.get(
             reverse('admin_login_approval_status', args=[approval.pk]),
