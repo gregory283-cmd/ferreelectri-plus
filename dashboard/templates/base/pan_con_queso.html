@@ -1486,9 +1486,122 @@
             font-size: 0.8rem;
             font-weight:700;
         }
+        #admin-sidebar-toggle,
+        #admin-sidebar-backdrop {
+            display: none;
+        }
+
+        .navbar .sidebar-menu li,
+        .navbar .sidebar-menu li:hover,
+        .navbar .sidebar-menu li > a,
+        .navbar .sidebar-menu li:hover > a,
+        .navbar .sidebar-menu li > a.active,
+        .navbar .sidebar-menu li .label,
+        .navbar .sidebar-menu li .material-symbols-outlined {
+            transform: none !important;
+        }
+
+        .navbar .sidebar-menu li > a .label {
+            min-width: 0;
+            overflow-wrap: anywhere;
+        }
+
         @media (max-width: 900px) {
-            .navbar { position: relative; width: 100%; border-radius: 12px; box-shadow:none; }
-            .main-content { margin-left: 0; }
+            #admin-sidebar {
+                position: fixed !important;
+                inset: 0 auto 0 0 !important;
+                width: min(280px, calc(100vw - 56px)) !important;
+                max-width: calc(100vw - 56px) !important;
+                height: 100vh !important;
+                height: 100dvh !important;
+                padding: 20px 14px !important;
+                align-items: stretch !important;
+                overflow-x: hidden !important;
+                overflow-y: auto !important;
+                border-radius: 0 18px 18px 0 !important;
+                transform: translateX(-105%) !important;
+                transition: transform 220ms ease, box-shadow 220ms ease !important;
+                z-index: 1200 !important;
+            }
+
+            body.admin-sidebar-open #admin-sidebar {
+                transform: translateX(0) !important;
+                box-shadow: 14px 0 48px rgba(2,48,89,0.28) !important;
+            }
+
+            #admin-sidebar .sidebar-menu {
+                width: 100% !important;
+                min-width: 0;
+                padding: 6px 0 0;
+            }
+
+            #admin-sidebar .sidebar-menu li {
+                min-width: 0;
+                padding: 4px 0;
+            }
+
+            #admin-sidebar .sidebar-menu li > a {
+                width: 100%;
+                min-width: 0;
+                padding: 10px 8px;
+                gap: 8px;
+                white-space: normal;
+            }
+
+            #admin-sidebar .sidebar-menu li > a .label {
+                flex: 1 1 auto;
+                white-space: normal;
+                overflow-wrap: anywhere;
+            }
+
+            #admin-sidebar-toggle {
+                position: fixed;
+                top: max(12px, env(safe-area-inset-top));
+                left: 12px;
+                z-index: 1301;
+                display: grid;
+                width: 46px;
+                height: 46px;
+                place-items: center;
+                padding: 0;
+                border: 1px solid rgba(255,255,255,.24);
+                border-radius: 12px;
+                background: #07365e;
+                color: #fff;
+                box-shadow: 0 8px 22px rgba(2,32,56,.22);
+                cursor: pointer;
+            }
+
+            #admin-sidebar-toggle .material-symbols-outlined {
+                color: #fff;
+                font-size: 24px !important;
+            }
+
+            #admin-sidebar-backdrop {
+                position: fixed;
+                inset: 0;
+                z-index: 1190;
+                display: none;
+                padding: 0;
+                border: 0;
+                background: rgba(3,16,29,.48);
+            }
+
+            body.admin-sidebar-open #admin-sidebar-backdrop {
+                display: block;
+            }
+
+            .main-content {
+                width: 100% !important;
+                max-width: 100% !important;
+                min-width: 0;
+                margin-left: 0 !important;
+                padding: 76px 16px 24px !important;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            #admin-sidebar { transition: none !important; }
         }
         .sidebar-menu svg,
         .logout-button svg,
