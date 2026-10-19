@@ -29,7 +29,7 @@
     {% if messages %}
       {% for message in messages %}
         {% if 'admin-action' not in message.tags %}
-          <div class="auth-alert{% if 'error' in message.tags %} auth-alert-error{% elif 'success' in message.tags %} auth-alert-success{% endif %}" role="status">{{ message }}</div>
+          <div class="auth-alert{% if 'error' in message.tags %} auth-alert-error{% elif 'success' in message.tags %} auth-alert-success{% endif %}" role="{% if 'error' in message.tags %}alert{% else %}status{% endif %}" aria-live="{% if 'error' in message.tags %}assertive{% else %}polite{% endif %}">{{ message }}</div>
         {% endif %}
       {% endfor %}
     {% endif %}

@@ -2178,9 +2178,9 @@ body.theme-dark .auth-input {
 
 .auth-alert-error,
 .auth-field ul.errorlist {
-  color: #b91c1c;
-  background: #fef2f2;
-  border-color: rgba(185,28,28,.2);
+  color: #7f1d1d;
+  background: #fff1f2;
+  border-color: #e11d48;
 }
 
 body.theme-dark .auth-alert {
@@ -2190,8 +2190,45 @@ body.theme-dark .auth-alert {
 
 body.theme-dark .auth-alert-error,
 body.theme-dark .auth-field ul.errorlist {
-  color: #fecaca;
-  background: rgba(127,29,29,.24);
+  color: #fff7ed;
+  background: #7f1d1d;
+  border-color: #fb7185;
+}
+
+.auth-document-wrap {
+  display: grid;
+  grid-template-columns: minmax(108px, .8fr) minmax(0, 1.2fr);
+  gap: 8px;
+}
+
+.auth-form-panel .auth-document-wrap select,
+.auth-form-panel .auth-document-wrap input {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  min-height: 47px;
+  box-sizing: border-box;
+  border: 1px solid #c8d4e0;
+  border-radius: 7px;
+  outline: none;
+  background: #fff;
+  color: #101d2e;
+  font: 500 .88rem/1.35 'Space Grotesk', sans-serif;
+}
+
+.auth-form-panel .auth-document-wrap select {
+  padding: 11px 9px 11px 41px;
+}
+
+.auth-form-panel .auth-document-wrap input {
+  padding: 11px 13px;
+}
+
+.auth-form-panel .auth-document-wrap select:focus,
+.auth-form-panel .auth-document-wrap input:focus {
+  border-color: #176ac2;
+  outline: 3px solid rgba(23,106,194,.17);
+  outline-offset: 1px;
 }
 
 .auth-field ul.errorlist {

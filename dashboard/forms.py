@@ -94,6 +94,27 @@ class ClienteForm(forms.ModelForm):
         return cleaned_data
 
 class ClienteRegistroForm(forms.ModelForm):
+    tipo_documento = forms.ChoiceField(
+        choices=[
+            ('V', 'V · Cédula'),
+            ('J', 'J · Empresa'),
+            ('G', 'G · Organismo'),
+            ('P', 'P · Pasaporte'),
+        ],
+        required=False,
+        initial='V',
+        widget=forms.Select(attrs={'class': 'auth-document-select', 'aria-label': 'Tipo de identificación'}),
+    )
+    numero_documento = forms.CharField(
+        required=False,
+        max_length=20,
+        widget=forms.TextInput(attrs={
+            'class': 'auth-document-number',
+            'placeholder': 'Número de cédula, RIF o pasaporte',
+            'autocomplete': 'off',
+            'aria-label': 'Número de cédula, RIF o pasaporte',
+        }),
+    )
     password1 = forms.CharField(
         label='Contraseña',
         widget=forms.PasswordInput(attrs={
@@ -117,6 +138,7 @@ class ClienteRegistroForm(forms.ModelForm):
     cedula = forms.CharField(
         label='Cédula o RIF',
         max_length=20,
+        required=False,
         widget=forms.TextInput(attrs={
             'class': 'w-full rounded-xl border border-gray-800 bg-gray-900/50 py-3 pl-10 pr-3 text-white placeholder:text-gray-400 shadow-inner shadow-slate-950/30 outline-none transition-all duration-300 focus:border-blue-500 focus:bg-gray-800 focus:ring-2 focus:ring-blue-600/50',
             'placeholder': 'V-12345678',
@@ -180,7 +202,16 @@ class ClienteRegistroForm(forms.ModelForm):
         return email
 
     def clean_cedula(self):
+        document_type = (self.data.get('tipo_documento') or '').strip().upper()
+        document_number = (self.data.get('numero_documento') or '').strip().upper()
         cedula = (self.cleaned_data.get('cedula') or '').strip()
+        if document_number:
+            if document_type in {'V', 'J', 'G'} and re.fullmatch(r'\d{5,10}', document_number):
+                cedula = f'{document_type}-{document_number}'
+            elif document_type == 'P' and re.fullmatch(r'[A-Z0-9.-]{5,20}', document_number):
+                cedula = document_number
+            else:
+                raise forms.ValidationError('Selecciona un tipo e ingresa una identificación válida.')
         if not cedula:
             raise forms.ValidationError('La cédula o RIF es obligatorio.')
         cedula = cedula.upper()

@@ -55,14 +55,17 @@
         </div>
 
         <div class="auth-field">
-          <label for="id_cedula">Cédula o RIF</label>
-          <div class="auth-input-wrap">
+          <label for="id_numero_documento">Cédula o RIF</label>
+          <div class="auth-input-wrap auth-document-wrap">
             <span class="auth-field-icon">
               <i class="fa-solid fa-id-card" aria-hidden="true"></i>
             </span>
-            {{ form.cedula }}
+            {{ form.tipo_documento }}
+            {{ form.numero_documento }}
           </div>
           {{ form.cedula.errors }}
+          {{ form.tipo_documento.errors }}
+          {{ form.numero_documento.errors }}
         </div>
 
         <div class="auth-field">

@@ -6232,9 +6232,14 @@ def completar_datos_facturacion(request):
         documento_tipado_valido = (
             tipo_documento in {'V', 'G', 'J'}
             and re.fullmatch(r'\d{5,10}', numero_documento) is not None
+        ) or (
+            tipo_documento == 'P'
+            and re.fullmatch(r'[A-Z0-9.-]{5,20}', numero_documento.upper()) is not None
         )
-        if documento_tipado_valido:
+        if documento_tipado_valido and tipo_documento in {'V', 'G', 'J'}:
             cedula_rif = f'{tipo_documento}-{numero_documento}'
+        elif documento_tipado_valido:
+            cedula_rif = numero_documento.upper()
         razon_social = (request.POST.get('razon_social') or '').strip()
         email = (request.POST.get('email') or '').strip()
 
@@ -6251,7 +6256,7 @@ def completar_datos_facturacion(request):
         }
         errores = []
         if documento_tipado and not documento_tipado_valido:
-            errores.append('Selecciona V, G o J e ingresa un número de 5 a 10 dígitos.')
+            errores.append('Selecciona V, J o G e ingresa de 5 a 10 dígitos, o selecciona P para el pasaporte.')
         if not all((nombre, apellido, telefono, direccion, cedula_rif, email)):
             errores.append('Completa todos los campos obligatorios antes de continuar.')
         if not documento_tipado and (len(cedula_rif) < 5 or len(cedula_rif) > 20 or not re.fullmatch(r'[A-Z0-9.-]+', cedula_rif)):
@@ -6346,11 +6351,25 @@ def completar_datos_facturacion(request):
         messages.success(request, 'Datos de facturación guardados correctamente.')
         return redirect('checkout')
 
+    saved_document = (perfil.cedula_rif or '').strip().upper()
+    typed_document = re.fullmatch(r'([VGJ])[- ]?(\d{5,10})', saved_document)
     context = {
         'user': user,
         'perfil': perfil,
         'cliente': cliente,
-        'form_values': {},
+        'form_values': {
+            'tipo_documento': (
+                typed_document.group(1) if typed_document
+                else 'V' if re.fullmatch(r'\d{5,10}', saved_document)
+                else 'P' if saved_document
+                else 'V'
+            ),
+            'numero_documento': (
+                typed_document.group(2) if typed_document
+                else saved_document if saved_document
+                else ''
+            ),
+        },
         'next': request.GET.get('next') or 'checkout',
     }
     return render(request, 'completar_datos_facturacion.html', context)

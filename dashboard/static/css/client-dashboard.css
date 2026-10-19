@@ -1132,15 +1132,22 @@ body.customer-space .main-content :is(
 .client-fiscal-alert {
   margin-bottom: 18px;
   padding: 12px 15px;
-  border: 1px solid rgba(238, 127, 127, .34);
+  border: 1px solid #e11d48;
   border-radius: 7px;
-  background: rgba(178, 54, 54, .13);
-  color: #f2b5b5;
-  font-size: .78rem;
+  background: #fff1f2;
+  color: #7f1d1d;
+  font-size: .9rem;
+  font-weight: 600;
+  line-height: 1.55;
 }
 
 .client-fiscal-alert p { margin: 0; }
 .client-fiscal-alert p + p { margin-top: 5px; }
+.client-fiscal-alert.is-success { border-color: #15803d; background: #f0fdf4; color: #14532d; }
+.client-fiscal-alert.is-info { border-color: #0369a1; background: #f0f9ff; color: #0c4a6e; }
+body.theme-dark .client-fiscal-alert.is-error { border-color: #fb7185; background: #7f1d1d; color: #fff7ed; }
+body.theme-dark .client-fiscal-alert.is-success { border-color: #4ade80; background: #14532d; color: #f0fdf4; }
+body.theme-dark .client-fiscal-alert.is-info { border-color: #38bdf8; background: #0c4a6e; color: #f0f9ff; }
 
 @media (max-width: 1200px) {
   .client-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }

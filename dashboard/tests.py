@@ -719,6 +719,24 @@ class ClienteRegistroPersistenceTest(TestCase):
         self.assertEqual(len(mail.outbox), 2)
         self.assertEqual(Customer.objects.filter(email='maria.reenvio@example.com').count(), 1)
 
+    def test_registration_form_normalizes_v_j_g_document_prefixes(self):
+        from .forms import ClienteRegistroForm
+
+        for index, document_type in enumerate(('V', 'J', 'G'), start=1):
+            form = ClienteRegistroForm({
+                'nombre': 'Cliente QA',
+                'email': f'prefix-{document_type.lower()}-{index}@example.test',
+                'tipo_documento': document_type,
+                'numero_documento': f'1234500{index}',
+                'cedula': '',
+                'telefono': '+58 414 000 0000',
+                'direccion': 'Dirección de prueba',
+                'password1': 'Strong!Password-2026',
+                'password2': 'Strong!Password-2026',
+            })
+            self.assertTrue(form.is_valid(), form.errors)
+            self.assertEqual(form.cleaned_data['cedula'], f'{document_type}-1234500{index}')
+
     def test_registration_persists_identification_and_delivery_data(self):
         response = self.client.post(reverse('cliente_registro'), {
             'nombre': 'María Pérez',
@@ -1620,6 +1638,8 @@ class CheckoutProfileValidationTest(TestCase):
         self.assertEqual(login_page.status_code, 200)
         self.assertContains(login_page, 'Por seguridad, cerramos esta sesión')
         self.assertContains(login_page, 'El carrito se conserva en este navegador')
+        self.assertContains(login_page, 'class="auth-alert auth-alert-error"')
+        self.assertContains(login_page, 'role="alert" aria-live="assertive"')
         self.assertContains(login_page, 'name="next" value="/cliente/completar-datos-facturacion/"')
 
         login_response = self.client.post(reverse('cliente_login'), {
@@ -1632,6 +1652,12 @@ class CheckoutProfileValidationTest(TestCase):
 
     def test_fiscal_checkout_builds_and_validates_document_prefixes(self):
         self.client.force_login(self.user)
+        form_page = self.client.get(reverse('completar_datos_facturacion'))
+        self.assertEqual(form_page.status_code, 200)
+        for field in ('tipo_documento', 'numero_documento'):
+            self.assertContains(form_page, f'name="{field}"')
+        for document_type in ('V', 'J', 'G'):
+            self.assertContains(form_page, f'value="{document_type}"')
         form_data = {
             'nombre': 'Cliente',
             'apellido': 'Prueba',
@@ -1646,7 +1672,7 @@ class CheckoutProfileValidationTest(TestCase):
             'tipo_documento': 'X',
         })
         self.assertEqual(invalid.status_code, 200)
-        self.assertContains(invalid, 'Selecciona V, G o J')
+        self.assertContains(invalid, 'Selecciona V, J o G')
         self.assertFalse(Cliente.objects.filter(email=self.user.email).exists())
 
         for index, document_type in enumerate(('V', 'G', 'J'), start=1):
