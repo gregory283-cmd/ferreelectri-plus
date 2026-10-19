@@ -26,7 +26,7 @@ from Inventario.models import Categoria, Productos, MovimientoInventario
 from Usuario.models import Clientes as UsuarioClientes
 from Ventas.models import DetalleFactura, Factura
 from .ferrebot import _clean_assistant_reply, build_assistant_reply, search_catalog
-from .models import AdminDashboardConfig, AdminDeviceSession, AdminLoginApproval, AdminPasskey, AdminSecurityConfig, AuditLog, Carrito, CarritoItem, Cliente, Customer, Pago, Pedido, PedidoItem, PerfilCliente
+from .models import AdminDashboardConfig, AdminDeviceSession, AdminLoginApproval, AdminPasskey, AdminSecurityConfig, AuditLog, Carrito, CarritoItem, Cliente, Customer, DevelopmentRequest, Pago, Pedido, PedidoItem, PerfilCliente
 
 
 def make_test_payment_image():
@@ -2565,6 +2565,34 @@ class AdminPWASecurityTest(TestCase):
 
         self.assertIsNone(_pending_admin_login_approval(request, owner))
         self.assertFalse(AdminLoginApproval.objects.filter(user=owner).exists())
+
+    def test_primary_owner_can_register_a_development_request(self):
+        owner = User.objects.create_superuser(
+            username='development-owner', email='development-owner@example.test', password='TestPassword123!',
+        )
+        primary_key = AdminPasskey.objects.create(
+            user=owner, credential_id='ZGV2ZWxvcG1lbnQtb3duZXI', public_key=b'development-owner-key',
+        )
+        config, _ = AdminSecurityConfig.objects.get_or_create(pk=1)
+        config.owner_user = owner
+        config.primary_passkey = primary_key
+        config.save(update_fields=['owner_user', 'primary_passkey', 'updated_at'])
+        self.client.force_login(owner)
+        session = self.client.session
+        session['admin_current_passkey_id'] = primary_key.pk
+        session.save()
+
+        response = self.client.post(reverse('create_development_request'), {
+            'objective': 'Mostrar equipos aprobados antes de completar su inicio.',
+            'priority': DevelopmentRequest.Priority.HIGH,
+            'acceptance_criteria': 'La laptop aprobada aparece con IP, nombre y estado pendiente.',
+        })
+
+        self.assertRedirects(response, reverse('dashboard'))
+        request = DevelopmentRequest.objects.get()
+        self.assertEqual(request.requested_by_id, owner.pk)
+        self.assertEqual(request.priority, DevelopmentRequest.Priority.HIGH)
+        self.assertTrue(AuditLog.objects.filter(action='DEVELOPMENT_REQUEST_CREATED', user=owner).exists())
 
     def test_primary_owner_can_revoke_and_restore_secondary_passkey(self):
         owner = User.objects.create_superuser(

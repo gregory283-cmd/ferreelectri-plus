@@ -1,3 +1,18 @@
+.development-request-panel { margin: 18px 0; }
+.development-request-form { display: grid; grid-template-columns: minmax(0, 1fr) 150px; gap: 8px 12px; align-items: center; }
+.development-request-form label { color: var(--admin-text, #172b3c); font-size: .78rem; font-weight: 750; }
+.development-request-form input, .development-request-form select, .development-request-form textarea { min-width: 0; border: 1px solid #dce5ec; border-radius: 7px; padding: 9px 10px; color: #172b3c; background: #fff; font: inherit; font-size: .82rem; }
+.development-request-form textarea { min-height: 74px; resize: vertical; }
+.development-request-form label:nth-of-type(1), .development-request-form label:nth-of-type(3), .development-request-form input, .development-request-form textarea { grid-column: 1 / -1; }
+.development-request-submit { justify-self: start; display: inline-flex; align-items: center; gap: 7px; min-height: 38px; border: 0; border-radius: 7px; padding: 8px 11px; color: #fff; background: #087f9a; font: inherit; font-size: .78rem; font-weight: 750; cursor: pointer; }
+.development-request-submit .material-symbols-outlined { font-size: 18px; }
+.development-request-list { display: grid; gap: 8px; margin: 16px 0 0; padding: 0; list-style: none; }
+.development-request-list li { padding: 10px 0; border-top: 1px solid #dce5ec; }
+.development-request-list div { display: flex; justify-content: space-between; gap: 12px; }
+.development-request-list strong { color: #172b3c; font-size: .84rem; }
+.development-request-list span, .development-request-list p { margin: 0; color: #62758a; font-size: .75rem; }
+.development-request-list p { margin-top: 4px; line-height: 1.4; }
+@media (max-width: 640px) { .development-request-form { grid-template-columns: 1fr; } .development-request-form label, .development-request-form select { grid-column: 1 / -1; } .development-request-list div { display: grid; gap: 3px; } }
 .executive-dashboard {
   --dash-surface: rgba(17, 27, 42, .88);
   --dash-raised: rgba(23, 37, 56, .86);

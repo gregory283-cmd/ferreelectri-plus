@@ -79,7 +79,7 @@ from Ventas.models import DetalleFactura
 from .forms import ClienteRegistroForm, ClienteAuthenticationForm, EnvioAdminForm, PagoManualForm, PagoMovilCheckoutForm
 from .decorators import cliente_required, log_view_access
 from .models import AdminDashboardConfig, AuditLog, Carrito, CarritoItem, ChatMessage, ChatSession, Cliente, Customer, Envio, EnvioEvento, Pedido, PedidoItem, PerfilCliente
-from .models import AdminDeviceSession, AdminLoginApproval, AdminPasskey, AdminPushSubscription, AdminSecurityConfig, Pago, PedidoArchivado
+from .models import AdminDeviceSession, AdminLoginApproval, AdminPasskey, AdminPushSubscription, AdminSecurityConfig, DevelopmentRequest, Pago, PedidoArchivado
 from .customer_auth import (
     get_customer_from_request,
     login_customer as login_customer_cookie,
@@ -2250,9 +2250,10 @@ def _dashboard_overview(request):
     except (BackupError, OSError):
         pass
 
+    is_security_owner = _request_is_security_owner(request)
     context = {
         'racismo': 'Panel administrativo | FerreElectri PLUS',
-        'is_security_owner': _request_is_security_owner(request),
+        'is_security_owner': is_security_owner,
         'can_setup_security_owner': bool(
             AdminSecurityConfig.objects.filter(pk=1, owner_user=request.user, primary_passkey__isnull=True).exists()
         ),
@@ -2299,6 +2300,7 @@ def _dashboard_overview(request):
         'backup_tools_ready': backup_tools_ready,
         'backup_retention': getattr(settings, 'BACKUP_RETENTION_COUNT', 12),
         'backup_archive_count': len(backup_files),
+        'development_requests': list(DevelopmentRequest.objects.select_related('requested_by')[:5]) if is_security_owner else [],
     }
     return render(request, 'dashboard_overview.html', context)
 
@@ -2331,6 +2333,34 @@ def actualizar_tasa_bcv(request):
     if currency in ('Bs.', 'USD'):
         return redirect(f'{dashboard_url}?{urllib_parse.urlencode({"moneda": currency})}')
     return redirect(dashboard_url)
+
+
+@admin_security_owner_required
+@require_POST
+def create_development_request(request):
+    objective = (request.POST.get('objective') or '').strip()[:240]
+    priority = request.POST.get('priority') or DevelopmentRequest.Priority.MEDIUM
+    acceptance_criteria = (request.POST.get('acceptance_criteria') or '').strip()[:4000]
+    if not objective or not acceptance_criteria:
+        messages.error(request, 'Define el objetivo y los criterios de aceptación antes de iniciar un desarrollo.')
+        return redirect('dashboard')
+    if priority not in DevelopmentRequest.Priority.values:
+        messages.error(request, 'Selecciona una prioridad válida.')
+        return redirect('dashboard')
+    development_request = DevelopmentRequest.objects.create(
+        objective=objective,
+        priority=priority,
+        acceptance_criteria=acceptance_criteria,
+        requested_by=request.user,
+    )
+    log_auth_event(
+        request,
+        'DEVELOPMENT_REQUEST_CREATED',
+        user=request.user,
+        details=f'Solicitud de desarrollo #{development_request.pk}: {objective}',
+    )
+    messages.success(request, 'Solicitud de desarrollo registrada. Ya tiene objetivo, prioridad y criterios de aceptación.')
+    return redirect('dashboard')
 
 
 @user_passes_test(lambda u: u.is_staff, login_url='login_admin_custom')

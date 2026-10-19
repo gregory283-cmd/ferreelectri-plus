@@ -33,6 +33,7 @@ urlpatterns = [
     path('api/chat/history/', views.ai_history_endpoint, name='legacy_ai_chat_history'),
     path('admin-panel/dashboard/', views.dashboard, name='dashboard'),
     path('admin-panel/dashboard/', views.dashboard, name='dashboard'),
+    path('admin-panel/desarrollo/solicitudes/', views.create_development_request, name='create_development_request'),
     path('admin-panel/tasa-bcv/', views.actualizar_tasa_bcv, name='actualizar_tasa_bcv'),
     path('registro/', views.cliente_registro, name='registro'),
     path('admin-panel/recuperar/', views.recuperar_admin, name='recuperar_admin'),

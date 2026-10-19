@@ -82,6 +82,38 @@
         <span><i class="material-symbols-outlined" aria-hidden="true">all_inbox</i> Unidades en stock <strong class="animated-value" data-count="{{ inventory_units }}" data-decimals="0">{{ inventory_units }}</strong></span>
     </div>
 
+    {% if is_security_owner %}
+    <section class="dashboard-panel development-request-panel" aria-labelledby="development-request-title">
+        <div class="panel-heading-row">
+            <div>
+                <span class="panel-kicker">DESARROLLO ACTIVO</span>
+                <h2 id="development-request-title">Antes de iniciar un cambio</h2>
+                <p>Define el resultado que esperas para que el desarrollo quede claro y verificable.</p>
+            </div>
+            <span class="panel-icon material-symbols-outlined" aria-hidden="true">rule</span>
+        </div>
+        <form class="development-request-form" method="post" action="{% url 'create_development_request' %}">
+            {% csrf_token %}
+            <label for="development-objective">¿Qué necesitas cambiar o lograr?</label>
+            <input id="development-objective" name="objective" maxlength="240" required>
+            <label for="development-priority">¿Qué prioridad tiene?</label>
+            <select id="development-priority" name="priority" required>
+                <option value="high">Alta</option>
+                <option value="medium" selected>Media</option>
+                <option value="low">Baja</option>
+            </select>
+            <label for="development-acceptance">¿Cómo sabremos que quedó bien?</label>
+            <textarea id="development-acceptance" name="acceptance_criteria" maxlength="4000" required></textarea>
+            <button type="submit" class="development-request-submit"><span class="material-symbols-outlined" aria-hidden="true">add_task</span> Registrar solicitud</button>
+        </form>
+        {% if development_requests %}
+        <ol class="development-request-list">
+            {% for item in development_requests %}<li><div><strong>{{ item.objective }}</strong><span>{{ item.get_priority_display }} · {{ item.get_status_display }} · {{ item.created_at|date:'d/m H:i' }}</span></div><p>{{ item.acceptance_criteria }}</p></li>{% endfor %}
+        </ol>
+        {% endif %}
+    </section>
+    {% endif %}
+
     <section class="executive-grid executive-grid-primary">
         <article class="dashboard-panel sales-panel">
             <div class="panel-heading-row">

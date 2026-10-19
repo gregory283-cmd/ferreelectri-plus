@@ -108,6 +108,34 @@ class AdminSecurityConfig(models.Model):
         super().save(*args, **kwargs)
 
 
+class DevelopmentRequest(models.Model):
+    class Priority(models.TextChoices):
+        HIGH = 'high', 'Alta'
+        MEDIUM = 'medium', 'Media'
+        LOW = 'low', 'Baja'
+
+    class Status(models.TextChoices):
+        PENDING = 'pending', 'Pendiente'
+        IN_PROGRESS = 'in_progress', 'En desarrollo'
+        COMPLETED = 'completed', 'Completada'
+
+    objective = models.CharField(max_length=240)
+    priority = models.CharField(max_length=12, choices=Priority.choices, default=Priority.MEDIUM)
+    acceptance_criteria = models.TextField()
+    status = models.CharField(max_length=16, choices=Status.choices, default=Status.PENDING)
+    requested_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='development_requests')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Solicitud de desarrollo'
+        verbose_name_plural = 'Solicitudes de desarrollo'
+        ordering = ['status', '-created_at']
+
+    def __str__(self):
+        return self.objective
+
+
 class AdminLoginApproval(models.Model):
     class Status(models.TextChoices):
         PENDING = 'pending', 'Pendiente'
