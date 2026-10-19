@@ -281,26 +281,28 @@ body.theme-light #aiAssistantDrawer #aiAssistantInput::placeholder {
 }
 
 .brand-logo {
-  width: 42px;
-  height: 42px;
-  object-fit: cover;
-  border-radius: 14px;
-  box-shadow: 0 0 0 1px rgba(255,255,255,0.14);
+  width: auto;
+  height: 60px;
+  max-width: 250px;
+  object-fit: contain;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .brand-logo-shell {
   display: grid;
   place-items: center;
-  padding: 5px;
-  border-radius: 50%;
-  background: #2563eb;
-  box-shadow: 0 8px 22px rgba(37,99,235,.28);
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .brand-logo-shell .brand-logo {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
+  width: auto;
+  height: 60px;
+  max-width: 250px;
+  border-radius: 0;
   box-shadow: none;
 }
 
@@ -1368,7 +1370,7 @@ body.modal-open {
 
 .payment-methods {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 10px;
   margin-top: 22px;
 }
@@ -5678,15 +5680,16 @@ body.auth-page #ferrebot-global {
   }
 
   .nav-bar .brand {
-    flex: 0 0 36px;
-    width: 36px;
-    min-width: 36px;
+    flex: 0 1 auto;
+    width: auto;
+    min-width: 0;
   }
 
   .nav-bar .brand-logo {
     display: block;
-    width: 36px;
-    height: 36px;
+    width: auto;
+    height: 48px;
+    max-width: min(210px, 34vw);
   }
 
   .nav-actions {
@@ -5717,12 +5720,18 @@ body.auth-page #ferrebot-global {
     padding: 6px;
   }
 
-  .nav-bar .brand,
+  .nav-bar .brand {
+    flex: 0 1 auto;
+    width: auto;
+    min-width: 0;
+  }
+
   .nav-bar .brand-logo {
-    flex-basis: 34px;
-    width: 34px;
-    min-width: 34px;
-    height: 34px;
+    flex-basis: auto;
+    width: auto;
+    min-width: 0;
+    height: 32px;
+    max-width: min(130px, 40vw);
   }
 
   .nav-actions {

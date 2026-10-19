@@ -28,7 +28,7 @@
       {% elif resent %}
         <p class="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">Si hay una cuenta pendiente para esa dirección, enviaremos un nuevo enlace.</p>
       {% else %}
-        <p class="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">Enviamos un enlace seguro a <strong class="text-slate-900 dark:text-white">{{ email }}</strong>. Confírmalo en las próximas 24 horas para activar la cuenta.</p>
+        <p class="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">El correo de confirmación se envió correctamente a <strong class="text-slate-900 dark:text-white">{{ email }}</strong>. Para finalizar tu registro, abre ese mensaje y presiona el botón <strong class="text-slate-900 dark:text-white">Confirmar correo</strong>. Iniciaremos tu sesión y te llevaremos al sistema donde quedaste.</p>
       {% endif %}
       <form class="mt-6 grid gap-3" method="post" action="{% url 'cliente_reenviar_verificacion' %}">
         {% csrf_token %}

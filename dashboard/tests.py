@@ -707,6 +707,8 @@ class ClienteRegistroPersistenceTest(TestCase):
         }, HTTP_HOST='localhost')
         self.assertEqual(registration.status_code, 200)
         self.assertEqual(len(mail.outbox), 1)
+        self.assertIn('se envió correctamente', mail.outbox[0].body)
+        self.assertIn('Confirmar correo', mail.outbox[0].alternatives[0][0])
 
         resend = self.client.post(reverse('cliente_registro'), {
             'email': 'maria.reenvio@example.com',
@@ -726,10 +728,13 @@ class ClienteRegistroPersistenceTest(TestCase):
             'direccion': 'San Cristóbal, Centro',
             'password1': 'Quito!Fuerte-2026-123',
             'password2': 'Quito!Fuerte-2026-123',
+            'next': reverse('checkout'),
         }, HTTP_HOST='localhost')
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Revisa tu correo')
+        self.assertContains(response, 'se envió correctamente')
+        self.assertContains(response, 'Confirmar correo')
         customer = Customer.objects.get(email='maria.perez@example.com')
         self.assertFalse(customer.email_verified)
         self.assertFalse(Cliente.objects.filter(email=customer.email).exists())
@@ -740,8 +745,9 @@ class ClienteRegistroPersistenceTest(TestCase):
         self.assertNotIn('customer_id', self.client.session)
 
         verification = confirm_customer_email(self.client, customer.email)
-        self.assertEqual(verification.status_code, 200)
-        self.assertContains(verification, 'Correo confirmado')
+        self.assertEqual(verification.status_code, 302)
+        self.assertEqual(verification['Location'], reverse('checkout'))
+        self.assertEqual(self.client.session.get('_auth_user_id'), str(customer.pk))
         customer.refresh_from_db()
         self.assertTrue(customer.email_verified)
         cliente = Cliente.objects.get(email='maria.perez@example.com')
@@ -1104,7 +1110,7 @@ class ClienteCompraEndToEndTest(TestCase):
         }, HTTP_HOST='localhost')
         self.assertEqual(registration.status_code, 200)
         verification = confirm_customer_email(self.client, 'camila.e2e@example.com')
-        self.assertEqual(verification.status_code, 200)
+        self.assertEqual(verification.status_code, 302)
 
         customer = Customer.objects.get(email='camila.e2e@example.com')
         cliente = Cliente.objects.get(email=customer.email)
@@ -1134,7 +1140,12 @@ class ClienteCompraEndToEndTest(TestCase):
             'email': 'camila.e2e@example.com',
         })
         self.assertRedirects(fiscal_response, reverse('checkout'))
-        self.assertEqual(self.client.get(reverse('checkout')).status_code, 200)
+        checkout_page = self.client.get(reverse('checkout'))
+        self.assertEqual(checkout_page.status_code, 200)
+        self.assertContains(checkout_page, 'Banco de Venezuela')
+        self.assertContains(checkout_page, '04140000000')
+        self.assertContains(checkout_page, 'V-12345678')
+        self.assertNotContains(checkout_page, 'data-payment-method="TRANSFERENCIA"')
 
         order_response = self.client.post(
             reverse('checkout'),
@@ -1235,7 +1246,7 @@ class ClienteCompraEndToEndTest(TestCase):
         }, HTTP_HOST='localhost')
         self.assertEqual(registration.status_code, 200)
         verification = confirm_customer_email(self.client, 'camila.binance.e2e@example.com')
-        self.assertEqual(verification.status_code, 200)
+        self.assertEqual(verification.status_code, 302)
         cliente = Cliente.objects.get(email='camila.binance.e2e@example.com')
         self.client.post(
             reverse('agregar_al_carrito', kwargs={'codigo': self.product.Codigo}),
@@ -1272,7 +1283,7 @@ class ClienteCompraEndToEndTest(TestCase):
         }, HTTP_HOST='localhost')
         self.assertEqual(registration.status_code, 200)
         verification = confirm_customer_email(self.client, 'camila.transfer.e2e@example.com')
-        self.assertEqual(verification.status_code, 200)
+        self.assertEqual(verification.status_code, 302)
         cliente = Cliente.objects.get(email='camila.transfer.e2e@example.com')
         self.client.post(
             reverse('agregar_al_carrito', kwargs={'codigo': self.product.Codigo}),

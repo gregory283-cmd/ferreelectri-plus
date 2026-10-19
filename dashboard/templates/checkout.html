@@ -72,19 +72,12 @@
             <div><i class="fa-solid fa-mobile-screen-button"></i></div>
             <div>
               <strong>Pago Móvil</strong>
-              <span>{% if payment_methods_enabled.PAGO_MOVIL %}Venezuela{% else %}Pendiente de configurar{% endif %}</span>
-            </div>
-          </button>
-          <button type="button" class="payment-method" data-payment-method="TRANSFERENCIA" role="tab" aria-selected="false" {% if not payment_methods_enabled.TRANSFERENCIA %}disabled title="Transferencia pendiente de configuración"{% endif %}>
-            <div><i class="fa-solid fa-building-columns"></i></div>
-            <div>
-              <strong>Transferencia bancaria</strong>
-              <span>{% if payment_methods_enabled.TRANSFERENCIA %}Bolívares · revisión manual{% else %}Pendiente de configurar{% endif %}</span>
+              <span>{% if payment_methods_enabled.PAGO_MOVIL %}Banco de Venezuela{% else %}Pendiente de configurar{% endif %}</span>
             </div>
           </button>
         </div>
 
-        {% if not payment_methods_enabled.PAGO_MOVIL and not payment_methods_enabled.TRANSFERENCIA %}
+        {% if not payment_methods_enabled.PAGO_MOVIL %}
           <p class="checkout-trust" role="status">{% if tasa_bcv <= 0 %}La tasa BCV todavía no está cargada.{% else %}Los datos oficiales para recibir pagos están pendientes de configuración.{% endif %} No es posible continuar hasta que el administrador configure los datos de recepción.</p>
         {% endif %}
 
@@ -95,8 +88,8 @@
             <div>
               <strong>Abona Bs. {{ total_bs|floatformat:2 }}</strong>
               <p>Total en USD: ${{ total|floatformat:2 }} · BCV: Bs. {{ tasa_bcv|floatformat:4 }} por USD. Se conserva esta tasa en el pedido.</p>
-              {% if payment_accounts.pago_movil_receptor and payment_accounts.pago_movil_banco and payment_accounts.pago_movil_telefono and payment_accounts.pago_movil_cedula %}
-              <p>Beneficiario: {{ payment_accounts.pago_movil_receptor }} · {{ payment_accounts.pago_movil_banco }} · {{ payment_accounts.pago_movil_telefono }} · {{ payment_accounts.pago_movil_cedula }}</p>
+              {% if payment_accounts.pago_movil_banco and payment_accounts.pago_movil_telefono and payment_accounts.pago_movil_cedula %}
+              <p>Datos para Pago Móvil: {{ payment_accounts.pago_movil_banco }} · {{ payment_accounts.pago_movil_telefono }} · C.I. {{ payment_accounts.pago_movil_cedula }}{% if payment_accounts.pago_movil_receptor %} · {{ payment_accounts.pago_movil_receptor }}{% endif %}</p>
               {% else %}
               <p>Los datos receptores de Pago Móvil están pendientes de configuración. Confirma los datos oficiales del negocio antes de transferir.</p>
               {% endif %}
@@ -138,32 +131,6 @@
           <p class="checkout-trust"><i class="fa-solid fa-circle-info"></i> Tu pedido quedará pendiente de confirmación hasta validar el pago.</p>
         </div>
 
-        <div class="payment-panel" data-payment-panel="TRANSFERENCIA">
-          <div class="payment-callout">
-            <div>
-              <strong>Abona Bs. {{ total_bs|floatformat:2 }}</strong>
-              <p>Total en USD: ${{ total|floatformat:2 }} · BCV: Bs. {{ tasa_bcv|floatformat:4 }} por USD. La tasa queda guardada al registrar el pago.</p>
-              {% if payment_accounts.transferencia_receptor and payment_accounts.transferencia_banco and payment_accounts.transferencia_cuenta and payment_accounts.transferencia_cedula %}
-              <p>Beneficiario: {{ payment_accounts.transferencia_receptor }} · {{ payment_accounts.transferencia_banco }} · Cuenta {{ payment_accounts.transferencia_cuenta }} · {{ payment_accounts.transferencia_cedula }}</p>
-              {% else %}
-              <p>Los datos receptores de transferencia están pendientes de configuración. Confirma los datos oficiales del negocio antes de transferir.</p>
-              {% endif %}
-            </div>
-          </div>
-          <label class="checkout-field">
-            <span>Banco de origen (opcional)</span>
-            <input name="banco_origen_transferencia" type="text" placeholder="Banco desde el que transferiste">
-          </label>
-          <label class="checkout-field">
-            <span>Número de referencia</span>
-            <input name="referencia" type="text" placeholder="Referencia de la transferencia" required>
-          </label>
-          <label class="checkout-field">
-            <span>Comprobante de transferencia</span>
-            <input name="comprobante" type="file" accept="image/*" required>
-          </label>
-          <p class="checkout-trust">El pedido se confirmará después de verificar manualmente el abono en la cuenta receptora.</p>
-        </div>
       </section>
 
       <div class="checkout-actions">
@@ -213,4 +180,4 @@
 </div>
 {% endblock %}
 
-{% block scripts %}<script src="{% static 'js/checkout.js' %}?v=20261018-ves-manual-v1"></script>{% endblock %}
+{% block scripts %}<script src="{% static 'js/checkout.js' %}?v=20261019-pago-movil-v2"></script>{% endblock %}

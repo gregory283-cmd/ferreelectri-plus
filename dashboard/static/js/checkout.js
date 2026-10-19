@@ -6,14 +6,11 @@
   const paymentFields = form ? {
     banco: form.querySelector('[name="banco"]'),
     cedula: form.querySelector('[name="cedula_pagador"]'),
-    referenciaPagoMovil: form.querySelector('[data-payment-panel="PAGO_MOVIL"] [name="referencia"]'),
-    referenciaTransferencia: form.querySelector('[data-payment-panel="TRANSFERENCIA"] [name="referencia"]'),
-    capture: form.querySelector('[name="capture"]'),
-    comprobante: form.querySelector('[name="comprobante"]')
+    referencia: form.querySelector('[data-payment-panel="PAGO_MOVIL"] [name="referencia"]'),
+    capture: form.querySelector('[name="capture"]')
   } : {};
   const requiredFields = {
-    PAGO_MOVIL: ['banco', 'cedula', 'referenciaPagoMovil', 'capture'],
-    TRANSFERENCIA: ['referenciaTransferencia', 'comprobante'],
+    PAGO_MOVIL: ['banco', 'cedula', 'referencia', 'capture'],
   };
 
   function showPaymentError() {
@@ -25,9 +22,7 @@
       alert.className = 'mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700';
       form.prepend(alert);
     }
-    alert.textContent = methodInput?.value === 'TRANSFERENCIA'
-      ? 'Por favor ingresa la referencia y adjunta el comprobante de la transferencia.'
-      : 'Por favor completa el banco, la cédula, la referencia y adjunta el comprobante de Pago Móvil.';
+    alert.textContent = 'Por favor completa el banco, la cédula, la referencia y adjunta el comprobante de Pago Móvil.';
     alert.scrollIntoView({behavior: 'smooth', block: 'center'});
   }
 

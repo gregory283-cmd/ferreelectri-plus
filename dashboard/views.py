@@ -50,6 +50,7 @@ from django.contrib.auth.views import LoginView
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.signing import BadSignature, SignatureExpired
 from django.contrib.auth.password_validation import validate_password
+from django.utils.html import format_html
 from django.db import models, transaction
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.db.models import Avg, Count, DecimalField, ExpressionWrapper, F, Q, Sum, Value
@@ -3977,8 +3978,7 @@ def _metodos_pago_checkout_disponibles():
         return {'PAGO_MOVIL': False, 'TRANSFERENCIA': False}
     return {
         'PAGO_MOVIL': all(accounts[key] for key in (
-            'pago_movil_receptor', 'pago_movil_banco',
-            'pago_movil_telefono', 'pago_movil_cedula',
+            'pago_movil_banco', 'pago_movil_telefono', 'pago_movil_cedula',
         )),
         'TRANSFERENCIA': all(accounts[key] for key in (
             'transferencia_receptor', 'transferencia_banco',
@@ -4127,11 +4127,7 @@ def checkout(request):
     total_bs = _importe_checkout(total * tasa_bcv) if tasa_bcv > 0 else None
 
     payment_methods_enabled = _metodos_pago_checkout_disponibles()
-    checkout_method = (
-        'PAGO_MOVIL' if payment_methods_enabled['PAGO_MOVIL']
-        else 'TRANSFERENCIA' if payment_methods_enabled['TRANSFERENCIA']
-        else ''
-    )
+    checkout_method = 'PAGO_MOVIL' if payment_methods_enabled['PAGO_MOVIL'] else ''
 
     def render_checkout_errors(errors, payment_form=None):
         return render(request, 'checkout.html', {
@@ -5551,13 +5547,29 @@ def _send_customer_email_verification(request, customer, next_url=''):
         subject='Confirma tu correo de FerreElectri PLUS',
         body=(
             f'Hola {customer.nombre},\n\n'
-            'Confirma que puedes recibir mensajes en esta dirección abriendo el enlace seguro:\n'
+            f'El correo de confirmación al correo registrado ({customer.email}) se envió correctamente.\n\n'
+            'Para finalizar tu registro, presiona el botón Confirmar correo de este mensaje. '
+            'Al confirmarlo, iniciaremos tu sesión y te llevaremos al sistema donde quedaste.\n\n'
             f'{verify_url}\n\n'
             'El enlace vence en 24 horas. Si no solicitaste esta cuenta, ignora este mensaje.'
         ),
         from_email=settings.DEFAULT_FROM_EMAIL,
         to=[customer.email],
     )
+    message.attach_alternative(format_html(
+        '<!doctype html><html lang="es"><body>'
+        '<p>Hola {},</p>'
+        '<p>El correo de confirmación al correo registrado (<strong>{}</strong>) '
+        'se envió correctamente.</p>'
+        '<p>Para finalizar tu registro, presiona este botón. Al confirmar, '
+        'iniciaremos tu sesión y te llevaremos al sistema donde quedaste.</p>'
+        '<p><a href="{}" style="display:inline-block;padding:12px 20px;'
+        'border-radius:6px;background:#f97316;color:#ffffff;font-weight:bold;'
+        'text-decoration:none">Confirmar correo</a></p>'
+        '<p>El enlace vence en 24 horas. Si no solicitaste esta cuenta, ignora este mensaje.</p>'
+        '</body></html>',
+        customer.nombre, customer.email, verify_url,
+    ), 'text/html')
     message.send(fail_silently=False)
 
 
@@ -5598,11 +5610,10 @@ def cliente_verificar_email(request, token):
     ).first()
     if not customer:
         return render(request, 'cliente_verificacion.html', {'invalid_token': True})
-    if customer.email_verified:
-        return render(request, 'cliente_verificacion.html', {'already_verified': True})
-
-    customer.email_verified = True
-    customer.save(update_fields=['email_verified'])
+    newly_verified = not customer.email_verified
+    if newly_verified:
+        customer.email_verified = True
+        customer.save(update_fields=['email_verified'])
     cliente = customer.ensure_cliente_profile()
     sync_admin_cliente_record(cliente)
     if cliente and not cliente.cedula and customer.cedula:
@@ -5616,9 +5627,16 @@ def cliente_verificar_email(request, token):
     request.session.modified = True
     customer.backend = 'dashboard.customer_auth.CustomerBackend'
     login(request, customer)
-    response = render(request, 'cliente_verificacion.html', {'verified': True})
+    candidate_next = payload.get('next') or ''
+    next_url = candidate_next if url_has_allowed_host_and_scheme(
+        candidate_next,
+        allowed_hosts={request.get_host()},
+        require_https=request.is_secure(),
+    ) else reverse('cliente_panel')
+    response = redirect(next_url)
     response = login_customer_cookie(response, customer)
-    log_auth_event(request, 'CLIENT_EMAIL_VERIFIED', user=None, details='Correo de cliente verificado.')
+    if newly_verified:
+        log_auth_event(request, 'CLIENT_EMAIL_VERIFIED', user=None, details='Correo de cliente verificado.')
     return response
 
 
