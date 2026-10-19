@@ -2756,6 +2756,8 @@ class AdminPWASecurityTest(TestCase):
         self.assertContains(response, 'width: min(280px, calc(100vw - 56px)) !important;')
         self.assertContains(response, 'body.admin-sidebar-open #admin-sidebar-backdrop')
         self.assertContains(response, '.navbar .sidebar-menu li:hover > a')
+        self.assertContains(response, 'admin-theme.css?v=20261019-sidebar-stable-v4')
+        self.assertContains(response, 'admin-sidebar-responsive.css?v=20261019-responsive-v1')
         self.assertContains(response, 'id="admin-ecommerce-link"')
         self.assertNotContains(response, 'class="quiet-action ecommerce-action"')
         self.assertNotContains(response, 'class="label">E-commerce</span>')

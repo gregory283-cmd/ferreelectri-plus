@@ -1742,7 +1742,8 @@
             color: #334155 !important;
         }
     </style>
-    <link rel="stylesheet" href="{% static 'css/admin-theme.css' %}?v=20261017-mobile-sidebar-scroll-v3">
+    <link rel="stylesheet" href="{% static 'css/admin-theme.css' %}?v=20261019-sidebar-stable-v4">
+    <link rel="stylesheet" href="{% static 'css/admin-sidebar-responsive.css' %}?v=20261019-responsive-v1">
     {% if request.user.is_authenticated and request.user.is_staff %}
     <meta id="admin-auth-identity" data-username="{{ request.user.get_username }}" data-display-name="{{ request.user.get_short_name|default:request.user.username }}" data-dashboard-url="{% url 'dashboard' %}" data-login-url="{% url 'login_admin_custom' %}">
     <link rel="manifest" href="{% url 'admin_pwa_manifest' %}">
