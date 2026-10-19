@@ -772,6 +772,10 @@ class ClienteRegistroPersistenceTest(TestCase):
         self.assertNotIn('ya está registrada', form_errors)
 
     def test_registration_persists_identification_and_delivery_data(self):
+        registration_page = self.client.get(reverse('cliente_registro'), {
+            'next': reverse('checkout'),
+        })
+        self.assertContains(registration_page, 'name="next" value="/checkout/"')
         response = self.client.post(reverse('cliente_registro'), {
             'nombre': 'María Pérez',
             'email': 'maria.perez@example.com',
@@ -813,6 +817,22 @@ class ClienteRegistroPersistenceTest(TestCase):
         self.assertEqual(admin_cliente.cedula, 'V-12345678')
         self.assertEqual(admin_cliente.telefono, '+584141234567')
         self.assertEqual(admin_cliente.direccion, 'San Cristóbal, Centro')
+
+    def test_registration_without_next_returns_to_checkout_after_confirmation(self):
+        self.client.post(reverse('cliente_registro'), {
+            'nombre': 'María Checkout',
+            'email': 'maria.checkout@example.com',
+            'cedula': 'V-12345680',
+            'telefono': '+58 414 123 4567',
+            'direccion': 'San Cristóbal, Centro',
+            'password1': 'Quito!Fuerte-2026-123',
+            'password2': 'Quito!Fuerte-2026-123',
+        }, HTTP_HOST='localhost')
+
+        verification = confirm_customer_email(self.client, 'maria.checkout@example.com')
+
+        self.assertEqual(verification.status_code, 302)
+        self.assertEqual(verification['Location'], reverse('checkout'))
 
     def test_google_profile_appears_in_admin_without_invented_data(self):
         from .services import sync_admin_cliente_record

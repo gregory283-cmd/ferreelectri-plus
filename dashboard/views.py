@@ -5473,7 +5473,7 @@ def detalle_pedido(request, pedido_id):
 @ratelimit(key='ip', rate='5/m', method='POST', block=True)
 def cliente_registro(request):
     next_value = request.POST.get('next') or request.GET.get('next', '')
-    next_url = get_safe_redirect(request, next_value, default=reverse('index'))
+    next_url = get_safe_redirect(request, next_value, default=reverse('checkout'))
     if request.method == 'POST':
         email_input = (request.POST.get('email') or '').strip().lower()
         pending_customer = Customer.objects.filter(
@@ -5632,7 +5632,7 @@ def cliente_verificar_email(request, token):
         candidate_next,
         allowed_hosts={request.get_host()},
         require_https=request.is_secure(),
-    ) else reverse('cliente_panel')
+    ) else reverse('checkout')
     response = redirect(next_url)
     response = login_customer_cookie(response, customer)
     if newly_verified:
