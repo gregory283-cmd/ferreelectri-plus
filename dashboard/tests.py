@@ -1659,6 +1659,18 @@ class CheckoutProfileValidationTest(TestCase):
             self.assertTrue(form.is_valid(), form.errors)
             self.assertEqual(form.cleaned_data['cedula_pagador'], f'{prefix.upper()}-12345678')
 
+        selected_prefix_form = PagoMovilCheckoutForm(
+            data={
+                'banco': 'Mercantil',
+                'cedula_tipo': 'J',
+                'cedula_pagador': '30403188',
+                'referencia': 'REF-1234',
+            },
+            files={'capture': make_test_payment_image()},
+        )
+        self.assertTrue(selected_prefix_form.is_valid(), selected_prefix_form.errors)
+        self.assertEqual(selected_prefix_form.cleaned_data['cedula_pagador'], 'J-30403188')
+
     def test_checkout_redirects_to_facturacion_when_profile_is_missing(self):
         self.client.force_login(self.user)
 
@@ -2137,25 +2149,45 @@ class CheckoutProfileValidationTest(TestCase):
         session['cliente_id'] = cliente.id
         session.save()
 
-        with patch.object(PrivatePaymentStorage, '_save', side_effect=OSError('Storage unavailable')):
-            response = self.client.post(
-                reverse('checkout'),
-                {
-                    'metodo': 'PAGO_MOVIL',
-                    'banco': 'Banesco',
-                    'cedula_pagador': 'J12345678',
-                    'referencia': 'REF-QA-456',
-                    'telefono': '04121234567',
-                    'direccion': 'Dirección de prueba QA',
-                    'capture': make_test_payment_image(),
-                },
-            )
+        capture = make_test_payment_image()
+        expected_capture = capture.read()
+        capture.seek(0)
+        with self.assertLogs('dashboard.views', level='WARNING') as storage_logs:
+            with patch.object(PrivatePaymentStorage, '_save', side_effect=OSError('Storage unavailable')):
+                response = self.client.post(
+                        reverse('checkout'),
+                        {
+                            'metodo': 'PAGO_MOVIL',
+                            'banco': 'Banesco',
+                            'cedula_pagador': 'J12345678',
+                            'referencia': 'REF-QA-456',
+                            'telefono': '04121234567',
+                            'direccion': 'Dirección de prueba QA',
+                            'capture': capture,
+                    },
+                )
 
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'No se pudo registrar el pago en este momento')
-        self.assertEqual(Pedido.objects.filter(cliente=self.user).count(), 0)
+            self.assertEqual(response.status_code, 302, '\n'.join(storage_logs.output))
+        self.assertRedirects(response, reverse('cliente_panel'), fetch_redirect_response=False)
+        self.assertIn('Comprobante del pago', storage_logs.output[0])
+        pedido = Pedido.objects.get(cliente=self.user)
+        pago = pedido.pagos.get()
+        self.assertFalse(pago.comprobante.name)
+        self.assertEqual(bytes(pago.comprobante_data), expected_capture)
+        self.assertEqual(pago.comprobante_content_type, 'image/png')
         self.product.refresh_from_db()
         self.assertEqual(self.product.Cantidad, 5)
+
+        admin = User.objects.create_superuser(
+            username='receipt-fallback-admin',
+            email='receipt-fallback-admin@example.test',
+            password='ReceiptFallback123!',
+        )
+        self.client.force_login(admin)
+        download = self.client.get(reverse('admin_comprobante_pago', args=[pago.pk]))
+        self.assertEqual(download.status_code, 200)
+        self.assertEqual(download['Content-Type'], 'image/png')
+        self.assertEqual(b''.join(download.streaming_content), expected_capture)
 
     @override_settings(STORAGES={
         'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},

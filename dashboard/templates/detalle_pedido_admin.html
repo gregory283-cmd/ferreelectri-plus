@@ -114,7 +114,7 @@
           </dl>
         </div>
         <div class="admin-order-actions">
-          {% if pago.comprobante and perms.dashboard.view_payment_evidence %}<a href="{% url 'admin_comprobante_pago' pago.id %}"><i class="fa-solid fa-download" aria-hidden="true"></i> Descargar comprobante</a>{% elif not pago.comprobante %}<span class="admin-order-muted">No hay comprobante adjunto.</span>{% endif %}
+          {% if pago.tiene_comprobante and perms.dashboard.view_payment_evidence %}<a href="{% url 'admin_comprobante_pago' pago.id %}"><i class="fa-solid fa-download" aria-hidden="true"></i> Descargar comprobante</a>{% elif not pago.tiene_comprobante %}<span class="admin-order-muted">No hay comprobante adjunto.</span>{% endif %}
           {% if whatsapp_url %}<a href="{{ whatsapp_url }}" target="_blank" rel="noopener noreferrer"><i class="fa-brands fa-whatsapp" aria-hidden="true"></i> Confirmar dirección por WhatsApp</a>{% endif %}
           {% if pedido.estado == 'pendiente' and perms.dashboard.verify_order_payments %}
           <form method="post" action="{% url 'confirmar_pago_admin' pago.id %}">{% csrf_token %}<button class="approve" type="submit"><i class="fa-solid fa-check" aria-hidden="true"></i> Confirmar pago y generar nota</button></form>

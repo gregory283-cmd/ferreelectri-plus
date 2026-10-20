@@ -10,7 +10,7 @@
             <td>{{ p.get_metodo_display }}</td>
             <td>${{ p.monto|floatformat:2 }}</td>
             <td>{{ p.estado }}</td>
-            <td>{% if p.comprobante and perms.dashboard.view_payment_evidence %}<a href="{% url 'admin_comprobante_pago' p.id %}">Descargar</a>{% elif p.comprobante %}Recibido{% else %}-{% endif %}</td>
+            <td>{% if p.tiene_comprobante and perms.dashboard.view_payment_evidence %}<a href="{% url 'admin_comprobante_pago' p.id %}">Descargar</a>{% elif p.tiene_comprobante %}Recibido{% else %}-{% endif %}</td>
             {% if perms.dashboard.verify_order_payments %}
             <td>
                 {% if p.estado != 'confirmado' %}

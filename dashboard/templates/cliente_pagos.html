@@ -66,7 +66,7 @@
             <td><a href="{% url 'detalle_pedido_cliente' pago.pedido_id %}">#{{ pago.pedido_id }}</a></td>
             <td>{{ pago.creado|date:"d/m/Y" }}</td>
             <td><span class="client-table-reference">{{ pago.referencia|default:"Sin referencia"|truncatechars:24 }}</span></td>
-            <td>{% if pago.comprobante %}<span class="client-proof is-attached"><i class="fa-solid fa-paperclip" aria-hidden="true"></i> Adjunto</span>{% else %}<span class="client-proof">No adjunto</span>{% endif %}</td>
+            <td>{% if pago.tiene_comprobante %}<span class="client-proof is-attached"><i class="fa-solid fa-paperclip" aria-hidden="true"></i> Adjunto</span>{% else %}<span class="client-proof">No adjunto</span>{% endif %}</td>
             <td><span class="client-state" data-state="{{ pago.estado }}">{{ pago.get_estado_display }}</span></td>
             <td class="is-numeric">$ {{ pago.monto|floatformat:2 }}</td>
             <td class="is-actions"><a class="client-icon-link" href="{% url 'detalle_pedido_cliente' pago.pedido_id %}" title="Ver pedido" aria-label="Ver pedido #{{ pago.pedido_id }}"><i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i></a></td>

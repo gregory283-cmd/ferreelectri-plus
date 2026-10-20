@@ -342,10 +342,15 @@ class PagoMovilCheckoutForm(forms.Form):
     )
 
     banco = forms.ChoiceField(choices=BANCOS, required=True)
+    cedula_tipo = forms.ChoiceField(
+        choices=(('V', 'V'), ('E', 'E'), ('J', 'J'), ('G', 'G'), ('P', 'P')),
+        required=False,
+        initial='V',
+    )
     cedula_pagador = forms.CharField(
         max_length=30,
         required=True,
-        widget=forms.TextInput(attrs={'inputmode': 'text', 'autocapitalize': 'characters'}),
+        widget=forms.TextInput(attrs={'inputmode': 'numeric', 'autocomplete': 'off'}),
     )
     referencia = forms.CharField(max_length=50, min_length=4, required=True)
     capture = forms.ImageField(
@@ -356,9 +361,15 @@ class PagoMovilCheckoutForm(forms.Form):
     def clean_cedula_pagador(self):
         value = self.cleaned_data['cedula_pagador'].strip().upper()
         match = re.fullmatch(r'([VEJPG])\s*-?\s*(\d{5,10})', value)
-        if not match:
-            raise forms.ValidationError('Ingrese una cédula válida con prefijo V, E, J, P o G.')
-        return f'{match.group(1)}-{match.group(2)}'
+        if match:
+            prefix, number = match.groups()
+        else:
+            prefix = self.cleaned_data.get('cedula_tipo') or 'V'
+            number_match = re.fullmatch(r'\d{5,10}', value)
+            if not number_match:
+                raise forms.ValidationError('Ingrese entre 5 y 10 dígitos para la cédula o identificación.')
+            number = value
+        return f'{prefix}-{number}'
 
     def clean_referencia(self):
         value = self.cleaned_data['referencia'].strip()

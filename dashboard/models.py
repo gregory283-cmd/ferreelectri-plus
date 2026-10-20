@@ -547,6 +547,9 @@ class Pago(models.Model):
     cedula_pagador = models.CharField(max_length=30, blank=True, default='')
     numero_referencia = models.CharField(max_length=100, blank=True, default='')
     comprobante = models.ImageField(storage=PrivatePaymentStorage(), upload_to='comprobantes/', null=True, blank=True)
+    comprobante_data = models.BinaryField(null=True, blank=True, editable=False)
+    comprobante_content_type = models.CharField(max_length=100, blank=True, default='')
+    comprobante_filename = models.CharField(max_length=255, blank=True, default='')
     verificado = models.BooleanField(default=False)
     ESTADO_CHOICES = (
         ('pendiente', 'Pendiente'),
@@ -575,6 +578,10 @@ class Pago(models.Model):
         if self.metodo:
             self.metodo = self.metodo.upper()
         super().save(*args, **kwargs)
+
+    @property
+    def tiene_comprobante(self):
+        return bool(self.comprobante or self.comprobante_data)
 
     def __str__(self):
         return f"Pago #{self.id} - {self.pedido.id} - {self.metodo} - {'Verificado' if self.verificado else 'No verificado'}"

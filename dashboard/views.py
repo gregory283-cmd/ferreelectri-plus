@@ -4459,7 +4459,35 @@ def checkout(request):
                 ]
                 if capture:
                     payment_update_fields.append('comprobante')
-                pago.save(update_fields=payment_update_fields)
+                try:
+                    with transaction.atomic():
+                        pago.save(update_fields=payment_update_fields)
+                except Exception as storage_error:
+                    if not capture:
+                        raise
+                    try:
+                        capture.seek(0)
+                        receipt_data = capture.read()
+                    except Exception:
+                        raise storage_error
+                    if not receipt_data:
+                        raise storage_error
+                    pago.comprobante = None
+                    pago.comprobante_data = receipt_data
+                    pago.comprobante_content_type = capture.content_type or 'application/octet-stream'
+                    pago.comprobante_filename = os.path.basename(capture.name or '')[:255]
+                    payment_update_fields = [
+                        field for field in payment_update_fields if field != 'comprobante'
+                    ]
+                    payment_update_fields.extend((
+                        'comprobante_data', 'comprobante_content_type', 'comprobante_filename',
+                    ))
+                    pago.save(update_fields=payment_update_fields)
+                    logging.getLogger(__name__).warning(
+                        'Comprobante del pago %s guardado en la base de datos porque falló el storage privado (%s).',
+                        pago.pk,
+                        type(storage_error).__name__,
+                    )
         except ValueError as stock_error:
             messages.error(request, str(stock_error))
             return redirect('carrito')
@@ -4721,17 +4749,17 @@ def _payment_has_manual_evidence(pago):
         return True
     if pago.metodo == 'PAGO_MOVIL':
         return bool(
-            pago.comprobante
+            pago.tiene_comprobante
             and pago.banco_origen
             and pago.cedula_pagador
             and pago.numero_referencia
         )
-    return bool(pago.comprobante and (pago.numero_referencia or pago.referencia))
+    return bool(pago.tiene_comprobante and (pago.numero_referencia or pago.referencia))
 
 
 def _manual_payment_evidence_error(pago):
     missing = []
-    if not pago.comprobante:
+    if not pago.tiene_comprobante:
         missing.append('un comprobante legible')
     if pago.metodo == 'PAGO_MOVIL':
         if not pago.banco_origen:
@@ -4938,13 +4966,21 @@ def descargar_comprobante_admin(request, filename=None, payment_id=None):
         if payment_id is not None
         else get_object_or_404(Pago, comprobante=f'comprobantes/{filename}')
     )
-    if not pago.comprobante:
+    if not pago.tiene_comprobante:
         return HttpResponse('Comprobante no disponible.', status=404)
-    response = FileResponse(
-        pago.comprobante.open('rb'),
-        as_attachment=True,
-        filename=os.path.basename(pago.comprobante.name),
-    )
+    if pago.comprobante_data:
+        response = FileResponse(
+            BytesIO(bytes(pago.comprobante_data)),
+            as_attachment=True,
+            filename=pago.comprobante_filename or f'comprobante_pago_{pago.pk}.bin',
+            content_type=pago.comprobante_content_type or 'application/octet-stream',
+        )
+    else:
+        response = FileResponse(
+            pago.comprobante.open('rb'),
+            as_attachment=True,
+            filename=os.path.basename(pago.comprobante.name),
+        )
     response['X-Content-Type-Options'] = 'nosniff'
     return response
 

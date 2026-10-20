@@ -114,7 +114,12 @@
             </label>
             <label class="checkout-field">
               <span>Cédula del pagador</span>
-              <input name="cedula_pagador" type="text" value="{{ payment_form.cedula_pagador.value|default:'' }}" placeholder="V-12345678" inputmode="text" autocapitalize="characters" autocomplete="off" class="w-full bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-600 rounded-xl px-3 py-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
+              <div class="grid grid-cols-[76px_minmax(0,1fr)] gap-2">
+                <select name="cedula_tipo" aria-label="Tipo de identificación" class="w-full bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-600 rounded-xl px-3 py-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
+                  {% for value,label in payment_form.cedula_tipo.field.choices %}<option value="{{ value }}" {% if payment_form.cedula_tipo.value|default:'V' == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+                </select>
+                <input name="cedula_pagador" type="text" value="{{ payment_form.cedula_pagador.value|default:'' }}" placeholder="12345678" inputmode="numeric" autocomplete="off" class="min-w-0 w-full bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-600 rounded-xl px-3 py-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
+              </div>
               {% if payment_form.cedula_pagador.errors %}<span class="mt-1 block text-sm font-semibold text-red-300">{{ payment_form.cedula_pagador.errors }}</span>{% endif %}
             </label>
             <label class="checkout-field" style="grid-column: 1 / -1;">

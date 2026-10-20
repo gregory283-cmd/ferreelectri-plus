@@ -19,7 +19,7 @@ class PedidoAdmin(admin.ModelAdmin):
 
 		@admin.display(description='Comprobante')
 		def comprobante_descarga(self, obj):
-			if not obj.comprobante:
+			if not obj.tiene_comprobante:
 				return 'No adjunto'
 			return format_html('<a href="{}">Descargar comprobante</a>', reverse('admin_comprobante_pago', args=[obj.pk]))
 
