@@ -492,6 +492,7 @@ class AdminOrderHistoryPresentationTest(TestCase):
             cedula_pagador='J-12345678',
             numero_referencia='KANBAN-1001',
             estado='en_revision',
+            comprobante='comprobantes/kanban-proof.png',
         )
         paid_order = Pedido.objects.create(
             cliente=self.customer, total=Decimal('25.00'), estado='pagado',
@@ -515,6 +516,8 @@ class AdminOrderHistoryPresentationTest(TestCase):
         self.assertContains(response, 'Mercantil')
         self.assertContains(response, 'J-12345678')
         self.assertContains(response, 'KANBAN-1001')
+        self.assertContains(response, 'data-admin-session-continue')
+        self.assertNotContains(response, 'target="_blank"')
 
 
 class OperationalFulfillmentPermissionsTest(TestCase):
