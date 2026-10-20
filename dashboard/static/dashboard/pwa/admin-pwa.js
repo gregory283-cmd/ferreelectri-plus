@@ -4,6 +4,7 @@
   const status = document.getElementById('admin-pwa-status');
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches
     || navigator.standalone === true;
+  const isNamingDevice = Boolean(document.querySelector('.admin-device-name-page'));
   const appSessionKey = 'ferreelectri_admin_app_session';
   const lastActivityKey = 'ferreelectri_admin_last_activity';
   const internalNavigationKey = 'ferreelectri_admin_internal_navigation_at';
@@ -156,7 +157,7 @@
   }
 
   function startStandaloneExit() {
-    if (!isStandalone || appExitLockStarted) return;
+    if (!isStandalone || isNamingDevice || appExitLockStarted) return;
     appExitPending = true;
     try {
       sessionStorage.setItem(appExitPendingKey, '1');
@@ -166,7 +167,7 @@
   }
 
   function finishStandaloneExit() {
-    if (!isStandalone || appExitLockStarted) return;
+    if (!isStandalone || isNamingDevice || appExitLockStarted) return;
     appExitLockStarted = true;
     lockAdminSession().then((locked) => {
       if (locked) {
@@ -185,7 +186,7 @@
   }
 
   function resolveStandaloneExit(sameDocumentResume = false) {
-    if (!isStandalone) return;
+    if (!isStandalone || isNamingDevice) return;
     let pending = appExitPending;
     let internalNavigation = false;
     let appReturnAllowed = false;
@@ -207,7 +208,7 @@
     finishStandaloneExit();
   }
 
-  if (isStandalone) {
+  if (isStandalone && !isNamingDevice) {
     document.addEventListener('click', (event) => {
       const link = event.target.closest('a[href]');
       if (!link || link.target === '_blank' || event.defaultPrevented || event.button !== 0) return;
@@ -339,7 +340,7 @@
   }
 
   function scheduleIdleConfirmation() {
-    if (isStandalone) return;
+    if (isStandalone || isNamingDevice) return;
     if (idleTimeout) window.clearTimeout(idleTimeout);
     if (!sessionDialog || sessionDialog.open || logoutInProgress) return;
     const remaining = idleTimeoutMs - (Date.now() - lastActivityAt);

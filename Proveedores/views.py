@@ -5,6 +5,8 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 from django.core.paginator import Paginator
 from django.db.models import Q
+from django.db import IntegrityError
+from django.core.exceptions import ValidationError
 from django.http import HttpResponse
 from django.utils import timezone
 from django.template.loader import get_template
@@ -62,13 +64,17 @@ def addProveedor(request):
             cedula_completa = f"{pref}{cedula_raw}"
 
         # Guarda el proveedor
-        Proveedores.objects.create(
-            nombre=nombre,
-            cedula=cedula_completa,
-            telefono=telefono,
-            email=correo,
-            direccion=direccion
-        )
+        try:
+            Proveedores.objects.create(
+                nombre=nombre,
+                cedula=cedula_completa,
+                telefono=telefono,
+                email=correo,
+                direccion=direccion
+            )
+        except (ValidationError, IntegrityError):
+            messages.error(request, 'No se pudo guardar el proveedor. Verifica sus datos y que su cédula no esté registrada.')
+            return redirect('Proveedor')
         messages.success(request, "¡Proveedor agregado exitosamente!")  # Mensaje de éxito
         return redirect('Proveedor')  # Cambia por el nombre correcto de tu url de listado
 
@@ -94,7 +100,11 @@ def updtProveedor(request, id):
         proveedor.telefono = request.POST.get('telefono')
         proveedor.email = request.POST.get('correo')  # Usa 'correo' del formulario, pero guarda en 'email'
         proveedor.direccion = request.POST.get('direccion')
-        proveedor.save()
+        try:
+            proveedor.save()
+        except (ValidationError, IntegrityError):
+            messages.error(request, 'No se pudo actualizar el proveedor. Verifica sus datos y que su cédula no esté registrada.')
+            return redirect('Proveedor')
         messages.success(request, '¡Proveedor modificado exitosamente!')
         return redirect('Proveedor')
     else:

@@ -1,6 +1,8 @@
 from django.contrib.auth import get_user_model
+from django.db import IntegrityError
 from django.test import Client, TestCase
 from django.urls import reverse
+from unittest.mock import patch
 
 from .models import Clientes
 
@@ -44,3 +46,12 @@ class ClientesDirectoryTests(TestCase):
 		response = Client().get(reverse('ver_cliente', args=[self.cliente.pk]))
 
 		self.assertEqual(response.status_code, 302)
+
+	def test_colision_al_guardar_cliente_no_produce_error_500(self):
+		with patch('Usuario.views.ClienteForm.is_valid', return_value=True), patch(
+			'Usuario.views.ClienteForm.save', side_effect=IntegrityError,
+		):
+			response = self.client.post(reverse('addUser'), {})
+
+		self.assertEqual(response.status_code, 200)
+		self.assertContains(response, 'Ya existe un cliente con esa cédula o correo.')

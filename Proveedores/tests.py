@@ -39,3 +39,16 @@ class ProveedoresDirectoryTests(TestCase):
 		self.assertTrue(Proveedores.objects.filter(pk=self.proveedor.pk).exists())
 		self.assertEqual(self.client.post(url).status_code, 302)
 		self.assertFalse(Proveedores.objects.filter(pk=self.proveedor.pk).exists())
+
+	def test_datos_invalidos_al_crear_proveedor_no_producen_error_500(self):
+		response = self.client.post(reverse('addProveedor'), {
+			'nombre': 'Proveedor nuevo',
+			'prefijo_cedula': 'J',
+			'cedula': '12',
+			'telefono': '123',
+			'correo': 'correo-invalido',
+			'direccion': 'Caracas',
+		})
+
+		self.assertEqual(response.status_code, 302)
+		self.assertEqual(Proveedores.objects.count(), 1)

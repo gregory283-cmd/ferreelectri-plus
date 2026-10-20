@@ -163,6 +163,19 @@ class InventarioTestCase(TestCase):
         self.assertEqual(presentation.factor, Decimal('12.50'))
         self.assertEqual(presentation.unidad_medida, 'Unidades')
 
+    def test_crear_producto_guarda_sin_error_500(self):
+        response = self.client.post(reverse('addProducto'), {
+            'Descripcion': 'Taladro nuevo',
+            'Precio': '45.00',
+            'iva': '16.00',
+            'Costo': '30.00',
+            'Cantidad': '4',
+            'presentations_json': '[]',
+        })
+
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(Productos.objects.filter(Descripcion='Taladro nuevo').exists())
+
     def test_edicion_muestra_json_de_presentaciones_invalido_sin_error_500(self):
         response = self.client.post(
             reverse('updtProducto', kwargs={'id': self.producto.Codigo}),

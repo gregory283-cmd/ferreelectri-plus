@@ -45,6 +45,44 @@ def confirm_customer_email(client, email):
     return client.get(urlparse(verify_url).path, HTTP_HOST='localhost')
 
 
+class DesignateAdminPrimaryDeviceCommandTests(TestCase):
+    def test_command_designates_device_and_creates_security_config(self):
+        from io import StringIO
+        from django.core.management import call_command
+
+        owner = User.objects.create_superuser(
+            username='command-primary-owner',
+            email='command-primary-owner@example.test',
+            password='CommandTest123!',
+        )
+        passkey = AdminPasskey.objects.create(
+            user=owner,
+            credential_id='Y29tbWFuZC1wcmltYXJ5',
+            public_key=b'command-primary-key',
+            name='Móvil principal',
+        )
+        device = AdminDevice.objects.create(
+            user=owner,
+            passkey=passkey,
+            name='Móvil del superusuario',
+        )
+        output = StringIO()
+
+        call_command(
+            'designate_admin_primary_device',
+            username=owner.username,
+            device_id=str(device.device_id),
+            stdout=output,
+        )
+
+        device.refresh_from_db()
+        config = AdminSecurityConfig.objects.get(pk=1)
+        self.assertTrue(device.is_primary)
+        self.assertEqual(config.owner_user, owner)
+        self.assertEqual(config.primary_passkey, passkey)
+        self.assertTrue(AuditLog.objects.filter(action='ADMIN_PRIMARY_DEVICE_SET', object_id=str(device.pk)).exists())
+
+
 class AdminClientesDashboardPresentationTest(TestCase):
     def setUp(self):
         self.admin = User.objects.create_superuser(

@@ -6,6 +6,7 @@ from django.contrib.auth.decorators import login_required, permission_required
 from .models import Clientes
 from django.core.paginator import Paginator
 from django.db.models import Q
+from django.db import IntegrityError
 from django.views.decorators.http import require_POST
 from django.templatetags.static import static
 from django.http import HttpResponse
@@ -58,7 +59,11 @@ def addUser(request):
             messages.error(request, 'Ya existe un cliente con ese correo, no se agregó.')
             return redirect('usuarios')
         if form.is_valid():
-            form.save()
+            try:
+                form.save()
+            except IntegrityError:
+                form.add_error(None, 'Ya existe un cliente con esa cédula o correo.')
+                return render(request, 'addUser.html', {'form': form})
             messages.success(request, 'Cliente agregado exitosamente')
             return redirect('usuarios')
         # Si no es válido, sigue y muestra errores en el formulario
@@ -74,7 +79,11 @@ def updtUser(request, id):
     if request.method == 'POST':
         form = ClienteForm(request.POST, request.FILES, instance=cliente)
         if form.is_valid():
-            form.save()
+            try:
+                form.save()
+            except IntegrityError:
+                form.add_error(None, 'Ya existe un cliente con esa cédula o correo.')
+                return render(request, 'updtUser.html', {'form': form, 'cliente': cliente})
             messages.success(request, 'Cliente actualizado exitosamente')
             return redirect('usuarios')
         else:

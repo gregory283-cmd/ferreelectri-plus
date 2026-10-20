@@ -13,7 +13,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import login_required, permission_required
 from dashboard.decorators import cliente_required
 from django.db.models.deletion import ProtectedError
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.db.models import Count, Q, Sum
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
@@ -222,10 +222,15 @@ def addProducto(request):
             producto = productos.save(commit=False)
             producto.Cantidad = productos.cleaned_data.get('Cantidad') or 0
             producto.Costo = productos.cleaned_data.get('Costo') or 0
-            producto.save()
-            save_product_presentations(producto, request)
-            messages.success(request, 'Producto agregado exitosamente')
-            return redirect('listar_productos')
+            try:
+                with transaction.atomic():
+                    producto.save()
+                    save_product_presentations(producto, request)
+            except (ValidationError, IntegrityError):
+                productos.add_error(None, 'No se pudo guardar el producto. Verifica sus datos e inténtalo de nuevo.')
+            else:
+                messages.success(request, 'Producto agregado exitosamente')
+                return redirect('listar_productos')
         else:
             messages.error(request, 'Error al agregar el producto')
     else:
@@ -243,10 +248,15 @@ def updtProducto(request, id):
             producto = productos.save(commit=False)
             producto.Cantidad = productos.cleaned_data.get('Cantidad') or 0
             producto.Costo = productos.cleaned_data.get('Costo') or producto.Costo
-            producto.save()
-            save_product_presentations(producto, request)
-            messages.success(request, 'Producto actualizado exitosamente')
-            return redirect('listar_productos')
+            try:
+                with transaction.atomic():
+                    producto.save()
+                    save_product_presentations(producto, request)
+            except (ValidationError, IntegrityError):
+                productos.add_error(None, 'No se pudo actualizar el producto. Verifica sus datos e inténtalo de nuevo.')
+            else:
+                messages.success(request, 'Producto actualizado exitosamente')
+                return redirect('listar_productos')
         else:
             messages.error(request, 'Error al actualizar el producto')
     else:
