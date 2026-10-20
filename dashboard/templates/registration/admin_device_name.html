@@ -4,14 +4,14 @@
 <main class="admin-device-name-page">
     <section class="admin-device-name-panel" role="dialog" aria-modal="true" aria-labelledby="device-name-title" aria-describedby="device-name-description">
         <span class="admin-device-name-eyebrow">IDENTIFICACIÓN DEL DISPOSITIVO</span>
-        <h1 id="device-name-title">Registra este dispositivo</h1>
-        <p id="device-name-description">El nombre aparecerá una sola vez en el registro de dispositivos de esta cuenta. No se cerrará la sesión de los otros equipos.</p>
+        <h1 id="device-name-title">{% if is_editing_device_name %}Edita el nombre de este dispositivo{% else %}Registra este dispositivo{% endif %}</h1>
+        <p id="device-name-description">{% if is_editing_device_name %}Este nombre identifica el dispositivo de la sesión actual en el registro de seguridad.{% else %}El nombre identificará este dispositivo en el registro de seguridad de la cuenta.{% endif %}</p>
         {% if error %}<p class="admin-device-name-error" role="alert">{{ error }}</p>{% endif %}
         <form method="post">
             {% csrf_token %}
             <label for="device-name">Nombre del dispositivo</label>
-            <input id="device-name" name="device_name" type="text" minlength="2" maxlength="40" required autofocus autocomplete="off" value="" placeholder="Ej.: Móvil de almacén">
-            <button type="submit">Guardar y continuar</button>
+            <input id="device-name" name="device_name" type="text" minlength="2" maxlength="40" required autofocus autocomplete="off" value="{{ device_name }}" placeholder="Ej.: Móvil de almacén">
+            <button type="submit">{% if is_editing_device_name %}Guardar nombre{% else %}Guardar y continuar{% endif %}</button>
         </form>
     </section>
 </main>

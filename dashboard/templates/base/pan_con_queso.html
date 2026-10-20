@@ -1879,6 +1879,10 @@
                 <span>Notificaciones de pedidos</span>
             </button>
             <p id="admin-pwa-status" role="status" aria-live="polite"></p>
+            <a class="theme-toggle-btn" href="{% url 'admin_device_name' %}" aria-label="Editar nombre de este dispositivo">
+                <span class="material-symbols-outlined" aria-hidden="true">edit</span>
+                <span>Editar nombre del dispositivo</span>
+            </a>
             {% if request.session.admin_passkey_enrollment_prompt %}
             <p role="status">Contraseña verificada. Activa una llave de acceso para iniciar sesión en este dispositivo.</p>
             {% endif %}

@@ -2666,7 +2666,9 @@ class AdminPWASecurityTest(TestCase):
 
         self.assertIn("navigationType === 'reload'", script)
         self.assertIn('if (sameDocumentResume || navigationType === \'reload\'', script)
-        self.assertIn('function scheduleIdleConfirmation() {\n    if (isStandalone) return;', script)
+        self.assertIn('function scheduleIdleConfirmation() {\n    if (isStandalone || isNamingDevice) return;', script)
+        self.assertIn('if (!isStandalone || isNamingDevice || appExitLockStarted) return;', script)
+        self.assertIn('if (!isStandalone || isNamingDevice) return;', script)
         self.assertIn('resolveStandaloneExit(true)', script)
         self.assertIn("window.addEventListener('pagehide', startStandaloneExit)", script)
         self.assertIn('sameDocumentResume || navigationType === \'reload\' || internalNavigation || appReturnAllowed', script)
@@ -2878,7 +2880,6 @@ class AdminPWASecurityTest(TestCase):
         self.assertEqual(repeated_login.json()['next'], reverse('dashboard'))
         self.assertEqual(AdminDevice.objects.filter(user=staff).count(), 1)
         self.assertEqual(AdminDevice.objects.get(user=staff).device_id, registered_device.device_id)
-
         self.client.post(reverse('logout'))
         another_admin = User.objects.create_user(
             username='other-account-same-browser', password='TestPassword123!', is_staff=True,
@@ -2894,6 +2895,31 @@ class AdminPWASecurityTest(TestCase):
         self.assertEqual(other_device.device_id, registered_device.device_id)
         self.assertEqual(AdminDevice.objects.filter(user=staff).count(), 1)
         self.assertEqual(AdminDevice.objects.filter(user=another_admin).count(), 1)
+
+    def test_current_device_name_can_be_edited_from_tools(self):
+        staff = User.objects.create_user(
+            username='rename-current-device-admin',
+            password='TestPassword123!',
+            is_staff=True,
+        )
+        self.client.force_login(staff)
+        device = AdminDevice.objects.create(user=staff, name='Nombre anterior')
+        session = self.client.session
+        session['admin_device_uuid'] = str(device.device_id)
+        session.save()
+
+        page = self.client.get(reverse('admin_device_name'))
+        self.assertEqual(page.status_code, 200)
+        self.assertTrue('Edita el nombre de este dispositivo' in page.content.decode())
+        self.assertTrue('value="Nombre anterior"' in page.content.decode())
+
+        response = self.client.post(reverse('admin_device_name'), {'device_name': 'Móvil personal'})
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response['Location'], reverse('dashboard'))
+        device.refresh_from_db()
+        self.assertEqual(device.name, 'Móvil personal')
+        self.assertTrue(AuditLog.objects.filter(action='ADMIN_DEVICE_SESSION_NAMED', user=staff).exists())
 
     def test_revoked_session_cannot_be_reactivated_by_a_later_request(self):
         staff = User.objects.create_user(

@@ -321,9 +321,6 @@ def _set_admin_device_name_requirement(request, device):
 def admin_device_name(request):
     if not request.user.is_authenticated or not request.user.is_staff:
         return redirect('login_admin_custom')
-    if not request.session.get('admin_device_name_required'):
-        return redirect('dashboard')
-
     device = get_object_or_404(
         AdminDevice,
         user=request.user,
@@ -331,6 +328,7 @@ def admin_device_name(request):
         is_active=True,
     )
     error = ''
+    device_name = device.name
     if request.method == 'POST':
         device_name = (request.POST.get('device_name') or '').strip()
         valid_name = (
@@ -358,7 +356,11 @@ def admin_device_name(request):
                 details=f'Dispositivo {device.pk} identificado como {device_name}.',
             )
             return redirect('dashboard')
-    return render(request, 'registration/admin_device_name.html', {'error': error})
+    return render(request, 'registration/admin_device_name.html', {
+        'error': error,
+        'device_name': device_name,
+        'is_editing_device_name': bool(device.name),
+    })
 
 
 def _admin_device_is_primary(device, config):
