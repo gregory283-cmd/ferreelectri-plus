@@ -105,7 +105,7 @@ class CommercialFlowMigrationTests(TransactionTestCase):
 
 class AdminDeviceRegistryMigrationTests(TransactionTestCase):
 	migrate_from = ('dashboard', '0037_developmentrequest')
-	migrate_to = ('dashboard', '0038_admindevice_registry')
+	migrate_to = ('dashboard', '0040_admindevice_uuid_per_user')
 	reset_sequences = True
 
 	def setUp(self):
@@ -144,6 +144,17 @@ class AdminDeviceRegistryMigrationTests(TransactionTestCase):
 				last_seen_at=last_seen,
 				is_active=session_key.endswith('2'),
 			)
+		for session_key, last_seen in (
+			('legacy-unknown-device-000001', timezone.now() - timedelta(minutes=35)),
+			('legacy-unknown-device-000002', timezone.now() - timedelta(minutes=20)),
+		):
+			AdminDeviceSession.objects.create(
+				user_id=self.user.pk,
+				session_key=session_key,
+				user_agent='Chrome Android',
+				last_seen_at=last_seen,
+				is_active=True,
+			)
 
 		executor = MigrationExecutor(connection)
 		executor.migrate([self.migrate_to])
@@ -159,11 +170,22 @@ class AdminDeviceRegistryMigrationTests(TransactionTestCase):
 		AdminDeviceSession = self.apps.get_model('dashboard', 'AdminDeviceSession')
 		devices = AdminDevice.objects.filter(user_id=self.user.pk)
 
-		self.assertEqual(devices.count(), 1)
-		device = devices.get()
+		self.assertEqual(devices.count(), 3)
+		device = devices.get(name='Yulimar móvil')
 		self.assertEqual(device.name, 'Yulimar móvil')
 		self.assertEqual(device.first_seen_at, self.first_seen)
 		self.assertEqual(device.last_seen_at, self.last_seen)
 		self.assertEqual(device.ip_address, '203.0.113.22')
 		self.assertTrue(device.is_primary)
 		self.assertEqual(AdminDeviceSession.objects.filter(device_id=device.pk).count(), 2)
+		self.assertEqual(devices.filter(name='').count(), 2)
+
+		User = self.apps.get_model(*settings.AUTH_USER_MODEL.split('.'))
+		other_user = User.objects.create(username='second-device-migration-owner', is_staff=True)
+		second_account_device = AdminDevice.objects.create(
+			user_id=other_user.pk,
+			device_id=device.device_id,
+			name='Mismo navegador, otra cuenta',
+		)
+		self.assertEqual(second_account_device.device_id, device.device_id)
+		self.assertEqual(devices.filter(name='').count(), 2)

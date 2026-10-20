@@ -272,8 +272,6 @@ def _admin_device_for_login(request, user, passkey=None, persist=False):
     device = AdminDevice.objects.filter(user=user, device_id=device_id).first()
     if device and not device.is_active:
         raise AdminDeviceBlockedError('Este dispositivo está bloqueado por el superusuario.')
-    if device is None and AdminDevice.objects.filter(device_id=device_id).exists():
-        device_id = uuid.uuid4()
 
     if device is None:
         device = AdminDevice(

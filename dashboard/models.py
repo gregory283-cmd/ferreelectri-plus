@@ -74,7 +74,7 @@ class AdminPasskey(models.Model):
 
 class AdminDevice(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='admin_devices')
-    device_id = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    device_id = models.UUIDField(default=uuid.uuid4, editable=False)
     passkey = models.ForeignKey(
         AdminPasskey, null=True, blank=True, on_delete=models.SET_NULL, related_name='admin_devices',
     )
@@ -91,6 +91,10 @@ class AdminDevice(models.Model):
         verbose_name_plural = 'Dispositivos administrativos'
         indexes = [models.Index(fields=['user', 'is_active', 'last_seen_at'])]
         constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'device_id'],
+                name='dash_device_uuid_per_user',
+            ),
             models.UniqueConstraint(
                 fields=['user'],
                 condition=models.Q(is_primary=True),

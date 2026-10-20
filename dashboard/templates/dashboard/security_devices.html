@@ -35,7 +35,7 @@
             <thead><tr><th>Dispositivo</th><th>Cuenta</th><th>Primera vez</th><th>Última conexión</th><th>Última IP</th><th>Estado</th><th>Gestión</th></tr></thead>
             <tbody>{% for device in admin_devices %}
                 <tr>
-                    <td data-label="Dispositivo"><strong>{{ device.name|default:'Sin nombre' }}</strong>{% if device.passkey %}<small>{{ device.passkey.name }}</small>{% endif %}</td>
+                    <td data-label="Dispositivo"><strong>{{ device.name|default_if_none:'' }}{% if not device.name %}Equipo por identificar #{{ device.pk }}{% endif %}</strong>{% if device.passkey %}<small>{{ device.passkey.name }}</small>{% endif %}</td>
                     <td data-label="Cuenta">{{ device.user.get_username }}</td>
                     <td data-label="Primera vez">{{ device.first_seen_at|date:'d/m/Y H:i' }}</td>
                     <td data-label="Última conexión">{{ device.last_seen_at|date:'d/m/Y H:i' }}</td>
@@ -56,7 +56,7 @@
         <div class="security-mobile-list">
             {% for device in admin_devices %}
             <article class="security-record">
-                <div class="security-record-top"><strong>{{ device.name|default:'Sin nombre' }}</strong>{% if device.is_primary_device %}<span class="security-status security-status-primary">Principal protegida</span>{% elif device.is_active %}<span class="security-status security-status-active">Habilitado</span>{% else %}<span class="security-status security-status-idle">Bloqueado</span>{% endif %}</div>
+                <div class="security-record-top"><strong>{{ device.name|default_if_none:'' }}{% if not device.name %}Equipo por identificar #{{ device.pk }}{% endif %}</strong>{% if device.is_primary_device %}<span class="security-status security-status-primary">Principal protegida</span>{% elif device.is_active %}<span class="security-status security-status-active">Habilitado</span>{% else %}<span class="security-status security-status-idle">Bloqueado</span>{% endif %}</div>
                 {% if device.passkey %}<p class="security-device-passkey">{{ device.passkey.name }}</p>{% endif %}
                 <dl class="security-record-details">
                     <div><dt>Cuenta</dt><dd>{{ device.user.get_username }}</dd></div>

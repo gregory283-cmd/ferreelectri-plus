@@ -2725,7 +2725,9 @@ class AdminPWASecurityTest(TestCase):
         self.assertEqual(other_login.status_code, 200)
         self.assertEqual(other_login.json()['next'], reverse('admin_device_name'))
         other_device = AdminDevice.objects.get(user=another_admin)
-        self.assertNotEqual(other_device.device_id, registered_device.device_id)
+        self.assertEqual(other_device.device_id, registered_device.device_id)
+        self.assertEqual(AdminDevice.objects.filter(user=staff).count(), 1)
+        self.assertEqual(AdminDevice.objects.filter(user=another_admin).count(), 1)
 
     def test_revoked_session_cannot_be_reactivated_by_a_later_request(self):
         staff = User.objects.create_user(
