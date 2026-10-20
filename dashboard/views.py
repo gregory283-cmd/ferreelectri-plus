@@ -7,6 +7,8 @@ import hashlib
 import re
 import time
 import logging
+import shutil
+import tempfile
 import unicodedata
 import uuid
 from pathlib import Path
@@ -60,6 +62,7 @@ from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.utils import timezone
+from django.utils.dateparse import parse_datetime
 from django.utils.crypto import get_random_string
 from django.utils.timezone import now
 from datetime import date, datetime, timedelta
@@ -160,12 +163,26 @@ def admin_security_devices_required(view_func):
             return view_func(request, *args, **kwargs)
         config = AdminSecurityConfig.objects.filter(pk=1).only('owner_user_id', 'primary_passkey_id').first()
         current_passkey_id = request.session.get('admin_current_passkey_id')
+        current_device_id = request.session.get('admin_device_uuid')
+        current_passkey_is_active = bool(
+            current_passkey_id
+            and AdminPasskey.objects.filter(
+                pk=current_passkey_id, user=request.user, is_active=True,
+            ).exists()
+        )
         setup_session = bool(
             config
             and config.owner_user_id == request.user.pk
-            and config.primary_passkey_id is None
-            and current_passkey_id
-            and AdminPasskey.objects.filter(pk=current_passkey_id, user=request.user).exists()
+            and current_passkey_is_active
+            and (
+                config.primary_passkey_id is None
+                or AdminDevice.objects.filter(
+                    user=request.user,
+                    device_id=current_device_id,
+                    passkey_id=current_passkey_id,
+                    is_active=True,
+                ).exists()
+            )
         )
         if not setup_session:
             if config and config.owner_user_id == request.user.pk and config.primary_passkey_id is None:
@@ -583,11 +600,13 @@ def admin_security_devices(request):
     if request.method == 'POST':
         action = request.POST.get('action')
         if action == 'set_primary':
-            passkey = get_object_or_404(AdminPasskey, pk=request.POST.get('passkey_id'), user=request.user)
-            if (
-                config.primary_passkey_id is None
-                and str(request.session.get('admin_current_passkey_id')) != str(passkey.pk)
-            ):
+            passkey = get_object_or_404(
+                AdminPasskey,
+                pk=request.POST.get('passkey_id'),
+                user=request.user,
+                is_active=True,
+            )
+            if str(request.session.get('admin_current_passkey_id')) != str(passkey.pk):
                 return HttpResponseForbidden('Inicia sesión con la llave que vas a designar como teléfono principal.')
             config.primary_passkey = passkey
             config.save(update_fields=['primary_passkey', 'updated_at'])
@@ -603,7 +622,7 @@ def admin_security_devices(request):
             if _set_admin_device_name_requirement(request, device):
                 messages.success(request, 'La passkey quedó designada. Asigna un nombre a este dispositivo para completar el registro.')
                 return redirect('admin_device_name')
-            messages.success(request, 'Llave principal actualizada. Inicia de nuevo con esa llave desde el teléfono elegido.')
+            messages.success(request, 'Este teléfono quedó como dispositivo principal; la auditoría está habilitada en esta sesión.')
         elif action == 'revoke_passkey':
             if not _request_is_security_owner(request):
                 return HttpResponseForbidden('Designa primero el teléfono principal de seguridad.')
@@ -2379,9 +2398,11 @@ def _dashboard_overview(request):
             'timestamp': log.timestamp,
         })
 
+    is_render_service = bool(getattr(settings, 'RENDER_EXTERNAL_HOSTNAME', ''))
     backup_directory = Path(getattr(settings, 'BACKUP_DIRECTORY', Path(settings.BASE_DIR) / 'backups' / 'weekly'))
     backup_files = sorted(
-        backup_directory.glob('ferreelectri-backup-*.tar.gz') if backup_directory.exists() else [],
+        backup_directory.glob('ferreelectri-backup-*.tar.gz')
+        if not is_render_service and backup_directory.exists() else [],
         key=lambda path: path.stat().st_mtime,
         reverse=True,
     )
@@ -2393,6 +2414,42 @@ def _dashboard_overview(request):
         }
         for item in backup_files[:5]
     ]
+    from FERREELECTRI_PLUS.render_backup import (
+        RenderBackupError,
+        render_backup_configured,
+        list_postgres_exports,
+        render_postgres_dashboard_url,
+        retrieve_recovery_status,
+    )
+    render_backup_ready = render_backup_configured()
+    render_database_url = render_postgres_dashboard_url()
+    render_recovery = {}
+    render_recovery_error = False
+    render_exports = []
+    if render_backup_ready:
+        recovery_cache_key = f'render-postgres-recovery:{settings.RENDER_POSTGRES_ID}'
+        render_recovery = cache.get(recovery_cache_key)
+        if render_recovery is None:
+            try:
+                render_recovery = retrieve_recovery_status()
+                cache.set(recovery_cache_key, render_recovery, 120)
+            except RenderBackupError:
+                render_recovery_error = True
+                render_recovery = {}
+        try:
+            render_exports = list_postgres_exports()
+        except RenderBackupError:
+            render_recovery_error = True
+    backup_cloud_configured = render_backup_ready
+    backup_history = [
+        {
+            'name': f"Exportación {item.get('id', '')}",
+            'size_mb': None,
+            'created_at': parse_datetime(item.get('createdAt', '')),
+            'export_id': item.get('id', ''),
+        }
+        for item in render_exports[:5]
+    ] if render_backup_ready else backup_history
     try:
         backup_status = json.loads((backup_directory / 'backup-status.json').read_text(encoding='utf-8'))
     except (OSError, ValueError, TypeError):
@@ -2404,16 +2461,16 @@ def _dashboard_overview(request):
         and len(backup_status.get('archive_sha256', '')) == 64
         and backup_status.get('archive_bytes') == latest_backup.stat().st_size
     )
-    backup_schedule_path = Path(getattr(
-        settings,
-        'BACKUP_SCHEDULE_STATUS_FILE',
-        Path(settings.BASE_DIR) / 'backups' / 'backup-schedule.json',
-    ))
-    try:
-        backup_schedule = json.loads(backup_schedule_path.read_text(encoding='utf-8'))
-    except (OSError, ValueError, TypeError):
-        backup_schedule = {}
-    backup_mirror_configured = bool(str(getattr(settings, 'BACKUP_MIRROR_DIRECTORY', '') or '').strip())
+    backup_latest_verified = bool(
+        not render_backup_ready
+        and latest_backup
+        and backup_status.get('archive_name') == latest_backup.name
+        and len(backup_status.get('archive_sha256', '')) == 64
+        and backup_status.get('archive_bytes') == latest_backup.stat().st_size
+    )
+    backup_schedule_installed = render_recovery.get('recoveryStatus') == 'AVAILABLE'
+    backup_schedule = {'task_name': 'PITR de Render'} if backup_schedule_installed else {}
+    backup_mirror_configured = render_backup_ready
     backup_tools_ready = False
     try:
         from FERREELECTRI_PLUS.backup_utils import BackupError, _find_postgres_tool
@@ -2466,13 +2523,22 @@ def _dashboard_overview(request):
         'backup_history': backup_history,
         'backup_latest_verified': backup_latest_verified,
         'backup_latest_hash': backup_status.get('archive_sha256', ''),
-        'backup_mirror_verified': bool(backup_status.get('mirror_verified')),
-        'backup_schedule_installed': bool(backup_schedule.get('task_name')),
+        'backup_mirror_verified': backup_latest_verified or bool(backup_status.get('mirror_verified')),
+        'backup_schedule_installed': backup_schedule_installed,
         'backup_schedule': backup_schedule,
         'backup_mirror_configured': backup_mirror_configured,
+        'backup_cloud_configured': backup_cloud_configured,
+        'backup_cloud_error': False,
+        'is_render_service': is_render_service,
+        'render_backup_ready': render_backup_ready,
+        'render_database_url': render_database_url,
+        'render_recovery_status': render_recovery.get('recoveryStatus', ''),
+        'render_recovery_error': render_recovery_error,
+        'render_exports': render_exports,
+        'backup_restore_ready': bool(getattr(settings, 'RESTORE_DATABASE_URL', '')),
         'backup_tools_ready': backup_tools_ready,
         'backup_retention': getattr(settings, 'BACKUP_RETENTION_COUNT', 12),
-        'backup_archive_count': len(backup_files),
+        'backup_archive_count': len(render_exports) if render_backup_ready else len(backup_files),
         'development_requests': list(DevelopmentRequest.objects.select_related('requested_by')[:5]) if is_security_owner else [],
     }
     return render(request, 'dashboard_overview.html', context)
@@ -6927,6 +6993,33 @@ def dashboard(request):
 @log_view_access
 def manual_backup(request):
     """Vista para realizar un backup manual desde el dashboard."""
+    from FERREELECTRI_PLUS.render_backup import (
+        RenderBackupError,
+        create_postgres_export,
+        render_backup_configured,
+    )
+    if render_backup_configured():
+        if not _request_is_security_owner(request):
+            return HttpResponseForbidden('Solo el dispositivo principal de seguridad puede exportar la base de Render.')
+        try:
+            result = create_postgres_export()
+        except RenderBackupError as error:
+            messages.error(request, f'Render no inició la exportación: {error}')
+        else:
+            export_id = result.get('id') or result.get('exportId')
+            log_auth_event(
+                request,
+                'RENDER_POSTGRES_EXPORT_REQUESTED',
+                user=request.user,
+                details=f'Exportación nativa de PostgreSQL solicitada en Render{f" ({export_id})" if export_id else ""}.',
+            )
+            messages.success(request, 'Render inició la exportación lógica. Descárgala o restáurala desde el servicio PostgreSQL en Render.')
+        return redirect('dashboard')
+
+    if getattr(settings, 'RENDER_EXTERNAL_HOSTNAME', ''):
+        messages.error(request, 'Configura RENDER_API_KEY y RENDER_POSTGRES_ID en el servicio Render para exportar PostgreSQL allí.')
+        return redirect('dashboard')
+
     from FERREELECTRI_PLUS import backup_utils
     try:
         result = backup_utils.create_backup()
@@ -6940,8 +7033,80 @@ def manual_backup(request):
 
 
 @user_passes_test(lambda u: u.is_staff, login_url='login_admin_custom')
+@require_POST
+@log_view_access
+def restore_backup(request):
+    if not _request_is_security_owner(request):
+        return HttpResponseForbidden('Solo el dispositivo principal de seguridad puede importar respaldos.')
+    if getattr(settings, 'RENDER_EXTERNAL_HOSTNAME', ''):
+        messages.error(request, 'Los exports de Render se restauran desde Recovery para crear primero una instancia separada.')
+        return redirect('dashboard')
+    if not getattr(settings, 'RESTORE_DATABASE_URL', ''):
+        messages.error(request, 'Configura primero una base de ensayo en RESTORE_DATABASE_URL.')
+        return redirect('dashboard')
+
+    from FERREELECTRI_PLUS.backup_utils import (
+        BackupError,
+        restore_backup_database,
+    )
+
+    uploaded_archive = request.FILES.get('archive')
+    if not uploaded_archive:
+        messages.error(request, 'Selecciona un paquete de respaldo para importar.')
+        return redirect('dashboard')
+
+    try:
+        with tempfile.TemporaryDirectory(prefix='ferreelectri-restore-upload-') as temporary_directory:
+            archive_path = Path(temporary_directory) / 'restore.tar.gz'
+            if not uploaded_archive.name.lower().endswith('.tar.gz'):
+                raise BackupError('El archivo debe ser un paquete .tar.gz de FERREELECTRI PLUS.')
+            maximum_bytes = int(getattr(settings, 'BACKUP_MAX_IMPORT_BYTES', 100 * 1024 * 1024))
+            if uploaded_archive.size > maximum_bytes:
+                raise BackupError('El archivo supera el límite configurado para importación.')
+            with archive_path.open('wb') as destination:
+                for chunk in uploaded_archive.chunks():
+                    destination.write(chunk)
+            database_name = restore_backup_database(archive_path, settings.RESTORE_DATABASE_URL)
+    except (BackupError, OSError, ValueError) as error:
+        messages.error(request, f'No se pudo importar la copia: {error}')
+    else:
+        messages.success(
+            request,
+            f'Base restaurada y verificada en el entorno de ensayo "{database_name}". '
+            'La conexión de producción no se modificó.',
+        )
+    return redirect('dashboard')
+
+
+@user_passes_test(lambda u: u.is_staff, login_url='login_admin_custom')
 @log_view_access
 def download_latest_backup(request):
+    from FERREELECTRI_PLUS.render_backup import (
+        RenderBackupError,
+        list_postgres_exports,
+        render_backup_configured,
+    )
+
+    if render_backup_configured():
+        if not _request_is_security_owner(request):
+            return HttpResponseForbidden('Solo el dispositivo principal de seguridad puede descargar exports de Render.')
+        try:
+            exports = list_postgres_exports()
+        except RenderBackupError as error:
+            messages.error(request, str(error))
+            return redirect('dashboard')
+        if not exports:
+            messages.info(request, 'Render todavía no tiene una exportación lista. Revisa Recovery en el servicio PostgreSQL.')
+            return redirect('dashboard')
+        export_url = urlsplit(exports[0]['url'])
+        if export_url.scheme != 'https' or not export_url.netloc:
+            messages.error(request, 'Render devolvió una URL de descarga no válida.')
+            return redirect('dashboard')
+        return redirect(exports[0]['url'])
+
+    if getattr(settings, 'RENDER_EXTERNAL_HOSTNAME', ''):
+        messages.error(request, 'Configura el acceso API de Render para descargar exports desde este panel.')
+        return redirect('dashboard')
     backup_directory = Path(getattr(settings, 'BACKUP_DIRECTORY', Path(settings.BASE_DIR) / 'backups' / 'weekly'))
     archives = sorted(
         backup_directory.glob('ferreelectri-backup-*.tar.gz') if backup_directory.exists() else [],

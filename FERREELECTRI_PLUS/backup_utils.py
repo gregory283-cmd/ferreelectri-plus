@@ -53,6 +53,95 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def restore_backup_database(archive_path: Path, target_url: str) -> str:
+    if not target_url:
+        raise BackupError('Configura RESTORE_DATABASE_URL con una base PostgreSQL de ensayo separada.')
+    try:
+        import dj_database_url
+        target = dj_database_url.parse(target_url, conn_max_age=0)
+    except Exception as error:
+        raise BackupError(f'La URL de restauración no es válida: {error}') from error
+
+    active = settings.DATABASES['default']
+    if str(target.get('NAME') or '') == str(active.get('NAME') or ''):
+        raise BackupError('La base de restauración no puede tener el mismo nombre que la base activa.')
+    _verify_archive(archive_path, 'database.dump')
+    try:
+        import psycopg
+        connection_options = {
+            'dbname': target['NAME'],
+            'user': target.get('USER'),
+            'password': target.get('PASSWORD'),
+            'host': target.get('HOST') or None,
+            'port': target.get('PORT') or None,
+        }
+        options = target.get('OPTIONS') or {}
+        if options.get('sslmode'):
+            connection_options['sslmode'] = str(options['sslmode'])
+        if options.get('connect_timeout'):
+            connection_options['connect_timeout'] = int(options['connect_timeout'])
+        with psycopg.connect(**connection_options) as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "SELECT EXISTS (SELECT 1 FROM pg_class c "
+                    "JOIN pg_namespace n ON n.oid = c.relnamespace "
+                    "WHERE c.relkind IN ('r', 'v', 'm', 'S') "
+                    "AND n.nspname NOT IN ('pg_catalog', 'information_schema') "
+                    "AND n.nspname NOT LIKE 'pg_toast%')"
+                )
+                if cursor.fetchone()[0]:
+                    raise BackupError('La base de restauración debe estar vacía antes de importar.')
+    except BackupError:
+        raise
+    except Exception as error:
+        raise BackupError(f'No se pudo verificar la base de restauración: {error}') from error
+    environment = os.environ.copy()
+    if target.get('PASSWORD'):
+        environment['PGPASSWORD'] = str(target['PASSWORD'])
+    options = target.get('OPTIONS') or {}
+    if options.get('connect_timeout'):
+        environment['PGCONNECT_TIMEOUT'] = str(options['connect_timeout'])
+    if options.get('sslmode'):
+        environment['PGSSLMODE'] = str(options['sslmode'])
+
+    with tempfile.TemporaryDirectory(prefix='ferreelectri-restore-') as temporary_directory:
+        dump_path = Path(temporary_directory) / 'database.dump'
+        try:
+            with tarfile.open(archive_path, 'r:gz') as archive:
+                database_dump = archive.extractfile('database.dump')
+                if database_dump is None:
+                    raise BackupError('El paquete no contiene database.dump.')
+                with database_dump, dump_path.open('wb') as destination:
+                    shutil.copyfileobj(database_dump, destination)
+        except (OSError, tarfile.TarError, KeyError) as error:
+            raise BackupError(f'No se pudo extraer el dump del paquete: {error}') from error
+
+        command = [
+            _find_postgres_tool('pg_restore'),
+            '--exit-on-error',
+            '--no-owner',
+            '--no-privileges',
+        ]
+        for setting, flag in (('HOST', '--host'), ('PORT', '--port'), ('USER', '--username')):
+            if target.get(setting):
+                command.extend((flag, str(target[setting])))
+        command.extend(('--dbname', str(target['NAME']), str(dump_path)))
+        try:
+            result = subprocess.run(
+                command,
+                check=False,
+                capture_output=True,
+                text=True,
+                timeout=getattr(settings, 'BACKUP_DUMP_TIMEOUT_SECONDS', 3600),
+                env=environment,
+            )
+        except (OSError, subprocess.TimeoutExpired) as error:
+            raise BackupError(f'No se pudo restaurar el dump PostgreSQL: {error}') from error
+        if result.returncode:
+            raise BackupError(f'pg_restore falló: {result.stderr.strip() or result.returncode}')
+    return str(target.get('NAME') or '')
+
+
 def _run_pg_dump(dump_path: Path, database: dict[str, Any]) -> tuple[str, dict[str, str]]:
     executable = _find_postgres_tool('pg_dump')
     environment = os.environ.copy()

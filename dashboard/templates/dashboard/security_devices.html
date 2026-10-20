@@ -22,7 +22,7 @@
             {% csrf_token %}<input type="hidden" name="action" value="set_primary">
             <label for="primary-passkey">Llave de este teléfono</label>
             <select id="primary-passkey" name="passkey_id" required>
-                {% for passkey in admin_passkeys %}{% if passkey.user_id == request.user.id %}<option value="{{ passkey.pk }}" {% if security_config.primary_passkey_id == passkey.pk %}selected{% endif %}>{{ passkey.name }} · {{ passkey.created_at|date:'d/m/Y' }}</option>{% endif %}{% endfor %}
+                {% for passkey in admin_passkeys %}{% if passkey.user_id == request.user.id and passkey.is_active and passkey.pk|stringformat:'s' == request.session.admin_current_passkey_id|stringformat:'s' %}<option value="{{ passkey.pk }}" selected>{{ passkey.name }} · {{ passkey.created_at|date:'d/m/Y' }}</option>{% endif %}{% endfor %}
             </select>
             <button type="submit" class="security-primary-button">{% if security_config.primary_passkey_id %}Actualizar teléfono principal{% else %}Designar este teléfono{% endif %}</button>
         </form>

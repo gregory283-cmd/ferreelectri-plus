@@ -298,6 +298,10 @@ BACKUP_DIRECTORY = os.environ.get('BACKUP_DIRECTORY', str(BASE_DIR / 'backups' /
 BACKUP_MIRROR_DIRECTORY = os.environ.get('BACKUP_MIRROR_DIRECTORY', '').strip()
 BACKUP_RETENTION_COUNT = max(1, int(os.environ.get('BACKUP_RETENTION_COUNT', '30')))
 BACKUP_DUMP_TIMEOUT_SECONDS = max(60, int(os.environ.get('BACKUP_DUMP_TIMEOUT_SECONDS', '3600')))
+BACKUP_MAX_IMPORT_BYTES = max(1, int(os.environ.get('BACKUP_MAX_IMPORT_BYTES', str(100 * 1024 * 1024))))
+RESTORE_DATABASE_URL = os.environ.get('RESTORE_DATABASE_URL', '').strip()
+RENDER_API_KEY = os.environ.get('RENDER_API_KEY', '').strip()
+RENDER_POSTGRES_ID = os.environ.get('RENDER_POSTGRES_ID', '').strip()
 PG_DUMP_PATH = os.environ.get('PG_DUMP_PATH', '').strip()
 BACKUP_SCHEDULE_STATUS_FILE = Path(os.environ.get(
     'BACKUP_SCHEDULE_STATUS_FILE',

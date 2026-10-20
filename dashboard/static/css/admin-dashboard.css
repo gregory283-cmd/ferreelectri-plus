@@ -321,6 +321,11 @@
 .backup-history ul { display: grid; gap: 6px; margin: 8px 0 0; padding: 0; list-style: none; }
 .backup-history li { display: flex; justify-content: space-between; gap: 12px; }
 .backup-history li strong { color: var(--dash-text); }
+.backup-restore-form { display: grid; gap: 8px; margin-top: 12px; }
+.backup-restore-form label { color: var(--dash-muted); font-size: .68rem; }
+.backup-restore-form select, .backup-restore-form input[type="file"] { width: 100%; min-width: 0; color: var(--dash-text); font: inherit; font-size: .72rem; }
+.backup-restore-form select { padding: 8px; border: 1px solid var(--dash-line); border-radius: 6px; background: var(--dash-raised); }
+.backup-restore-form .backup-secondary { justify-self: start; }
 .backup-note { margin: 12px 0 0; color: var(--dash-muted); font-size: .68rem; line-height: 1.5; }
 .backup-integrity { display: flex; align-items: center; gap: 6px; margin: 10px 0 0; color: var(--dash-green); font-size: .68rem; }
 .backup-integrity .material-symbols-outlined { font-size: 16px; }

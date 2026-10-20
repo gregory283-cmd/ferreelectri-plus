@@ -13,7 +13,7 @@ class Command(BaseCommand):
         except (BackupError, OSError, ValueError) as error:
             raise CommandError(str(error)) from error
 
-        self.stdout.write(self.style.SUCCESS(f'Backup verificado: {backup_path}'))
+        self.stdout.write(self.style.SUCCESS(f'Backup local verificado: {backup_path}'))
         if not getattr(settings, 'BACKUP_MIRROR_DIRECTORY', '').strip():
             self.stderr.write(
                 self.style.WARNING(

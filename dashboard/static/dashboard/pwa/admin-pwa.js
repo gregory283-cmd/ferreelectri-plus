@@ -200,7 +200,7 @@
     if (!pending) return;
 
     const navigationType = performance.getEntriesByType('navigation')[0]?.type;
-    if (navigationType === 'reload' || internalNavigation || appReturnAllowed) {
+    if (sameDocumentResume || navigationType === 'reload' || internalNavigation || appReturnAllowed) {
       clearAppExitMarkers();
       return;
     }
@@ -339,6 +339,7 @@
   }
 
   function scheduleIdleConfirmation() {
+    if (isStandalone) return;
     if (idleTimeout) window.clearTimeout(idleTimeout);
     if (!sessionDialog || sessionDialog.open || logoutInProgress) return;
     const remaining = idleTimeoutMs - (Date.now() - lastActivityAt);

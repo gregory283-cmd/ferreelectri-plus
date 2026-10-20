@@ -55,8 +55,18 @@ pg_restore --exit-on-error --no-owner --no-privileges --dbname=ferreelectri_rest
 
 Comprueba que existan tablas de auditoría, facturas e inventario; después copia `media/` y `private-media/` a sus destinos configurados. Valida pedidos, pagos y comprobantes antes de abrir tráfico. Nunca ejecutes `pg_restore --clean` contra la base activa.
 
-## Programación y copia externa
+## Respaldos nativos de Render
+
+Render ofrece exports lógicos de PostgreSQL desde la página **Recovery** del servicio. Se conservan siete días y se descargan como archivo comprimido desde el dashboard. La app solicita el export con `POST /v1/postgres/{postgresId}/export` y lista exports mediante `GET /v1/postgres/{postgresId}/export`. En el panel, el botón manual y la descarga solo aparecen para el dispositivo principal de seguridad.
+
+Para habilitar esos botones, configura `RENDER_API_KEY` y `RENDER_POSTGRES_ID` como variables secretas del servicio web en Render. El ID PostgreSQL comienza por `dpg-`. La clave nunca va en el repositorio. Render debe permitir exports en el plan de la base. El estado PITR se consulta con la API y se presenta como disponible solo cuando Render responde `AVAILABLE`; planes gratuitos no ofrecen recuperación/PITR, y los planes pagos tienen una ventana que depende del plan (3 o 7 días). La recuperación crea otra instancia para validar. No apuntes la aplicación a ella hasta comprobar los datos y cambiar la conexión desde Render.
+
+Los exports y PITR cubren la base PostgreSQL, no los ficheros locales. El proyecto almacena imágenes y comprobantes en `FileSystemStorage`, y el filesystem de Render es efímero por defecto. Para conservarlos en Render, adjunta un Persistent Disk al servicio web con un mount path que contenga ambos directorios y configura `MEDIA_ROOT`/`PRIVATE_MEDIA_ROOT` bajo ese mount. Render toma snapshots automáticos diarios de discos persistentes, pero Cron Jobs no pueden montar esos discos; no se usará un Cron externo para fingir una copia completa. Los snapshots de disco son una protección adicional, no sustituyen los exports de PostgreSQL.
+
+La app solo automatiza el inicio del export lógico manual; el calendario de backups/PITR lo administra Render según el plan. La página **Recovery** permite crear un export manual, descargarlo y recuperar a una instancia nueva. En desarrollo local se conserva `manage.py create_system_backup` y la importación a una base de ensayo separada. Nunca ejecutes `pg_restore --clean` contra la base activa.
+
+## Respaldos locales de desarrollo
 
 El instalador es `scripts/install_daily_backup_task.ps1`; registra una tarea diaria a las 02:00 y deja un marcador para el dashboard. La tarea requiere que Windows permita registrar tareas programadas. En este equipo la política de PowerShell bloqueó el script y el usuario actual recibió `Acceso denegado` al registrar la tarea; por eso el dashboard no la muestra como instalada. Debe registrarla una cuenta autorizada desde el Programador de tareas o una consola aprobada por administración.
 
-`BACKUP_DIRECTORY` controla el almacenamiento local y `BACKUP_RETENTION_COUNT` la retención (30 por defecto). `BACKUP_MIRROR_DIRECTORY` permite una segunda copia y el proceso compara sus hashes. No se ha configurado un destino externo; los paquetes incluyen datos personales y comprobantes privados, así que configura únicamente un destino externo autorizado y protegido.
+`BACKUP_DIRECTORY` controla los paquetes locales de desarrollo y `BACKUP_RETENTION_COUNT` su retención (30 por defecto). No se muestran como backup cloud en Render porque su filesystem puede desaparecer al reiniciar.

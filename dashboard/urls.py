@@ -109,6 +109,7 @@ urlpatterns = [
     path('cliente/reenviar-verificacion/', views.cliente_reenviar_verificacion, name='cliente_reenviar_verificacion'),
     path('admin-panel/manual-backup/', views.manual_backup, name='manual_backup'),
     path('admin-panel/respaldo/ultimo/', views.download_latest_backup, name='download_latest_backup'),
+    path('admin-panel/respaldo/importar/', views.restore_backup, name='restore_backup'),
     path('admin-panel/creditos/reporte/', views.creditos_reporte_pdf, name='creditos_reporte_pdf'),
     path('admin-panel/creditos/reporte/<slug:slug>/', views.credito_individual_pdf, name='credito_individual_pdf'),
     path('cliente/manual-usuario/', views.manual_usuario_pdf, name='manual_usuario'),

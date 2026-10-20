@@ -2,7 +2,7 @@
 {% load static l10n %}
 
 {% block arroz_con_pollo %}
-<link rel="stylesheet" href="{% static 'css/admin-dashboard.css' %}?v=20261018-mobile-actions">
+<link rel="stylesheet" href="{% static 'css/admin-dashboard.css' %}?v=20261020-cloud-restore">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 
 <main class="executive-dashboard{% if is_security_owner %} is-security-owner{% endif %}{% if can_setup_security_owner %} is-security-setup{% endif %}" data-currency="{{ currency|escape }}">
@@ -242,26 +242,36 @@
                 <div>
                     <span class="panel-kicker">PROTECCIÓN DE DATOS</span>
                     <h2>Copias de seguridad</h2>
-                    <p>PostgreSQL custom + manifiesto + archivos privados.</p>
+                    <p>Exportaciones PostgreSQL y recuperación administrada por Render.</p>
                 </div>
                 <span class="backup-shield material-symbols-outlined" aria-hidden="true">backup</span>
             </div>
             <div class="backup-status-grid">
-                <div><span>Automatización</span><strong class="{% if backup_schedule_installed %}status-ok{% else %}status-warning{% endif %}">{% if backup_schedule_installed %}Diaria · 02:00{% else %}No instalada{% endif %}</strong></div>
-                <div><span>Último respaldo</span><strong>{% if backup_history %}{{ backup_history.0.created_at|date:"d/m/Y H:i" }}{% else %}Sin copias{% endif %}</strong></div>
-                <div><span>Destino secundario</span><strong class="{% if backup_mirror_configured %}status-ok{% else %}status-warning{% endif %}">{% if backup_mirror_configured %}Configurado{% else %}Pendiente de autorización{% endif %}</strong></div>
-                <div><span>Retención local</span><strong>{{ backup_retention }} copias</strong></div>
+                <div><span>Protección automática</span><strong class="{% if render_recovery_status == 'AVAILABLE' %}status-ok{% else %}status-warning{% endif %}">{% if render_recovery_status == 'AVAILABLE' %}PITR disponible{% elif render_recovery_status == 'BACKUP_NOT_READY' %}Preparando{% elif render_recovery_status == 'NOT_AVAILABLE' %}No incluida en el plan{% elif render_backup_ready %}No disponible{% else %}Conexión pendiente{% endif %}</strong></div>
+                <div><span>Última exportación</span><strong>{% if backup_history %}{{ backup_history.0.created_at|date:"d/m/Y H:i" }}{% elif render_recovery_status == 'AVAILABLE' %}PITR disponible{% else %}Sin exportaciones{% endif %}</strong></div>
+                <div><span>PostgreSQL en Render</span><strong class="{% if render_backup_ready %}status-ok{% else %}status-warning{% endif %}">{% if render_backup_ready %}API conectable{% else %}Pendiente de conexión{% endif %}</strong></div>
+                <div><span>Retención de exports</span><strong>{% if render_backup_ready %}7 días · Render{% else %}Ver Recovery{% endif %}</strong></div>
             </div>
-            {% if not backup_tools_ready %}<p class="backup-alert">Faltan las herramientas `pg_dump`/`pg_restore`; no se puede crear un respaldo verificable.</p>{% endif %}
+            {% if render_recovery_error %}<p class="backup-alert">No se pudo consultar el historial o la recuperación de Render. Revisa el ID del Postgres y el acceso API del servicio.</p>{% endif %}
+            {% if render_database_url %}<p class="backup-note"><a href="{{ render_database_url }}" target="_blank" rel="noopener noreferrer">Abrir Recovery y exportaciones en Render</a></p>{% endif %}
+            {% if is_render_service and not render_database_url %}<p class="backup-note"><a href="https://dashboard.render.com" target="_blank" rel="noopener noreferrer">Abrir dashboard de Render para Recovery</a></p>{% endif %}
+            {% if not render_backup_ready and is_render_service %}<p class="backup-alert">Faltan RENDER_API_KEY y RENDER_POSTGRES_ID. La copia local no persiste en el disco efímero de Render.</p>{% endif %}
+            {% if not render_backup_ready and not backup_tools_ready %}<p class="backup-alert">Faltan las herramientas `pg_dump`/`pg_restore`; no se puede crear un respaldo local verificable.</p>{% endif %}
             <div class="backup-actions">
-                <form method="post" action="{% url 'manual_backup' %}">{% csrf_token %}<button type="submit" class="backup-primary" {% if not backup_tools_ready %}disabled{% endif %}><span class="material-symbols-outlined" aria-hidden="true">save</span> Crear respaldo ahora</button></form>
-                {% if backup_history %}<a class="backup-secondary" href="{% url 'download_latest_backup' %}"><span class="material-symbols-outlined" aria-hidden="true">download</span> Descargar último</a>{% endif %}
+                {% if is_security_owner and render_backup_ready or not is_render_service %}<form method="post" action="{% url 'manual_backup' %}">{% csrf_token %}<button type="submit" class="backup-primary" {% if not render_backup_ready and not backup_tools_ready %}disabled{% endif %}><span class="material-symbols-outlined" aria-hidden="true">save</span>{% if render_backup_ready %}Solicitar exportación en Render{% else %}Crear respaldo ahora{% endif %}</button></form>{% elif is_render_service %}<a class="backup-secondary" href="https://dashboard.render.com" target="_blank" rel="noopener noreferrer"><span class="material-symbols-outlined" aria-hidden="true">open_in_new</span> Abrir exports de Render</a>{% endif %}
+                {% if backup_history and is_security_owner %}<a class="backup-secondary" href="{% url 'download_latest_backup' %}"><span class="material-symbols-outlined" aria-hidden="true">download</span> Descargar última exportación</a>{% endif %}
             </div>
             {% if backup_latest_verified %}<p class="backup-integrity"><span class="material-symbols-outlined" aria-hidden="true">verified_user</span> Integridad verificada · SHA-256 {{ backup_latest_hash|slice:":12" }}…</p>{% endif %}
             {% if backup_history %}
-            <details class="backup-history"><summary>Historial reciente · {{ backup_archive_count }}</summary><ul>{% for backup in backup_history %}<li><span>{{ backup.created_at|date:"d/m/Y H:i" }}</span><strong>{{ backup.size_mb }} MB</strong></li>{% endfor %}</ul></details>
+            <details class="backup-history"><summary>Historial reciente · {{ backup_archive_count }}</summary><ul>{% for backup in backup_history %}<li><span>{{ backup.name }} · {{ backup.created_at|date:"d/m/Y H:i" }}</span><strong>{% if backup.size_mb %}{{ backup.size_mb }} MB{% else %}Render{% endif %}</strong></li>{% endfor %}</ul></details>
             {% endif %}
-            <p class="backup-note">Cada operación confirmada queda guardada en PostgreSQL. La copia diaria es una protección recuperable; no sustituye una copia fuera del equipo.</p>
+            {% if backup_restore_ready and not render_backup_ready %}
+            <details class="backup-history"><summary>Importar a base de ensayo</summary>
+                <form id="backup-import-upload" method="post" action="{% url 'restore_backup' %}" enctype="multipart/form-data" class="backup-restore-form">{% csrf_token %}<label for="backup-upload-file">Paquete .tar.gz</label><input id="backup-upload-file" type="file" name="archive" accept=".tar.gz,application/gzip" required><button type="submit" class="backup-secondary">Importar archivo a ensayo</button></form>
+            </details>
+            {% elif render_backup_ready %}<p class="backup-note">Para restaurar, usa Recovery en Render: se crea una instancia nueva que puedes validar antes de cambiar la conexión del servicio.</p>
+            {% elif not is_render_service %}<p class="backup-note">La importación local se habilita con RESTORE_DATABASE_URL y una base PostgreSQL de ensayo vacía.</p>{% endif %}
+            <p class="backup-note">Los exports de PostgreSQL no incluyen archivos multimedia ni comprobantes guardados en el sistema de archivos del servicio.</p>
         </article>
     </section>
 </main>

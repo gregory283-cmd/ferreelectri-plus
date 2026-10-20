@@ -17,7 +17,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 from decimal import Decimal
 from PIL import Image
 from django.conf import settings
@@ -724,6 +724,83 @@ class BackupArchiveIntegrityTest(TestCase):
 
             with self.assertRaises(BackupError):
                 _verify_archive(archive_path, 'database.dump')
+
+    @override_settings(
+        DATABASES={'default': {'NAME': 'ferreelectri_production'}},
+    )
+    def test_restore_refuses_active_database_name(self):
+        from FERREELECTRI_PLUS.backup_utils import BackupError, restore_backup_database
+
+        with self.assertRaisesMessage(BackupError, 'mismo nombre que la base activa'):
+            restore_backup_database(Path('unused.tar.gz'), 'postgresql://user:pass@localhost/ferreelectri_production')
+
+    def test_dashboard_shows_safe_import_setup_notice_without_restore_database(self):
+        admin = User.objects.create_superuser(
+            username='backup-panel-admin', email='backup-panel-admin@example.test', password='TestPassword123!',
+        )
+        self.client.force_login(admin)
+
+        with override_settings(RESTORE_DATABASE_URL=''):
+            response = self.client.get(reverse('dashboard'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'La importación local se habilita con RESTORE_DATABASE_URL')
+
+    @override_settings(
+        RENDER_API_KEY='test-render-key',
+        RENDER_POSTGRES_ID='dpg-dashboard-test',
+        RENDER_EXTERNAL_HOSTNAME='ferreelectri.example.onrender.com',
+    )
+    def test_dashboard_shows_render_pitr_and_native_export_history(self):
+        admin = User.objects.create_superuser(
+            username='render-backup-panel-admin',
+            email='render-backup-panel@example.test',
+            password='TestPassword123!',
+        )
+        self.client.force_login(admin)
+        with patch('FERREELECTRI_PLUS.render_backup.retrieve_recovery_status', return_value={'recoveryStatus': 'AVAILABLE'}), patch(
+            'FERREELECTRI_PLUS.render_backup.list_postgres_exports',
+            return_value=[{'id': 'exp-dashboard', 'createdAt': '2026-10-20T02:00:00Z', 'url': 'https://exports.example/backup'}],
+        ):
+            response = self.client.get(reverse('dashboard'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'PITR disponible')
+        self.assertContains(response, 'Exportación exp-dashboard')
+        self.assertContains(response, 'Abrir Recovery y exportaciones en Render')
+
+    @override_settings(RENDER_API_KEY='test-render-key', RENDER_POSTGRES_ID='dpg-test-postgres')
+    def test_render_export_request_uses_server_side_api_key(self):
+        from FERREELECTRI_PLUS.render_backup import create_postgres_export
+
+        response = Mock()
+        response.__enter__ = Mock(return_value=response)
+        response.__exit__ = Mock(return_value=False)
+        response.read.return_value = json.dumps({'id': 'exp-test'}).encode()
+        with patch('FERREELECTRI_PLUS.render_backup.urllib.request.urlopen', return_value=response) as urlopen:
+            result = create_postgres_export()
+
+        request = urlopen.call_args.args[0]
+        self.assertEqual(result['id'], 'exp-test')
+        self.assertEqual(request.full_url, 'https://api.render.com/v1/postgres/dpg-test-postgres/export')
+        self.assertEqual(request.get_header('Authorization'), 'Bearer test-render-key')
+
+    @override_settings(RENDER_API_KEY='test-render-key', RENDER_POSTGRES_ID='dpg-test-postgres')
+    def test_render_export_history_returns_temporary_download_urls(self):
+        from FERREELECTRI_PLUS.render_backup import list_postgres_exports
+
+        response = Mock()
+        response.__enter__ = Mock(return_value=response)
+        response.__exit__ = Mock(return_value=False)
+        response.read.return_value = json.dumps([
+            {'id': 'exp-old', 'createdAt': '2026-10-19T02:00:00Z', 'url': 'https://exports.example/old'},
+            {'id': 'exp-new', 'createdAt': '2026-10-20T02:00:00Z', 'url': 'https://exports.example/new'},
+        ]).encode()
+        with patch('FERREELECTRI_PLUS.render_backup.urllib.request.urlopen', return_value=response):
+            exports = list_postgres_exports()
+
+        self.assertEqual(exports[0]['id'], 'exp-new')
+        self.assertEqual(exports[0]['url'], 'https://exports.example/new')
 
 
 @override_settings(
@@ -2550,9 +2627,11 @@ class AdminPWASecurityTest(TestCase):
         script = (Path(settings.BASE_DIR) / 'dashboard/static/dashboard/pwa/admin-pwa.js').read_text(encoding='utf-8')
 
         self.assertIn("navigationType === 'reload'", script)
+        self.assertIn('if (sameDocumentResume || navigationType === \'reload\'', script)
+        self.assertIn('function scheduleIdleConfirmation() {\n    if (isStandalone) return;', script)
         self.assertIn('resolveStandaloneExit(true)', script)
         self.assertIn("window.addEventListener('pagehide', startStandaloneExit)", script)
-        self.assertIn("if (navigationType === 'reload' || internalNavigation || appReturnAllowed)", script)
+        self.assertIn('sameDocumentResume || navigationType === \'reload\' || internalNavigation || appReturnAllowed', script)
         self.assertIn('appExitLockStarted = false', script)
         self.assertIn("sessionStorage.setItem(appExitPendingKey, '1')", script)
         self.assertIn('appSessionReturnAllowedKey', script)
@@ -3294,6 +3373,48 @@ class AdminPWASecurityTest(TestCase):
             self.assertTrue(owner_device.is_active)
             self.assertTrue(owner_device.is_primary)
         self.assertEqual(self.client.get(reverse('auditoria_completa')).status_code, 200)
+
+    def test_owner_can_reassign_primary_to_its_authenticated_phone(self):
+        owner = User.objects.create_superuser(
+            username='primary-device-recovery-owner',
+            email='primary-device-recovery@example.test',
+            password='TestPassword123!',
+        )
+        old_passkey = AdminPasskey.objects.create(
+            user=owner, credential_id='b2xkLXByaW1hcnkta2V5', public_key=b'old-key', name='Teléfono anterior',
+        )
+        phone_passkey = AdminPasskey.objects.create(
+            user=owner, credential_id='bmV3LXBob25lLWtleQ', public_key=b'phone-key', name='Mi teléfono',
+        )
+        config, _ = AdminSecurityConfig.objects.get_or_create(pk=1)
+        config.owner_user = owner
+        config.primary_passkey = old_passkey
+        config.save(update_fields=['owner_user', 'primary_passkey', 'updated_at'])
+        AdminDevice.objects.create(
+            user=owner, passkey=old_passkey, name='Teléfono anterior', is_primary=True,
+        )
+        phone_device = AdminDevice.objects.create(
+            user=owner, passkey=phone_passkey, name='Mi teléfono',
+        )
+        self.client.force_login(owner)
+        session = self.client.session
+        session['admin_current_passkey_id'] = phone_passkey.pk
+        session['admin_device_uuid'] = str(phone_device.device_id)
+        session.save()
+
+        page = self.client.get(reverse('admin_security_devices'))
+        self.assertEqual(page.status_code, 200)
+        response = self.client.post(reverse('admin_security_devices'), {
+            'action': 'set_primary', 'passkey_id': phone_passkey.pk,
+        })
+
+        self.assertRedirects(response, reverse('admin_security_devices'))
+        config.refresh_from_db()
+        phone_device.refresh_from_db()
+        self.assertEqual(config.primary_passkey_id, phone_passkey.pk)
+        self.assertTrue(phone_device.is_primary)
+        self.assertFalse(AdminDevice.objects.get(user=owner, passkey=old_passkey).is_primary)
+        self.assertTrue(AuditLog.objects.filter(action='ADMIN_PRIMARY_DEVICE_SET', user=owner).exists())
 
     def test_security_owner_can_transfer_superuser_role_to_another_admin(self):
         current_owner = User.objects.create_superuser(
