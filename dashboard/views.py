@@ -4322,8 +4322,8 @@ def checkout(request):
             'payment_accounts': _cuentas_pago_checkout(),
             'payment_methods_enabled': payment_methods_enabled,
             'checkout_post_data': {
-                'telefono': request.POST.get('telefono', ''),
-                'direccion': request.POST.get('direccion', ''),
+                'telefono': request.POST.get('telefono') or getattr(cliente, 'telefono', ''),
+                'direccion': request.POST.get('direccion') or getattr(cliente, 'direccion', ''),
                 'referencia': request.POST.get('referencia', ''),
             },
             'checkout_errors': errors,
@@ -4565,7 +4565,11 @@ def checkout(request):
         'total_bs': total_bs,
         'payment_accounts': _cuentas_pago_checkout(),
         'payment_methods_enabled': payment_methods_enabled,
-        'checkout_post_data': {'telefono': '', 'direccion': '', 'referencia': ''},
+        'checkout_post_data': {
+            'telefono': getattr(cliente, 'telefono', ''),
+            'direccion': getattr(cliente, 'direccion', ''),
+            'referencia': '',
+        },
     })
 
 

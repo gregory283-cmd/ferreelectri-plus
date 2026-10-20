@@ -2047,6 +2047,18 @@ class CheckoutProfileValidationTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Método de pago premium')
 
+    def test_anonymous_checkout_with_session_cart_renders_document_prefix_selector(self):
+        session = self.client.session
+        session['anon_cart'] = {self.product_code: 1}
+        session.save()
+
+        response = self.client.get(reverse('checkout'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'name="cedula_tipo"')
+        self.assertContains(response, '<option value="V"')
+        self.assertContains(response, '<option value="J"')
+
     def test_checkout_requires_fiscal_address_even_when_client_has_delivery_address(self):
         self.client.force_login(self.user)
         self.user.first_name = 'QA'

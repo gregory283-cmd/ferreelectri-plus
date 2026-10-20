@@ -49,11 +49,11 @@
           </label>
           <label class="checkout-field">
             <span>Teléfono de contacto</span>
-            <input name="telefono" type="tel" value="{{ checkout_post_data.telefono|default:cliente.telefono }}" placeholder="0414 000 0000" autocomplete="tel" required>
+            <input name="telefono" type="tel" value="{{ checkout_post_data.telefono|default:'' }}" placeholder="0414 000 0000" autocomplete="tel" required>
           </label>
           <label class="checkout-field" style="grid-column: 1 / -1;">
             <span>Dirección de entrega</span>
-            <input name="direccion" type="text" value="{{ checkout_post_data.direccion|default:cliente.direccion }}" placeholder="Ciudad, municipio, sector, calle y punto de referencia" autocomplete="street-address" required>
+            <input name="direccion" type="text" value="{{ checkout_post_data.direccion|default:'' }}" placeholder="Ciudad, municipio, sector, calle y punto de referencia" autocomplete="street-address" required>
           </label>
         </div>
       </section>
