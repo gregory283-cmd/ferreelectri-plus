@@ -6,8 +6,8 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
     html, body {
-        width: 100vw;
-        overflow-x: hidden;
+        width: 100%;
+        overflow-x: clip;
         margin: 0;
         padding: 0;
     }
@@ -251,6 +251,7 @@
         max-width: 100%;
         overflow-x: auto;
     }
+    .factura-actions { display:flex; gap:8px; justify-content:center; align-items:center; }
     .tabla-facturas {
         width: 100%;
         margin: 30px auto;
@@ -652,7 +653,33 @@ html[data-theme="dark"] .btn-precios {
         .ventas-btn-nuevo { width: 100%; min-width: 0; min-height: 46px; justify-content: center; margin: 0; padding: 9px 12px; border-radius: 10px; font-size: .92rem; }
         .top-bar-precios { justify-content: stretch; margin: 10px 0; }
         .btn-precios { width: 100%; justify-content: center; margin: 0; padding: 10px 12px; font-size: .9rem; }
-        .ventas-table-container { margin-bottom: 20px; padding: 14px 10px; border-radius: 12px; }
+        .ventas-table-container { margin-bottom: 20px; padding: 14px 10px; border-radius: 12px; overflow:visible; }
+        .ventas-main { margin-top:28px; width:100%; max-width:100%; padding:8px 12px; }
+        .ventas-summary-row { align-items:stretch; }
+        .ventas-summary-card { min-height:76px; max-width:none; }
+        .ventas-summary-card .info { min-width:0; }
+        .ventas-summary-card .info small { display:block; overflow-wrap:anywhere; }
+        .ventas-summary-card .info small .material-symbols-outlined { display:none; }
+        .ventas-form-search button { display:grid; place-items:center; color:#fff; }
+        .tabla-facturas { display:block; width:100%; margin:12px 0; box-shadow:none; }
+        .tabla-facturas tbody { width:100%; }
+        .tabla-facturas tr { width:100%; max-width:100%; }
+        .tabla-facturas td { display:block!important; width:100%; min-width:0; overflow-wrap:anywhere; }
+        .tabla-facturas td.factura-actions { display:flex!important; flex-wrap:wrap; justify-content:flex-start!important; }
+        .tabla-facturas td[style] { white-space:normal; }
+        .ventas-main > div[style*="Total de ventas"] { margin:0 2px 16px!important; font-size:1rem!important; }
+        .ventas-main .pagination { margin:14px 0; }
+        .ventas-main .pagination .step-links { display:flex; flex-wrap:wrap; justify-content:center; gap:6px; }
+        .ventas-main .pagination .step-links a,.ventas-main .pagination .step-links span { margin:0; }
+    }
+    @media (max-width: 380px) {
+        .ventas-main { padding-right:8px; padding-left:8px; }
+        .ventas-summary-row { gap:5px; }
+        .ventas-summary-card { gap:5px; padding:8px 6px; }
+        .ventas-summary-card .icon { padding:6px; font-size:1rem; }
+        .ventas-summary-card .info h5 { font-size:1.05rem; }
+        .ventas-summary-card .info small { font-size:.6rem; }
+        .report-buttons a { font-size:.72rem; }
     }
 </style>
 <script>
@@ -808,7 +835,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             </span>
                         {% endif %}
                     </td>
-                    <td data-label="Acciones" style="display:flex; gap:8px; justify-content:center; align-items:center;">
+                    <td data-label="Acciones" class="factura-actions">
                         <!-- Ver nota de entrega -->
                         <a href="{% url 'ver_factura' f.numero %}" title="Ver nota de entrega" aria-label="Ver nota de entrega #{{ f.numero }}" style="background:#00b2ff; color:white; padding:8px 12px; border-radius:8px; text-decoration:none; display:inline-flex; align-items:center;">
                             <span class="material-symbols-outlined" style="font-size:24px; color:white;">visibility</span>
@@ -850,7 +877,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="6" style="text-align:center; color:#888; padding:20px;">No hay ventas registradas.</td>
+                    <td colspan="7" style="text-align:center; color:#888; padding:20px;">No hay ventas registradas.</td>
                 </tr>
                 {% endfor %}
             </tbody>

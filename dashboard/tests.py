@@ -26,7 +26,7 @@ from Inventario.models import Categoria, Productos, MovimientoInventario
 from Usuario.models import Clientes as UsuarioClientes
 from Ventas.models import DetalleFactura, Factura
 from .ferrebot import _clean_assistant_reply, build_assistant_reply, search_catalog
-from .models import AdminDashboardConfig, AdminDeviceSession, AdminLoginApproval, AdminPasskey, AdminSecurityConfig, AuditLog, Carrito, CarritoItem, Cliente, Customer, DevelopmentRequest, Pago, Pedido, PedidoItem, PerfilCliente
+from .models import AdminDashboardConfig, AdminDevice, AdminDeviceSession, AdminLoginApproval, AdminPasskey, AdminSecurityConfig, AuditLog, Carrito, CarritoItem, Cliente, Customer, DevelopmentRequest, Pago, Pedido, PedidoItem, PerfilCliente
 
 
 def make_test_payment_image():
@@ -482,6 +482,39 @@ class AdminOrderHistoryPresentationTest(TestCase):
         self.assertEqual(response.context['orders_total'], 1)
         self.assertEqual(response.context['pedidos'].paginator.count, 0)
         self.assertContains(response, 'No hay pedidos para mostrar')
+
+    def test_kanban_groups_orders_by_payment_decision_and_keeps_existing_actions(self):
+        Pago.objects.create(
+            pedido=self.order,
+            metodo='PAGO_MOVIL',
+            monto=Decimal('69.60'),
+            banco_origen='Mercantil',
+            cedula_pagador='J-12345678',
+            numero_referencia='KANBAN-1001',
+            estado='en_revision',
+        )
+        paid_order = Pedido.objects.create(
+            cliente=self.customer, total=Decimal('25.00'), estado='pagado',
+        )
+        rejected_order = Pedido.objects.create(
+            cliente=self.customer, total=Decimal('12.00'), estado='cancelado',
+        )
+
+        response = self.client.get(reverse('admin_historial_pedidos'))
+
+        self.assertEqual(response.status_code, 200)
+        lanes = {lane['key']: lane for lane in response.context['order_lanes']}
+        self.assertEqual(lanes['pending']['count'], 1)
+        self.assertEqual(lanes['approved']['count'], 1)
+        self.assertEqual(lanes['rejected']['count'], 1)
+        self.assertContains(response, 'Tablero Kanban de pedidos')
+        self.assertContains(response, 'Aprobar pedido')
+        self.assertContains(response, 'Rechazar pedido')
+        self.assertContains(response, f'Pedido #{paid_order.pk}')
+        self.assertContains(response, f'Pedido #{rejected_order.pk}')
+        self.assertContains(response, 'Mercantil')
+        self.assertContains(response, 'J-12345678')
+        self.assertContains(response, 'KANBAN-1001')
 
 
 class OperationalFulfillmentPermissionsTest(TestCase):
@@ -1611,6 +1644,21 @@ class CheckoutProfileValidationTest(TestCase):
         self.media_settings.disable()
         self.media_directory.cleanup()
 
+    def test_pago_movil_accepts_venezuelan_document_prefixes_case_insensitively(self):
+        from .forms import PagoMovilCheckoutForm
+
+        for prefix in 'VEJPGvejpg':
+            form = PagoMovilCheckoutForm(
+                data={
+                    'banco': 'Mercantil',
+                    'cedula_pagador': f'{prefix}-12345678',
+                    'referencia': 'REF-1234',
+                },
+                files={'capture': make_test_payment_image()},
+            )
+            self.assertTrue(form.is_valid(), form.errors)
+            self.assertEqual(form.cleaned_data['cedula_pagador'], f'{prefix.upper()}-12345678')
+
     def test_checkout_redirects_to_facturacion_when_profile_is_missing(self):
         self.client.force_login(self.user)
 
@@ -2063,6 +2111,56 @@ class CheckoutProfileValidationTest(TestCase):
         'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
         'staticfiles': {'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage'},
     })
+    def test_payment_storage_failure_returns_checkout_error_and_rolls_back_order(self):
+        from .storage import PrivatePaymentStorage
+
+        self.client.force_login(self.user)
+        self.user.first_name = 'QA'
+        self.user.last_name = 'Tester'
+        self.user.save(update_fields=['first_name', 'last_name'])
+        PerfilCliente.objects.create(
+            user=self.user,
+            cedula_rif='V12345678',
+            telefono='04121234567',
+            direccion='Dirección de prueba QA',
+        )
+        cliente = Cliente.objects.create(
+            user=self.user,
+            nombre='QA Tester',
+            email=self.user.email,
+            telefono='04121234567',
+            direccion='Dirección de prueba QA',
+        )
+        carrito = Carrito.objects.create(cliente=cliente)
+        CarritoItem.objects.create(carrito=carrito, producto=self.product, cantidad=2)
+        session = self.client.session
+        session['cliente_id'] = cliente.id
+        session.save()
+
+        with patch.object(PrivatePaymentStorage, '_save', side_effect=OSError('Storage unavailable')):
+            response = self.client.post(
+                reverse('checkout'),
+                {
+                    'metodo': 'PAGO_MOVIL',
+                    'banco': 'Banesco',
+                    'cedula_pagador': 'J12345678',
+                    'referencia': 'REF-QA-456',
+                    'telefono': '04121234567',
+                    'direccion': 'Dirección de prueba QA',
+                    'capture': make_test_payment_image(),
+                },
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'No se pudo registrar el pago en este momento')
+        self.assertEqual(Pedido.objects.filter(cliente=self.user).count(), 0)
+        self.product.refresh_from_db()
+        self.assertEqual(self.product.Cantidad, 5)
+
+    @override_settings(STORAGES={
+        'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
+        'staticfiles': {'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage'},
+    })
     def test_checkout_reserves_stock_until_admin_approves_payment(self):
         self.client.force_login(self.user)
         self.user.first_name = 'QA'
@@ -2386,8 +2484,53 @@ class AdminPWASecurityTest(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'class="launch-progress"')
-        self.assertContains(response, reverse('admin_app_session_lock'))
+        self.assertContains(response, 'pwa_launch.js')
         self.assertContains(response, 'rel="manifest"')
+        self.assertNotContains(response, reverse('admin_app_session_lock'))
+
+    def test_pwa_launch_resumes_authenticated_administrator(self):
+        staff = User.objects.create_user(
+            username='pwa-resume-admin', password='TestPassword123!', is_staff=True,
+        )
+        self.client.force_login(staff)
+
+        response = self.client.get(reverse('admin_pwa_launch'))
+
+        self.assertRedirects(response, reverse('dashboard'))
+        self.assertIn('_auth_user_id', self.client.session)
+
+    def test_pwa_exit_script_defers_logout_until_reload_or_internal_navigation_is_known(self):
+        script = (Path(settings.BASE_DIR) / 'dashboard/static/dashboard/pwa/admin-pwa.js').read_text(encoding='utf-8')
+
+        self.assertIn("navigationType === 'reload'", script)
+        self.assertIn('resolveStandaloneExit(true)', script)
+        self.assertIn("window.addEventListener('pagehide', startStandaloneExit)", script)
+        self.assertIn("if (navigationType === 'reload' || internalNavigation)", script)
+        self.assertIn('appExitLockStarted = false', script)
+        self.assertIn("sessionStorage.setItem(appExitPendingKey, '1')", script)
+
+    def test_blocked_device_cannot_login_and_the_shared_account_remains_active(self):
+        cache.clear()
+        staff = User.objects.create_superuser(
+            username='blocked-device-login',
+            email='blocked-device-login@example.test',
+            password='TestPassword123!',
+        )
+        device = AdminDevice.objects.create(user=staff, name='Laptop de Yulimar', is_active=False)
+        client = Client(HTTP_HOST='localhost')
+        client.cookies['ferreelectri_admin_device'] = str(device.device_id)
+
+        response = client.post(
+            reverse('login_admin_custom'),
+            {'username': staff.username, 'password': 'TestPassword123!', 'remember_device': '0'},
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertIn('Este dispositivo está bloqueado', response.json()['errors']['__all__'][0])
+        staff.refresh_from_db()
+        self.assertTrue(staff.is_active)
+        self.assertNotIn('_auth_user_id', client.session)
 
     def test_admin_password_login_ajax_returns_success_destination(self):
         staff = User.objects.create_superuser(
@@ -2401,7 +2544,7 @@ class AdminPWASecurityTest(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), {'ok': True, 'next': reverse('dashboard')})
+        self.assertEqual(response.json(), {'ok': True, 'next': reverse('admin_device_name')})
         login_event = AuditLog.objects.get(action='ADMIN_PASSWORD_LOGIN', user=staff)
         self.assertEqual(login_event.model_name, 'AdminAuth')
         self.assertEqual(login_event.ip_address, '127.0.0.1')
@@ -2519,12 +2662,85 @@ class AdminPWASecurityTest(TestCase):
         )
         self.assertEqual(completion_response.status_code, 200)
         self.assertTrue(completion_response.json()['complete'])
+        self.assertEqual(completion_response.json()['next'], reverse('admin_device_name'))
         self.assertEqual(approval.__class__.objects.get(pk=approval.pk).status, AdminLoginApproval.Status.COMPLETED)
         self.assertIn('_auth_user_id', requesting_client.session)
         self.assertEqual(int(requesting_client.session['_auth_user_id']), requesting_admin.pk)
+        naming_response = requesting_client.post(reverse('admin_device_name'), {'device_name': 'Movil de pruebas'})
+        self.assertEqual(naming_response.status_code, 302)
+        named_session = AdminDeviceSession.objects.get(session_key=requesting_client.session.session_key)
+        self.assertEqual(named_session.name, 'Movil de pruebas')
+        self.assertNotIn('admin_device_name_required', requesting_client.session)
         self.assertTrue(AdminDeviceSession.objects.get(session_key=active_session_key).is_active)
         self.assertEqual(self.client.get(reverse('dashboard')).status_code, 200)
         self.assertTrue(AuditLog.objects.filter(action='ADMIN_SESSION_APPROVED', user=requesting_admin).exists())
+
+    def test_password_login_requires_a_valid_device_name_before_panel_access(self):
+        cache.clear()
+        staff = User.objects.create_user(
+            username='named-device-admin', password='TestPassword123!', is_staff=True,
+        )
+        response = self.client.post(
+            reverse('login_admin_custom'),
+            {'username': staff.username, 'password': 'TestPassword123!', 'remember_device': '0'},
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['next'], reverse('admin_device_name'))
+        blocked_panel = self.client.get(reverse('dashboard'))
+        self.assertRedirects(blocked_panel, reverse('admin_device_name'))
+        invalid_name = self.client.post(reverse('admin_device_name'), {'device_name': '  '})
+        self.assertEqual(invalid_name.status_code, 200)
+        self.assertContains(invalid_name, 'Usa entre 2 y 40 caracteres')
+        self.assertEqual(self.client.get(reverse('dashboard')).status_code, 302)
+
+        named = self.client.post(reverse('admin_device_name'), {'device_name': 'PC oficina-1'})
+        self.assertRedirects(named, reverse('dashboard'))
+        device = AdminDeviceSession.objects.get(session_key=self.client.session.session_key)
+        self.assertEqual(device.name, 'PC oficina-1')
+        registered_device = device.device
+        self.assertEqual(registered_device.name, 'PC oficina-1')
+        self.assertEqual(self.client.get(reverse('dashboard')).status_code, 200)
+        self.client.post(reverse('logout'))
+        repeated_login = self.client.post(
+            reverse('login_admin_custom'),
+            {'username': staff.username, 'password': 'TestPassword123!', 'remember_device': '0'},
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+        )
+        self.assertEqual(repeated_login.status_code, 200)
+        self.assertEqual(repeated_login.json()['next'], reverse('dashboard'))
+        self.assertEqual(AdminDevice.objects.filter(user=staff).count(), 1)
+        self.assertEqual(AdminDevice.objects.get(user=staff).device_id, registered_device.device_id)
+
+        self.client.post(reverse('logout'))
+        another_admin = User.objects.create_user(
+            username='other-account-same-browser', password='TestPassword123!', is_staff=True,
+        )
+        other_login = self.client.post(
+            reverse('login_admin_custom'),
+            {'username': another_admin.username, 'password': 'TestPassword123!', 'remember_device': '0'},
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+        )
+        self.assertEqual(other_login.status_code, 200)
+        self.assertEqual(other_login.json()['next'], reverse('admin_device_name'))
+        other_device = AdminDevice.objects.get(user=another_admin)
+        self.assertNotEqual(other_device.device_id, registered_device.device_id)
+
+    def test_revoked_session_cannot_be_reactivated_by_a_later_request(self):
+        staff = User.objects.create_user(
+            username='revoked-device-admin', password='TestPassword123!', is_staff=True,
+        )
+        self.client.force_login(staff)
+        self.client.get(reverse('dashboard'))
+        session_key = self.client.session.session_key
+        AdminDeviceSession.objects.filter(session_key=session_key).update(is_active=False)
+
+        response = self.client.get(reverse('dashboard'))
+
+        self.assertRedirects(response, reverse('login_admin_custom'))
+        self.assertFalse(AdminDeviceSession.objects.get(session_key=session_key).is_active)
+        self.assertNotIn('_auth_user_id', self.client.session)
 
     def test_active_admin_can_deny_a_second_login(self):
         cache.clear()
@@ -2560,6 +2776,7 @@ class AdminPWASecurityTest(TestCase):
         self.assertEqual(self.client.get(reverse('dashboard')).status_code, 200)
 
     def test_primary_device_remains_approval_authority_after_inactivity(self):
+        cache.clear()
         owner = User.objects.create_superuser(
             username='persistent-primary-owner', email='persistent-primary@example.test', password='TestPassword123!',
         )
@@ -2573,9 +2790,13 @@ class AdminPWASecurityTest(TestCase):
         config.owner_user = owner
         config.primary_passkey = primary_key
         config.save(update_fields=['owner_user', 'primary_passkey', 'updated_at'])
+        primary_device = AdminDevice.objects.create(
+            user=owner, passkey=primary_key, name='Teléfono principal', is_primary=True,
+        )
         self.client.force_login(owner)
         owner_session = self.client.session
         owner_session['admin_current_passkey_id'] = primary_key.pk
+        owner_session['admin_device_uuid'] = str(primary_device.device_id)
         owner_session.save()
         self.client.get(reverse('dashboard'))
         primary_device = AdminDeviceSession.objects.get(session_key=self.client.session.session_key)
@@ -2598,9 +2819,6 @@ class AdminPWASecurityTest(TestCase):
         owner = User.objects.create_superuser(
             username='session-revoker-owner', email='session-revoker@example.test', password='TestPassword123!',
         )
-        secondary = User.objects.create_user(
-            username='secondary-device-user', password='TestPassword123!', is_staff=True,
-        )
         primary_key = AdminPasskey.objects.create(
             user=owner, credential_id='c2Vzc2lvbi1yZXZva2Vy', public_key=b'revoker-key', name='Teléfono principal',
         )
@@ -2608,32 +2826,92 @@ class AdminPWASecurityTest(TestCase):
         config.owner_user = owner
         config.primary_passkey = primary_key
         config.save(update_fields=['owner_user', 'primary_passkey', 'updated_at'])
+        primary_device = AdminDevice.objects.create(
+            user=owner, passkey=primary_key, name='Teléfono principal', is_primary=True,
+        )
         self.client.force_login(owner)
         primary_session = self.client.session
         primary_session['admin_current_passkey_id'] = primary_key.pk
+        primary_session['admin_device_uuid'] = str(primary_device.device_id)
         primary_session.save()
         self.client.get(reverse('dashboard'))
 
         secondary_client = Client(HTTP_HOST='localhost')
-        secondary_client.force_login(secondary)
+        secondary_client.force_login(owner)
         secondary_client.get(reverse('dashboard'))
         secondary_key = secondary_client.session.session_key
-        secondary_device = AdminDeviceSession.objects.get(session_key=secondary_key)
+        secondary_device = AdminDevice.objects.create(
+            user=owner,
+            name='Equipo secundario',
+            ip_address='203.0.113.21',
+            user_agent='Chrome en Android',
+        )
+        AdminDeviceSession.objects.filter(session_key=secondary_key).update(device=secondary_device)
 
         response = self.client.post(reverse('admin_security_devices'), {
-            'action': 'revoke_session',
-            'session_id': secondary_device.pk,
+            'action': 'block_device',
+            'device_id': secondary_device.pk,
         })
 
         self.assertEqual(response.status_code, 302)
-        self.assertFalse(AdminDeviceSession.objects.get(pk=secondary_device.pk).is_active)
+        self.assertFalse(AdminDevice.objects.get(pk=secondary_device.pk).is_active)
+        self.assertFalse(AdminDeviceSession.objects.get(session_key=secondary_key).is_active)
         self.assertEqual(self.client.get(reverse('dashboard')).status_code, 200)
         self.assertEqual(secondary_client.get(reverse('dashboard')).status_code, 302)
+        self.assertEqual(AdminDeviceSession.objects.filter(device=secondary_device).count(), 1)
+
+        activate_response = self.client.post(reverse('admin_security_devices'), {
+            'action': 'activate_device', 'device_id': secondary_device.pk,
+        })
+        secondary_device.refresh_from_db()
+        self.assertEqual(activate_response.status_code, 302)
+        self.assertTrue(secondary_device.is_active)
+
+        delete_response = self.client.post(reverse('admin_security_devices'), {
+            'action': 'delete_device', 'device_id': secondary_device.pk,
+        })
+        self.assertEqual(delete_response.status_code, 302)
+        self.assertFalse(AdminDevice.objects.filter(pk=secondary_device.pk).exists())
+        self.assertFalse(AdminDeviceSession.objects.filter(device=secondary_device).exists())
+
+    def test_primary_device_session_is_never_blocked_by_inactive_session_record(self):
+        owner = User.objects.create_superuser(
+            username='protected-primary-session',
+            email='protected-primary-session@example.test',
+            password='TestPassword123!',
+        )
+        primary_key = AdminPasskey.objects.create(
+            user=owner,
+            credential_id='cHJvdGVjdGVkLXByaW1hcnktc2Vzc2lvbg',
+            public_key=b'protected-primary-key',
+            name='Teléfono principal',
+        )
+        config, _ = AdminSecurityConfig.objects.get_or_create(pk=1)
+        config.owner_user = owner
+        config.primary_passkey = primary_key
+        config.save(update_fields=['owner_user', 'primary_passkey', 'updated_at'])
+        primary_device = AdminDevice.objects.create(
+            user=owner, passkey=primary_key, name='Teléfono principal', is_primary=True,
+        )
+        self.client.force_login(owner)
+        session = self.client.session
+        session['admin_current_passkey_id'] = primary_key.pk
+        session['admin_device_uuid'] = str(primary_device.device_id)
+        session.save()
+        self.client.get(reverse('dashboard'))
+        session_key = self.client.session.session_key
+        AdminDeviceSession.objects.filter(session_key=session_key).update(is_active=False)
+
+        response = self.client.get(reverse('dashboard'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('_auth_user_id', self.client.session)
+        self.assertTrue(AdminDeviceSession.objects.get(session_key=session_key).is_active)
 
     def test_primary_passkey_bypasses_login_approval(self):
         from django.contrib.sessions.middleware import SessionMiddleware
         from django.test import RequestFactory
-        from .views import _pending_admin_login_approval
+        from .views import _pending_admin_login_approval, _set_admin_device_name_requirement
 
         owner = User.objects.create_superuser(
             username='primary-passkey-login', email='primary-passkey-login@example.test', password='TestPassword123!',
@@ -2645,17 +2923,37 @@ class AdminPWASecurityTest(TestCase):
         config.owner_user = owner
         config.primary_passkey = primary_key
         config.save(update_fields=['owner_user', 'primary_passkey', 'updated_at'])
-        AdminDeviceSession.objects.create(
-            user=owner, passkey=primary_key, session_key='primary-active-session-000001', is_active=True,
+        primary_device = AdminDevice.objects.create(
+            user=owner, passkey=primary_key, name='Teléfono principal', is_primary=True,
+        )
+        active_session = AdminDeviceSession.objects.create(
+            user=owner, device=primary_device, passkey=primary_key,
+            session_key='primary-active-session-000001', is_active=True,
         )
         request = RequestFactory().post('/admin-panel/passkeys/login/verify/')
         SessionMiddleware(lambda response: response).process_request(request)
         request.session.save()
         request.session['admin_current_passkey_id'] = primary_key.pk
+        request.session['admin_device_uuid'] = str(primary_device.device_id)
         request.session.save()
 
+        self.assertFalse(_set_admin_device_name_requirement(request, primary_device))
+        self.assertNotIn('admin_device_name_required', request.session)
+        secondary_passkey = AdminPasskey.objects.create(
+            user=owner, credential_id='c2Vjb25kYXJ5LWRldmljZQ', public_key=b'secondary-key', name='Llave secundaria',
+        )
+        secondary_device = AdminDevice.objects.create(user=owner, passkey=secondary_passkey, name='')
+        self.assertTrue(_set_admin_device_name_requirement(request, secondary_device))
         self.assertIsNone(_pending_admin_login_approval(request, owner))
         self.assertFalse(AdminLoginApproval.objects.filter(user=owner).exists())
+
+        cloned_passkey_device = AdminDevice.objects.create(
+            user=owner, passkey=primary_key, name='Otro teléfono', is_primary=False,
+        )
+        request.session['admin_device_uuid'] = str(cloned_passkey_device.device_id)
+        approval = _pending_admin_login_approval(request, owner)
+        self.assertIsNotNone(approval)
+        self.assertEqual(approval.active_session_key, active_session.session_key)
 
     def test_primary_owner_can_register_a_development_request(self):
         owner = User.objects.create_superuser(
@@ -2668,9 +2966,13 @@ class AdminPWASecurityTest(TestCase):
         config.owner_user = owner
         config.primary_passkey = primary_key
         config.save(update_fields=['owner_user', 'primary_passkey', 'updated_at'])
+        primary_device = AdminDevice.objects.create(
+            user=owner, passkey=primary_key, name='Teléfono principal', is_primary=True,
+        )
         self.client.force_login(owner)
         session = self.client.session
         session['admin_current_passkey_id'] = primary_key.pk
+        session['admin_device_uuid'] = str(primary_device.device_id)
         session.save()
 
         response = self.client.post(reverse('create_development_request'), {
@@ -2699,9 +3001,13 @@ class AdminPWASecurityTest(TestCase):
         config.owner_user = owner
         config.primary_passkey = primary_key
         config.save(update_fields=['owner_user', 'primary_passkey', 'updated_at'])
+        primary_device = AdminDevice.objects.create(
+            user=owner, passkey=primary_key, name='Teléfono principal', is_primary=True,
+        )
         self.client.force_login(owner)
         session = self.client.session
         session['admin_current_passkey_id'] = primary_key.pk
+        session['admin_device_uuid'] = str(primary_device.device_id)
         session.save()
 
         response = self.client.post(reverse('admin_security_devices'), {
@@ -2808,9 +3114,13 @@ class AdminPWASecurityTest(TestCase):
         )
         security_config.primary_passkey = owner_passkey
         security_config.save(update_fields=['owner_user', 'primary_passkey', 'updated_at'])
+        owner_device = AdminDevice.objects.create(
+            user=owner, passkey=owner_passkey, name='Teléfono titular', is_primary=True,
+        )
         self.client.force_login(owner)
         session = self.client.session
         session['admin_current_passkey_id'] = owner_passkey.pk
+        session['admin_device_uuid'] = str(owner_device.device_id)
         session.save()
         AuditLog.objects.create(
             user=owner,
@@ -2865,30 +3175,73 @@ class AdminPWASecurityTest(TestCase):
         self.assertEqual(response.status_code, 404)
         self.assertIsNone(AdminSecurityConfig.objects.get(pk=1).primary_passkey_id)
 
+        primary_device = AdminDevice.objects.create(
+            user=owner, passkey=owner_passkey, name='Computadora titular', is_primary=False,
+        )
+        session = self.client.session
+        session['admin_device_uuid'] = str(primary_device.device_id)
+        session.save()
         response = self.client.post(reverse('admin_security_devices'), {
             'action': 'set_primary',
             'passkey_id': owner_passkey.pk,
         })
-        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, reverse('admin_security_devices'))
         self.assertEqual(AdminSecurityConfig.objects.get(pk=1).primary_passkey_id, owner_passkey.pk)
 
         session = self.client.session
         session['admin_current_passkey_id'] = owner_passkey.pk
         session.save()
+        owner_device = AdminDevice.objects.get(pk=primary_device.pk)
+        self.assertTrue(owner_device.is_primary)
+        self.assertEqual(owner_device.name, 'Computadora titular')
         AdminDeviceSession.objects.create(
-            user=another_admin,
-            passkey=other_passkey,
-            session_key='secondary-device-session-test-0001',
-            ip_address='203.0.113.25',
-            user_agent='Secondary device test',
-            last_seen_at=timezone.now(),
-            is_active=True,
+            user=owner, device=owner_device, passkey=owner_passkey,
+            session_key='primary-device-session-test-0001', is_active=True,
+        )
+        secondary_device = AdminDevice.objects.create(
+            user=owner, name='Yulimar', ip_address='203.0.113.25',
+            user_agent='Chrome en Android',
+        )
+        AdminDeviceSession.objects.create(
+            user=owner, device=secondary_device, passkey=owner_passkey,
+            session_key='secondary-device-session-test-0001', ip_address='203.0.113.25',
+            user_agent='Chrome en Android', is_active=True,
+        )
+        AdminDeviceSession.objects.create(
+            user=owner, device=secondary_device, passkey=owner_passkey,
+            session_key='secondary-device-session-test-0002', ip_address='203.0.113.25',
+            user_agent='Chrome en Android', is_active=False,
         )
         security_page = self.client.get(reverse('admin_security_devices'))
         self.assertEqual(security_page.status_code, 200)
         self.assertContains(security_page, 'security-page-heading')
         self.assertContains(security_page, 'security-mobile-list')
-        self.assertContains(security_page, 'Revocar sesión')
+        self.assertContains(security_page, 'Bloquear')
+        self.assertContains(security_page, 'Yulimar')
+        self.assertEqual(len(security_page.context['admin_devices']), 2)
+        self.assertEqual(
+            sum(item.pk == secondary_device.pk for item in security_page.context['admin_devices']),
+            1,
+        )
+        self.assertEqual(secondary_device.sessions.count(), 2)
+
+        rename_response = self.client.post(reverse('admin_security_devices'), {
+            'action': 'rename_device', 'device_id': secondary_device.pk, 'device_name': 'Yulimar móvil',
+        })
+        secondary_device.refresh_from_db()
+        self.assertEqual(rename_response.status_code, 302)
+        self.assertEqual(secondary_device.name, 'Yulimar móvil')
+        self.assertEqual(set(secondary_device.sessions.values_list('name', flat=True)), {'Yulimar móvil'})
+
+        for action in ('block_device', 'delete_device'):
+            protected_response = self.client.post(reverse('admin_security_devices'), {
+                'action': action,
+                'device_id': owner_device.pk,
+            })
+            self.assertEqual(protected_response.status_code, 302)
+            owner_device.refresh_from_db()
+            self.assertTrue(owner_device.is_active)
+            self.assertTrue(owner_device.is_primary)
         self.assertEqual(self.client.get(reverse('auditoria_completa')).status_code, 200)
 
     def test_security_owner_can_transfer_superuser_role_to_another_admin(self):
@@ -2906,11 +3259,15 @@ class AdminPWASecurityTest(TestCase):
         config.owner_user = current_owner
         config.primary_passkey = primary_key
         config.save(update_fields=['owner_user', 'primary_passkey', 'updated_at'])
+        owner_device = AdminDevice.objects.create(
+            user=current_owner, passkey=primary_key, name='Teléfono titular', is_primary=True,
+        )
         session = self.client.session
         session['_auth_user_id'] = str(current_owner.pk)
         session['_auth_user_backend'] = 'django.contrib.auth.backends.ModelBackend'
         session['_auth_user_hash'] = current_owner.get_session_auth_hash()
         session['admin_current_passkey_id'] = primary_key.pk
+        session['admin_device_uuid'] = str(owner_device.device_id)
         session.save()
 
         response = self.client.post(reverse('admin_security_devices'), {
@@ -3334,7 +3691,7 @@ class SeguridadTest(TestCase):
             reverse('login_admin_custom'),
             {'username': admin_user.username, 'password': 'Admin123!'},
         )
-        self.assertRedirects(post_response, reverse('dashboard'))
+        self.assertRedirects(post_response, reverse('admin_device_name'))
 
     @override_settings(DEBUG=True)
     def test_login_admin_es_directo_en_desarrollo_y_no_renderiza_modal(self):
@@ -3359,8 +3716,8 @@ class SeguridadTest(TestCase):
         self.assertEqual(login_page.status_code, 200)
         self.assertNotContains(login_page, 'adminLoginCountdown')
         self.assertNotContains(store_page, 'id="adminGate"')
-        self.assertRedirects(login_response, reverse('dashboard'))
-        self.assertEqual(unlock_response.status_code, 404)
+        self.assertRedirects(login_response, reverse('admin_device_name'))
+        self.assertRedirects(unlock_response, reverse('admin_device_name'))
 
     @override_settings(DEBUG=False)
     def test_credenciales_de_cliente_no_desbloquean_login_admin(self):
@@ -3454,7 +3811,7 @@ class SeguridadTest(TestCase):
         )
 
         self.assertEqual(response.status_code, 302)
-        self.assertRedirects(response, reverse('dashboard'))
+        self.assertRedirects(response, reverse('admin_device_name'))
 
     @override_settings(DEBUG=False)
     def test_tres_claves_incorrectas_bloquean_solo_la_sesion_que_falla(self):

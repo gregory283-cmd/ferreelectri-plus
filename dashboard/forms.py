@@ -342,7 +342,11 @@ class PagoMovilCheckoutForm(forms.Form):
     )
 
     banco = forms.ChoiceField(choices=BANCOS, required=True)
-    cedula_pagador = forms.CharField(max_length=30, required=True)
+    cedula_pagador = forms.CharField(
+        max_length=30,
+        required=True,
+        widget=forms.TextInput(attrs={'inputmode': 'text', 'autocapitalize': 'characters'}),
+    )
     referencia = forms.CharField(max_length=50, min_length=4, required=True)
     capture = forms.ImageField(
         required=True,
@@ -353,7 +357,7 @@ class PagoMovilCheckoutForm(forms.Form):
         value = self.cleaned_data['cedula_pagador'].strip().upper()
         match = re.fullmatch(r'([VEJPG])\s*-?\s*(\d{5,10})', value)
         if not match:
-            raise forms.ValidationError('Ingrese una cédula válida, por ejemplo V-12345678.')
+            raise forms.ValidationError('Ingrese una cédula válida con prefijo V, E, J, P o G.')
         return f'{match.group(1)}-{match.group(2)}'
 
     def clean_referencia(self):

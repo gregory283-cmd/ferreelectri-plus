@@ -8,6 +8,7 @@ urlpatterns = [
     path('pwa/icons/<int:size>.png', views.admin_pwa_icon, name='admin_pwa_icon'),
     path('service-worker.js', views.admin_pwa_service_worker, name='admin_pwa_service_worker'),
     path('admin-panel/app-session/lock/', views.admin_app_session_lock, name='admin_app_session_lock'),
+    path('admin-panel/device/name/', views.admin_device_name, name='admin_device_name'),
     path('admin-panel/session-approval/pending/', views.admin_login_approval_pending, name='admin_login_approval_pending'),
     path('admin-panel/session-approval/<uuid:approval_id>/respond/', views.admin_login_approval_respond, name='admin_login_approval_respond'),
     path('admin-panel/session-approval/status/<uuid:approval_id>/', views.admin_login_approval_status, name='admin_login_approval_status'),

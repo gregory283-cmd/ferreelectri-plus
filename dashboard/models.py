@@ -72,8 +72,41 @@ class AdminPasskey(models.Model):
         return f'{self.name} · {self.user.get_username()}'
 
 
+class AdminDevice(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='admin_devices')
+    device_id = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    passkey = models.ForeignKey(
+        AdminPasskey, null=True, blank=True, on_delete=models.SET_NULL, related_name='admin_devices',
+    )
+    name = models.CharField(max_length=80, blank=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.TextField(blank=True)
+    first_seen_at = models.DateTimeField(default=now)
+    last_seen_at = models.DateTimeField(default=now)
+    is_active = models.BooleanField(default=True)
+    is_primary = models.BooleanField(default=False)
+
+    class Meta:
+        verbose_name = 'Dispositivo administrativo'
+        verbose_name_plural = 'Dispositivos administrativos'
+        indexes = [models.Index(fields=['user', 'is_active', 'last_seen_at'])]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user'],
+                condition=models.Q(is_primary=True),
+                name='dash_one_primary_device_user',
+            ),
+        ]
+
+    def __str__(self):
+        return f'{self.name or "Dispositivo sin nombre"} · {self.user.get_username()}'
+
+
 class AdminDeviceSession(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='admin_device_sessions')
+    device = models.ForeignKey(
+        AdminDevice, null=True, blank=True, on_delete=models.SET_NULL, related_name='sessions',
+    )
     passkey = models.ForeignKey(
         AdminPasskey, null=True, blank=True, on_delete=models.SET_NULL, related_name='device_sessions',
     )

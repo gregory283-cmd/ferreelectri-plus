@@ -27,7 +27,7 @@
         @keyframes launch-progress { to { transform: translateX(340%); } }
         @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; } }
     </style>
-    <script src="{% static 'js/pwa_launch.js' %}?v=20261018-launch-v2" defer></script>
+    <script src="{% static 'js/pwa_launch.js' %}?v=20261019-launch-session-v3" defer></script>
 </head>
 <body>
     <main class="launch-screen" aria-label="Iniciando FerreElectri PLUS">
@@ -36,9 +36,6 @@
             <div class="launch-progress" role="progressbar" aria-label="Cargando inicio de sesión"></div>
             <p class="launch-status" id="launch-status" role="status" aria-live="polite">Preparando acceso seguro</p>
         </div>
-        <form class="launch-csrf" id="launch-session-form" method="post" action="{% url 'admin_app_session_lock' %}">
-            {% csrf_token %}
-        </form>
     </main>
 </body>
 </html>

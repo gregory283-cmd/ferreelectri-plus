@@ -1,6 +1,7 @@
 import threading
 import logging
 import ipaddress
+import uuid
 from django.shortcuts import redirect, render
 from django.conf import settings
 from django.urls import resolve
@@ -96,6 +97,84 @@ class AdminDeviceSessionMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
+        user = getattr(request, 'user', None)
+        device_session = None
+        admin_device = None
+        if (
+            request.path.startswith('/admin-panel/')
+            and getattr(user, 'is_authenticated', False)
+            and getattr(user, 'is_staff', False)
+            and request.session.session_key
+        ):
+            from django.contrib.auth import logout
+            from django.contrib.sessions.models import Session
+            from dashboard.models import AdminDevice, AdminDeviceSession, AdminSecurityConfig
+
+            device_session = AdminDeviceSession.objects.filter(
+                session_key=request.session.session_key,
+                user=user,
+            ).select_related('device').first()
+            raw_device_id = request.session.get('admin_device_uuid') or request.COOKIES.get('ferreelectri_admin_device')
+            if device_session and device_session.device_id:
+                admin_device = device_session.device
+                request.session['admin_device_uuid'] = str(admin_device.device_id)
+                if not admin_device.name.strip():
+                    request.session['admin_device_name_required'] = True
+            elif raw_device_id:
+                try:
+                    admin_device = AdminDevice.objects.filter(
+                        user=user,
+                        device_id=uuid.UUID(str(raw_device_id)),
+                    ).first()
+                except (AttributeError, TypeError, ValueError):
+                    admin_device = None
+                if admin_device and not admin_device.name.strip():
+                    request.session['admin_device_name_required'] = True
+            if admin_device:
+                request.session['admin_device_uuid'] = str(admin_device.device_id)
+
+            security_config = AdminSecurityConfig.objects.filter(pk=1).only(
+                'owner_user_id', 'primary_passkey_id',
+            ).first()
+            primary_session = bool(
+                admin_device
+                and admin_device.is_primary
+                and security_config
+                and security_config.owner_user_id == user.pk
+                and security_config.primary_passkey_id
+                and admin_device.passkey_id == security_config.primary_passkey_id
+                and str(request.session.get('admin_device_uuid')) == str(admin_device.device_id)
+            )
+            if admin_device and not admin_device.is_active and primary_session:
+                AdminDevice.objects.filter(pk=admin_device.pk).update(is_active=True)
+                admin_device.is_active = True
+            if admin_device and not admin_device.is_active:
+                session_keys = list(
+                    AdminDeviceSession.objects.filter(device=admin_device).values_list('session_key', flat=True)
+                )
+                Session.objects.filter(session_key__in=session_keys).delete()
+                AdminDeviceSession.objects.filter(device=admin_device).update(is_active=False)
+                logout(request)
+                return redirect('login_admin_custom')
+            if device_session and not device_session.is_active:
+                if primary_session:
+                    AdminDeviceSession.objects.filter(pk=device_session.pk).update(is_active=True)
+                    device_session.is_active = True
+                else:
+                    Session.objects.filter(session_key=request.session.session_key).delete()
+                    logout(request)
+                    return redirect('login_admin_custom')
+
+        if (
+            request.path.startswith('/admin-panel/')
+            and getattr(user, 'is_authenticated', False)
+            and getattr(user, 'is_staff', False)
+            and request.session.get('admin_device_name_required')
+            and request.path not in {'/admin-panel/device/name/', '/admin-panel/app-session/lock/'}
+        ):
+            if device_session and device_session.is_active:
+                return redirect('admin_device_name')
+
         response = self.get_response(request)
         user = getattr(request, 'user', None)
         if (
@@ -105,13 +184,25 @@ class AdminDeviceSessionMiddleware:
             and request.session.session_key
         ):
             from django.utils import timezone
-            from dashboard.models import AdminDeviceSession
+            from dashboard.models import AdminDevice, AdminDeviceSession
 
             session_key = request.session.session_key
             last_refresh = timezone.now() - timezone.timedelta(seconds=30)
+            if admin_device is None:
+                raw_device_id = request.session.get('admin_device_uuid') or request.COOKIES.get('ferreelectri_admin_device')
+                if raw_device_id:
+                    try:
+                        admin_device = AdminDevice.objects.filter(
+                            user=user,
+                            device_id=uuid.UUID(str(raw_device_id)),
+                        ).first()
+                    except (AttributeError, TypeError, ValueError):
+                        admin_device = None
             defaults = {
                 'user': user,
+                'device': admin_device,
                 'passkey_id': request.session.get('admin_current_passkey_id'),
+                'name': admin_device.name if admin_device else '',
                 'ip_address': get_client_ip(request),
                 'user_agent': request.META.get('HTTP_USER_AGENT', '')[:1000],
                 'last_seen_at': timezone.now(),
@@ -122,10 +213,24 @@ class AdminDeviceSessionMiddleware:
                 AdminDeviceSession.objects.create(session_key=session_key, **defaults)
             elif (
                 device_session.last_seen_at < last_refresh
-                or not device_session.is_active
                 or device_session.passkey_id != defaults['passkey_id']
             ):
                 AdminDeviceSession.objects.filter(pk=device_session.pk).update(**defaults)
+            if admin_device:
+                if admin_device.last_seen_at < last_refresh:
+                    AdminDevice.objects.filter(pk=admin_device.pk).update(
+                        last_seen_at=timezone.now(),
+                        ip_address=defaults['ip_address'],
+                        user_agent=defaults['user_agent'],
+                    )
+                response.set_cookie(
+                    'ferreelectri_admin_device',
+                    str(admin_device.device_id),
+                    max_age=60 * 60 * 24 * 365 * 3,
+                    secure=request.is_secure(),
+                    httponly=True,
+                    samesite='Lax',
+                )
         return response
 
 class LoginRequiredMiddleware:

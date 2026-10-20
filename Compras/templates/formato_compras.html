@@ -283,11 +283,21 @@ document.addEventListener('DOMContentLoaded', function() {
             modalCols.forEach(col => {
                 const cell = document.createElement('td');
                 const value = row[col.key];
+                cell.dataset.label = col.label;
                 cell.textContent = typeof value === 'boolean' ? (value ? 'Activa' : 'No') : (value ?? '—');
                 tableRow.appendChild(cell);
             });
             fragment.appendChild(tableRow);
         });
+        if (!datos.length) {
+            const emptyRow = document.createElement('tr');
+            emptyRow.className = 'modal-search-empty-row';
+            const emptyCell = document.createElement('td');
+            emptyCell.colSpan = Math.max(modalCols.length, 1);
+            emptyCell.textContent = modalData.length ? 'No hay coincidencias para esa búsqueda.' : 'No hay registros disponibles.';
+            emptyRow.appendChild(emptyCell);
+            fragment.appendChild(emptyRow);
+        }
         body.replaceChildren(fragment);
     }
 
@@ -1423,19 +1433,38 @@ html[data-theme="light"] .purchase-shell .btn-cancelar-compra, html:not([data-th
 html[data-theme="light"] .purchase-shell .btn-guardar-compra, html:not([data-theme="dark"]) .purchase-shell .btn-guardar-compra { color: #2c211a !important; }
 html[data-theme="light"] .purchase-shell .formato-compras-articulos-header p, html:not([data-theme="dark"]) .purchase-shell .formato-compras-articulos-header p { color: #687d8b !important; }
 @media (max-width: 900px) {
-    .purchase-shell { width: calc(100% - 28px); margin: 18px auto 32px; padding: 20px; }
+    .purchase-shell { width: calc(100% - 24px); max-width: none; margin: 18px auto 32px; padding: 20px; }
     .purchase-shell .formato-compras-proveedor > .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .purchase-shell .formato-compras-proveedor-datos,.purchase-shell .formato-compras-proveedor-datos > .relative { width:100%; min-width:0; }
+    .purchase-table-wrap { overflow:visible; }
+    .purchase-shell .formato-compras-tabla { display:block; width:100%; min-width:0; }
+    .purchase-shell .formato-compras-tabla thead { display:none; }
+    .purchase-shell .formato-compras-tabla tbody { display:grid; gap:10px; padding:10px; }
+    .purchase-shell .formato-compras-tabla tbody tr { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); min-width:0; border:1px solid var(--purchase-line); border-radius:8px; background:var(--purchase-surface); }
+    .purchase-shell .formato-compras-tabla tbody td { display:grid; align-content:start; gap:5px; min-width:0; padding:9px; border-bottom:1px solid var(--purchase-line); }
+    .purchase-shell .formato-compras-tabla tbody td::before { color:var(--purchase-muted); font-size:.62rem; font-weight:750; text-transform:uppercase; }
+    .purchase-shell .formato-compras-tabla tbody td:nth-child(1)::before { content:'Código'; }
+    .purchase-shell .formato-compras-tabla tbody td:nth-child(2)::before { content:'Descripción'; }
+    .purchase-shell .formato-compras-tabla tbody td:nth-child(3)::before { content:'Costo'; }
+    .purchase-shell .formato-compras-tabla tbody td:nth-child(4)::before { content:'Cantidad'; }
+    .purchase-shell .formato-compras-tabla tbody td:nth-child(5)::before { content:'Subtotal'; }
+    .purchase-shell .formato-compras-tabla tbody td:nth-child(6)::before { content:'Acciones'; }
+    .purchase-shell .formato-compras-tabla tbody td:nth-child(6) { display:flex; align-items:center; gap:8px; grid-column:1/-1; }
+    .purchase-shell .formato-compras-tabla tbody td:nth-child(6)::before { margin-right:auto; }
+    .purchase-shell .formato-compras-tabla input.table-field { width:100%; min-width:0; }
     .purchase-footer { align-items: stretch; flex-direction: column; }
     .purchase-shell .formato-compras-acciones { justify-content: flex-start; }
 }
 @media (max-width: 600px) {
-    .purchase-shell { width: calc(100% - 20px); margin: 10px auto 24px; padding: 16px; border-radius: 11px; }
+    .purchase-shell { width: calc(100% - 16px); max-width:none; margin:8px auto 20px; padding:14px; border-radius:11px; }
     .purchase-heading { align-items: flex-start; gap: 11px; margin-bottom: 20px; }
     .purchase-heading-icon { width: 42px; height: 42px; flex-basis: 42px; font-size: 21px; }
     .purchase-heading h1 { font-size: 21px; }
     .purchase-document-mark { display: none; }
     .purchase-shell .formato-compras-proveedor { padding: 14px; }
     .purchase-shell .formato-compras-proveedor > .grid { grid-template-columns: 1fr; gap: 13px; }
+    .purchase-shell .formato-compras-proveedor-datos,.purchase-shell .formato-compras-proveedor-datos > .relative { width:100%; min-width:0; }
+    .purchase-shell .formato-compras-proveedor-datos input { width:100%; max-width:none; min-height:44px; }
     .purchase-shell .formato-compras-articulos-header { padding: 14px; }
     .purchase-shell .formato-compras-acciones { display: grid; grid-template-columns: 1fr 1fr; }
     .cost-policy-control { grid-column: 1 / -1; }
@@ -1443,8 +1472,20 @@ html[data-theme="light"] .purchase-shell .formato-compras-articulos-header p, ht
     .purchase-shell .btn-cancelar-compra, .purchase-shell .btn-guardar-compra { width: 100%; padding: 0 9px; }
     .purchase-shell .formato-compras-proveedor-datos .btn-buscar-proveedor { top: 3px; right: 3px; width: 44px; height: 44px; }
     .purchase-shell .formato-compras-tabla .btn-modal-busqueda { flex-basis: 44px; width: 44px; height: 44px; }
-    .modal-busqueda-contenido { width: calc(100vw - 20px); max-height: 88vh; padding: 18px 12px 12px; }
-    #modal-busqueda-tabla { min-width: 680px; }
+    #modal-busqueda { padding:10px; }
+    .modal-busqueda-contenido { width:calc(100vw - 20px); min-width:0; max-height:min(88dvh,760px); gap:10px; padding:16px 11px 11px; }
+    .modal-busqueda-tabla-wrapper { max-height:52vh; overflow:auto; }
+    #modal-busqueda-tabla { width:100%; min-width:0; table-layout:fixed; }
+    #modal-busqueda-tabla thead { display:none; }
+    #modal-busqueda-tabla tbody { display:grid; gap:8px; padding:8px; }
+    #modal-busqueda-tabla tbody tr { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); min-width:0; border:1px solid var(--purchase-line); border-radius:6px; background:var(--purchase-surface); }
+    #modal-busqueda-tabla tbody td { display:grid; align-content:start; gap:3px; min-width:0; max-width:none; padding:8px; border-bottom:1px solid var(--purchase-line); color:var(--purchase-text); font-size:.72rem; line-height:1.35; white-space:normal; overflow-wrap:anywhere; }
+    #modal-busqueda-tabla tbody td::before { content:attr(data-label); color:var(--purchase-muted); font-size:.6rem; font-weight:750; text-transform:uppercase; }
+    #modal-busqueda-tabla tbody .modal-search-empty-row { grid-template-columns:minmax(0,1fr); }
+    #modal-busqueda-tabla tbody .modal-search-empty-row td { display:block; grid-column:1/-1; padding:18px 10px; border:0; text-align:center; }
+    #modal-busqueda-tabla tbody .modal-search-empty-row td::before { content:none; }
+    .modal-busqueda-cerrar { width:40px; height:40px; }
+    #modal-busqueda-titulo { min-height:40px; max-width:calc(100% - 52px); padding-top:2px; }
 }
 @media (prefers-reduced-motion: reduce) {
     .purchase-shell *, .purchase-shell *::before, .purchase-shell *::after, .modal-busqueda-contenido { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }

@@ -5,13 +5,13 @@
     <div class="security-page-heading">
         <span class="security-eyebrow">CONTROL DE ACCESO</span>
         <h1>Dispositivos</h1>
-        <p>El teléfono principal aparece primero y está protegido contra revocación desde esta pantalla.</p>
+        <p>El dispositivo principal aparece primero y está protegido contra bloqueo o eliminación.</p>
     </div>
 
     {% if messages %}<div class="security-messages" role="status">{% for message in messages %}<p class="{{ message.tags }}">{{ message }}</p>{% endfor %}</div>{% endif %}
 
     <section class="security-section primary-device-section">
-        <div class="security-section-heading"><div><span class="security-eyebrow">AUTORIDAD PRINCIPAL</span><h2>Teléfono principal</h2></div><span class="security-badge">{{ security_config.owner_user.get_username }}</span></div>
+        <div class="security-section-heading"><div><span class="security-eyebrow">AUTORIDAD PRINCIPAL</span><h2>Dispositivo principal</h2></div><span class="security-badge">{{ security_config.owner_user.get_username }}</span></div>
         {% if security_config.primary_passkey %}
             <p class="security-copy">La auditoría y la gestión de acceso están vinculadas a <strong>{{ security_config.primary_passkey.name }}</strong>.</p>
             <p class="security-copy security-last-used">Registrado {{ security_config.primary_passkey.created_at|date:'d/m/Y H:i' }}{% if security_config.primary_passkey.last_used_at %} · Último uso {{ security_config.primary_passkey.last_used_at|date:'d/m/Y H:i' }}{% endif %}</p>
@@ -29,34 +29,50 @@
     </section>
 
     <section class="security-section">
-        <div class="security-section-heading"><div><span class="security-eyebrow">ACCESO</span><h2>Sesiones</h2></div><span class="security-section-count">{{ device_sessions|length }} recientes</span></div>
-        <div class="security-desktop-table"><div class="security-table-wrap"><table>
-            <thead><tr><th>Cuenta</th><th>Rol</th><th>Última actividad</th><th>IP</th><th>Dispositivo</th><th>Estado</th><th>Acción</th></tr></thead>
-            <tbody>{% for device in device_sessions %}
+        <div class="security-section-heading"><div><span class="security-eyebrow">DISPOSITIVOS AFILIADOS</span><h2>Equipos registrados</h2></div><span class="security-section-count">{{ admin_devices|length }} dispositivos</span></div>
+        <p class="security-copy">Cada equipo aparece una sola vez, aunque haya iniciado sesión varias veces. Bloquearlo cierra sus sesiones y no afecta la cuenta.</p>
+        <div class="security-desktop-table"><div class="security-table-wrap"><table class="security-device-table">
+            <thead><tr><th>Dispositivo</th><th>Cuenta</th><th>Primera vez</th><th>Última conexión</th><th>Última IP</th><th>Estado</th><th>Gestión</th></tr></thead>
+            <tbody>{% for device in admin_devices %}
                 <tr>
+                    <td data-label="Dispositivo"><strong>{{ device.name|default:'Sin nombre' }}</strong>{% if device.passkey %}<small>{{ device.passkey.name }}</small>{% endif %}</td>
                     <td data-label="Cuenta">{{ device.user.get_username }}</td>
-                    <td data-label="Rol">{% if device.is_primary_device %}Titular{% elif device.user.is_superuser %}Superusuario{% else %}Administración{% endif %}</td>
-                    <td data-label="Última actividad">{{ device.last_seen_at|date:'d/m/Y H:i:s' }}</td>
-                    <td data-label="IP">{{ device.ip_address|default:'No disponible' }}</td>
-                    <td data-label="Dispositivo">{% if device.name %}<strong>{{ device.name }}</strong><br>{% endif %}{% if device.passkey %}{{ device.passkey.name }}{% else %}{{ device.user_agent|default:'Contraseña' }}{% endif %}</td>
-                    <td data-label="Estado">{% if device.is_primary_device %}<span class="security-status security-status-primary">Principal</span>{% elif device.awaiting_completion %}<span class="security-status security-status-idle">Pendiente de completar</span>{% elif device.is_recent and device.is_active %}<span class="security-status security-status-active">Activa</span>{% elif device.is_active %}<span class="security-status security-status-idle">Inactiva</span>{% else %}<span class="security-status security-status-idle">Cerrada</span>{% endif %}</td>
-                    <td data-label="Acción"><form class="security-rename-form" method="post">{% csrf_token %}<input type="hidden" name="action" value="rename_session"><input type="hidden" name="session_id" value="{{ device.pk }}"><input name="device_name" value="{{ device.name }}" maxlength="80" placeholder="Nombrar equipo" aria-label="Nombre del dispositivo"><button class="security-primary-button" type="submit">Guardar</button></form>{% if device.can_revoke %}<form method="post">{% csrf_token %}<input type="hidden" name="action" value="revoke_session"><input type="hidden" name="session_id" value="{{ device.pk }}"><button class="security-danger-button" type="submit">Revocar sesión</button></form>{% elif device.is_primary_device %}<span class="security-muted">Protegida</span>{% endif %}</td>
+                    <td data-label="Primera vez">{{ device.first_seen_at|date:'d/m/Y H:i' }}</td>
+                    <td data-label="Última conexión">{{ device.last_seen_at|date:'d/m/Y H:i' }}</td>
+                    <td data-label="Última IP">{{ device.ip_address|default:'No disponible' }}</td>
+                    <td data-label="Estado">{% if device.is_primary_device %}<span class="security-status security-status-primary">Principal protegida</span>{% elif device.is_active %}<span class="security-status security-status-active">Habilitado</span>{% else %}<span class="security-status security-status-idle">Bloqueado</span>{% endif %}</td>
+                    <td data-label="Gestión">
+                        {% if device.can_manage %}
+                        <div class="security-device-actions">
+                            <form class="security-rename-form" method="post">{% csrf_token %}<input type="hidden" name="action" value="rename_device"><input type="hidden" name="device_id" value="{{ device.pk }}"><input name="device_name" value="{{ device.name }}" maxlength="40" placeholder="Nombre del equipo" aria-label="Nombre del dispositivo"><button class="security-primary-button" type="submit" aria-label="Guardar nombre"><span class="material-symbols-outlined" aria-hidden="true">save</span></button></form>
+                            <form method="post">{% csrf_token %}<input type="hidden" name="device_id" value="{{ device.pk }}"><input type="hidden" name="action" value="{% if device.is_active %}block_device{% else %}activate_device{% endif %}"><button class="{% if device.is_active %}security-danger-button{% else %}security-primary-button{% endif %}" type="submit">{% if device.is_active %}Bloquear{% else %}Activar{% endif %}</button></form>
+                            <form method="post" onsubmit="return confirm('¿Eliminar este dispositivo y cerrar sus sesiones?');">{% csrf_token %}<input type="hidden" name="action" value="delete_device"><input type="hidden" name="device_id" value="{{ device.pk }}"><button class="security-icon-danger" type="submit" aria-label="Eliminar dispositivo" title="Eliminar dispositivo"><span class="material-symbols-outlined" aria-hidden="true">delete</span></button></form>
+                        </div>
+                        {% elif device.is_primary_device %}<span class="security-muted">Principal protegida</span>{% elif device.is_current_device %}<span class="security-muted">Dispositivo actual</span>{% endif %}
+                    </td>
                 </tr>
-            {% empty %}<tr><td colspan="7" class="security-empty">Todavía no hay sesiones registradas.</td></tr>{% endfor %}</tbody>
+            {% empty %}<tr><td colspan="7" class="security-empty">Todavía no hay dispositivos registrados.</td></tr>{% endfor %}</tbody>
         </table></div></div>
         <div class="security-mobile-list">
-            {% for device in device_sessions %}
+            {% for device in admin_devices %}
             <article class="security-record">
-                <div class="security-record-top"><strong>{% if device.name %}{{ device.name }}{% else %}{{ device.user.get_username }}{% endif %}</strong>{% if device.is_primary_device %}<span class="security-status security-status-primary">Titular protegido</span>{% elif device.awaiting_completion %}<span class="security-status security-status-idle">Pendiente de completar</span>{% elif device.is_recent and device.is_active %}<span class="security-status security-status-active">Activa</span>{% elif device.is_active %}<span class="security-status security-status-idle">Inactiva</span>{% else %}<span class="security-status security-status-idle">Cerrada</span>{% endif %}</div>
+                <div class="security-record-top"><strong>{{ device.name|default:'Sin nombre' }}</strong>{% if device.is_primary_device %}<span class="security-status security-status-primary">Principal protegida</span>{% elif device.is_active %}<span class="security-status security-status-active">Habilitado</span>{% else %}<span class="security-status security-status-idle">Bloqueado</span>{% endif %}</div>
+                {% if device.passkey %}<p class="security-device-passkey">{{ device.passkey.name }}</p>{% endif %}
                 <dl class="security-record-details">
-                    <div><dt>Última actividad</dt><dd>{{ device.last_seen_at|date:'d/m/Y H:i:s' }}</dd></div>
-                    <div><dt>IP</dt><dd>{{ device.ip_address|default:'No disponible' }}</dd></div>
-                    <div class="security-record-wide"><dt>Dispositivo</dt><dd>{% if device.passkey %}{{ device.passkey.name }}{% else %}{{ device.user_agent|default:'Contraseña' }}{% endif %}</dd></div>
+                    <div><dt>Cuenta</dt><dd>{{ device.user.get_username }}</dd></div>
+                    <div><dt>Última IP</dt><dd>{{ device.ip_address|default:'No disponible' }}</dd></div>
+                    <div><dt>Primera vez</dt><dd>{{ device.first_seen_at|date:'d/m/Y H:i' }}</dd></div>
+                    <div><dt>Última conexión</dt><dd>{{ device.last_seen_at|date:'d/m/Y H:i' }}</dd></div>
                 </dl>
-                <form class="security-rename-form" method="post">{% csrf_token %}<input type="hidden" name="action" value="rename_session"><input type="hidden" name="session_id" value="{{ device.pk }}"><input name="device_name" value="{{ device.name }}" maxlength="80" placeholder="Nombrar equipo" aria-label="Nombre del dispositivo"><button class="security-primary-button" type="submit">Guardar</button></form>
-                {% if device.can_revoke %}<form method="post">{% csrf_token %}<input type="hidden" name="action" value="revoke_session"><input type="hidden" name="session_id" value="{{ device.pk }}"><button class="security-danger-button" type="submit">Revocar sesión</button></form>{% endif %}
+                {% if device.can_manage %}
+                <div class="security-device-actions">
+                    <form class="security-rename-form" method="post">{% csrf_token %}<input type="hidden" name="action" value="rename_device"><input type="hidden" name="device_id" value="{{ device.pk }}"><input name="device_name" value="{{ device.name }}" maxlength="40" placeholder="Nombre del equipo" aria-label="Nombre del dispositivo"><button class="security-primary-button" type="submit" aria-label="Guardar nombre"><span class="material-symbols-outlined" aria-hidden="true">save</span></button></form>
+                    <form method="post">{% csrf_token %}<input type="hidden" name="device_id" value="{{ device.pk }}"><input type="hidden" name="action" value="{% if device.is_active %}block_device{% else %}activate_device{% endif %}"><button class="{% if device.is_active %}security-danger-button{% else %}security-primary-button{% endif %}" type="submit">{% if device.is_active %}Bloquear{% else %}Activar{% endif %}</button></form>
+                    <form method="post" onsubmit="return confirm('¿Eliminar este dispositivo y cerrar sus sesiones?');">{% csrf_token %}<input type="hidden" name="action" value="delete_device"><input type="hidden" name="device_id" value="{{ device.pk }}"><button class="security-icon-danger" type="submit" aria-label="Eliminar dispositivo" title="Eliminar dispositivo"><span class="material-symbols-outlined" aria-hidden="true">delete</span></button></form>
+                </div>
+                {% elif device.is_current_device %}<span class="security-muted">Dispositivo actual</span>{% endif %}
             </article>
-            {% empty %}<p class="security-empty-mobile">Todavía no hay sesiones registradas.</p>{% endfor %}
+            {% empty %}<p class="security-empty-mobile">Todavía no hay dispositivos registrados.</p>{% endfor %}
         </div>
     </section>
 
@@ -113,8 +129,19 @@
     .security-last-used { font-size:.74rem; }
     .security-inline-form { display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin-top:12px; }
     .security-rename-form { display:flex; gap:6px; align-items:center; margin-bottom:6px; }
-    .security-rename-form input { min-width:0; width:130px; min-height:34px; padding:6px 8px; border:1px solid var(--sec-line); border-radius:6px; color:var(--sec-text); background:var(--sec-card); font:inherit; font-size:.72rem; }
+    .security-rename-form input { min-width:0; width:132px; min-height:34px; padding:6px 8px; border:1px solid var(--sec-line); border-radius:6px; color:var(--sec-text); background:var(--sec-card); font:inherit; font-size:.72rem; }
     .security-rename-form .security-primary-button { min-height:34px; padding:6px 8px; }
+    .security-device-table { min-width:930px!important; }
+    .security-device-table td:first-child strong { display:block; color:var(--sec-text); }
+    .security-device-table td:first-child small { display:block; margin-top:3px; color:var(--sec-muted); font-size:.68rem; }
+    .security-device-actions { display:flex; align-items:center; flex-wrap:wrap; gap:6px; min-width:235px; }
+    .security-device-actions .security-rename-form { flex:1 1 150px; min-width:140px; margin:0; }
+    .security-device-actions .security-rename-form input { flex:1 1 auto; width:0; }
+    .security-device-actions form:not(.security-rename-form) { margin:0; }
+    .security-device-actions .security-primary-button,.security-device-actions .security-danger-button { min-height:34px; padding:6px 8px; white-space:nowrap; }
+    .security-icon-danger { display:grid; width:34px; height:34px; place-items:center; border:1px solid rgba(173,51,62,.2); border-radius:7px; color:#a22e3c; background:#fff4f4; cursor:pointer; }
+    :root[data-theme="dark"] .security-icon-danger { color:#ffadb4; background:rgba(189,57,72,.12); }
+    .security-device-passkey { margin:6px 0 0; color:var(--sec-muted); font-size:.72rem; }
     .security-inline-form label { color:var(--sec-text); font-size:.78rem; font-weight:700; }
     .security-inline-form select { flex:1 1 220px; min-width:0; min-height:40px; padding:7px 10px; border:1px solid var(--sec-line); border-radius:8px; color:var(--sec-text); background:var(--sec-card); font:inherit; font-size:.8rem; }
     .security-primary-button,.security-danger-button { min-height:38px; padding:8px 11px; border:1px solid transparent; border-radius:8px; color:#fff; background:#0759a8; font:inherit; font-size:.76rem; font-weight:750; cursor:pointer; }
@@ -140,7 +167,7 @@
     .security-transfer { padding:14px 0; border-top:1px solid var(--sec-line); border-bottom:1px solid var(--sec-line); color:var(--sec-text); }
     .security-transfer summary { color:var(--sec-accent); font-size:.82rem; font-weight:750; cursor:pointer; }
     .security-transfer p { color:var(--sec-muted); font-size:.78rem; line-height:1.45; }
-    @media (max-width:700px) {
+    @media (max-width:900px) {
         .admin-security-page { padding:14px 12px 36px; }
         .security-page-heading { margin-bottom:17px; }
         .security-page-heading h1 { font-size:1.45rem; }
@@ -157,7 +184,15 @@
         .security-record-details .security-record-wide { grid-column:1 / -1; }
         .security-record-details dt { margin-bottom:3px; color:var(--sec-muted); font-size:.64rem; font-weight:750; }
         .security-record-details dd { margin:0; color:var(--sec-text); font-size:.75rem; line-height:1.4; font-variant-numeric:tabular-nums; overflow-wrap:anywhere; }
-        .security-record .security-danger-button { width:100%; min-height:40px; }
+        .security-device-actions { display:grid; grid-template-columns:minmax(0,1fr) auto auto; gap:7px; margin-top:10px; }
+        .security-device-actions .security-rename-form { display:grid; grid-template-columns:minmax(0,1fr) 38px; grid-column:1 / -1; min-width:0; margin:0; }
+        .security-device-actions .security-rename-form input { width:100%; min-height:40px; font-size:.8rem; }
+        .security-device-actions .security-rename-form .security-primary-button { min-width:38px; min-height:40px; }
+        .security-device-actions .security-primary-button,.security-device-actions .security-danger-button { min-height:40px; }
+        .security-device-actions form:not(.security-rename-form) { min-width:0; }
+        .security-device-actions form:not(.security-rename-form) button { width:100%; min-height:40px; }
+        .security-device-actions .security-icon-danger { width:40px; height:40px; }
+        .security-device-passkey { font-size:.7rem; }
         .security-empty-mobile { margin:0; padding:18px; border:1px solid var(--sec-line); border-radius:9px; background:var(--sec-card); font-size:.78rem; }
     }
 </style>

@@ -74,6 +74,12 @@ class ComprasCostIntegrationTests(TestCase):
 		self.assertContains(page, 'name="csrfmiddlewaretoken"')
 		self.assertContains(page, 'btn-buscar-proveedor')
 		self.assertContains(page, 'btn-buscar-articulo')
+		self.assertContains(page, 'cell.dataset.label = col.label')
+		self.assertContains(page, '#modal-busqueda-tabla tbody td::before')
+		self.assertContains(page, 'grid-template-columns:repeat(2,minmax(0,1fr))')
+		self.assertContains(page, '.purchase-table-wrap { overflow:visible; }')
+		self.assertContains(page, '.modal-busqueda-contenido { width:calc(100vw - 20px); min-width:0;')
+		self.assertContains(page, 'No hay registros disponibles.')
 
 		response = csrf_client.post(
 			reverse('guardar_compra'),

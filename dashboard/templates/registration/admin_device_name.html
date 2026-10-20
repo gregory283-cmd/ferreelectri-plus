@@ -1,0 +1,31 @@
+{% extends 'base/pan_con_queso.html' %}
+{% block title %}Identificar dispositivo | FerreElectri PLUS{% endblock %}
+{% block arroz_con_pollo %}
+<main class="admin-device-name-page">
+    <section class="admin-device-name-panel" role="dialog" aria-modal="true" aria-labelledby="device-name-title" aria-describedby="device-name-description">
+        <span class="admin-device-name-eyebrow">IDENTIFICACIÓN DEL DISPOSITIVO</span>
+        <h1 id="device-name-title">Registra este dispositivo</h1>
+        <p id="device-name-description">El nombre aparecerá una sola vez en el registro de dispositivos de esta cuenta. No se cerrará la sesión de los otros equipos.</p>
+        {% if error %}<p class="admin-device-name-error" role="alert">{{ error }}</p>{% endif %}
+        <form method="post">
+            {% csrf_token %}
+            <label for="device-name">Nombre del dispositivo</label>
+            <input id="device-name" name="device_name" type="text" minlength="2" maxlength="40" required autofocus autocomplete="off" value="" placeholder="Ej.: Móvil de almacén">
+            <button type="submit">Guardar y continuar</button>
+        </form>
+    </section>
+</main>
+<style>
+    .admin-device-name-page { position:fixed; z-index:20000; inset:0; display:grid; min-height:100svh; place-items:center; padding:max(18px,env(safe-area-inset-top)) 14px max(18px,env(safe-area-inset-bottom)); color:#172b3c; background:rgba(4,18,32,.68); backdrop-filter:blur(5px); }
+    .admin-device-name-panel { width:min(100%, 480px); padding:26px; border:1px solid #dce5ec; border-radius:8px; background:#fff; box-shadow:0 22px 75px rgba(3,17,31,.3); }
+    .admin-device-name-eyebrow { color:#087f9a; font-size:.72rem; font-weight:800; }
+    .admin-device-name-panel h1 { margin:8px 0; font-size:1.4rem; }
+    .admin-device-name-panel p { color:#62758a; line-height:1.5; }
+    .admin-device-name-panel form { display:grid; gap:10px; margin-top:20px; }
+    .admin-device-name-panel label { font-size:.85rem; font-weight:700; }
+    .admin-device-name-panel input { min-height:44px; padding:9px 11px; border:1px solid #aebfca; border-radius:6px; font:inherit; }
+    .admin-device-name-panel button { min-height:44px; border:0; border-radius:6px; color:#fff; background:#0759a8; font:inherit; font-weight:700; cursor:pointer; }
+    .admin-device-name-panel .admin-device-name-error { color:#a22e3c; font-weight:650; }
+    @media (max-width:520px) { .admin-device-name-panel { padding:21px 17px; } }
+</style>
+{% endblock %}

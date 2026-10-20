@@ -72,15 +72,15 @@
         }
         {% endcomment %}
     </style>
-    <link rel="stylesheet" href="{% static 'css/admin-orders.css' %}?v=20261010-search-bcv">
+    <link rel="stylesheet" href="{% static 'css/admin-orders.css' %}?v=20261019-order-kanban-v1">
     <main class="orders-workspace">
     <div class="page-shell">
         <div class="panel">
             <div class="panel-header">
                 <div>
                     <span class="orders-eyebrow"><i class="fas fa-layer-group" aria-hidden="true"></i> OPERACIONES · PEDIDOS</span>
-                    <h1 class="page-title">Historial Global de Pedidos</h1>
-                    <p class="page-subtitle">Revisa cada solicitud, valida el estado y accede a la ficha completa del cliente.</p>
+                    <h1 class="page-title">Tablero de pedidos</h1>
+                    <p class="page-subtitle">Revisa el pago y decide qué pedidos aprobar o rechazar. La preparación del envío se gestiona por separado.</p>
                 </div>
                 <div class="quick-actions">
                     <a href="{% url 'admin_dashboard' %}" class="btn-pill secondary"><i class="fas fa-arrow-left" aria-hidden="true"></i> Panel</a>
@@ -121,7 +121,7 @@
                     <div class="metric-note">Compradores con pedidos</div>
                 </div>
             </div>
-            <div class="orders-context-line"><span class="status-dot"></span> Último pedido <strong>{% if orders_latest_date %}{{ orders_latest_date|date:'d M Y · H:i' }}{% else %}Sin pedidos{% endif %}</strong><span class="context-divider"></span><span>{{ pedidos.paginator.count }} resultado{{ pedidos.paginator.count|pluralize }} en esta vista</span></div>
+            <div class="orders-context-line"><span class="status-dot"></span> Último pedido <strong>{% if orders_latest_date %}{{ orders_latest_date|date:'d M Y · H:i' }}{% else %}Sin pedidos{% endif %}</strong><span class="context-divider"></span><span>{{ orders_total }} pedido{{ orders_total|pluralize }} registrado{{ orders_total|pluralize }}</span></div>
             {% if messages %}
                 {% for message in messages %}
                     {% if 'admin-action' in message.tags %}
@@ -130,81 +130,59 @@
                 {% endfor %}
             {% endif %}
             <div class="filter-bar">
-                <div class="filter-tabs">
-                    <a href="?" class="filter-tab {% if not request.GET.estado %}active{% endif %}">Todos <span>{{ orders_total }}</span></a>
-                    <a href="?estado=pendiente" class="filter-tab {% if request.GET.estado == 'pendiente' %}active{% endif %}">Pendientes <span>{{ orders_pending }}</span></a>
-                    <a href="?estado=aprobado" class="filter-tab {% if request.GET.estado == 'aprobado' %}active{% endif %}">Aprobados <span>{{ orders_approved }}</span></a>
-                    <a href="?estado=cancelado" class="filter-tab {% if request.GET.estado == 'cancelado' %}active{% endif %}">Rechazados <span>{{ orders_rejected }}</span></a>
-                </div>
+                <nav class="filter-tabs" aria-label="Filtrar columnas del tablero">
+                    <a href="?q={{ query|urlencode }}" class="filter-tab {% if not request.GET.estado %}active{% endif %}">Todos <span>{{ orders_total }}</span></a>
+                    <a href="?estado=pendiente&amp;q={{ query|urlencode }}" class="filter-tab {% if request.GET.estado == 'pendiente' %}active{% endif %}">Pendientes <span>{{ orders_pending }}</span></a>
+                    <a href="?estado=aprobado&amp;q={{ query|urlencode }}" class="filter-tab {% if request.GET.estado == 'aprobado' %}active{% endif %}">Aprobados <span>{{ orders_approved }}</span></a>
+                    <a href="?estado=cancelado&amp;q={{ query|urlencode }}" class="filter-tab {% if request.GET.estado == 'cancelado' %}active{% endif %}">Rechazados <span>{{ orders_rejected }}</span></a>
+                </nav>
                 <form method="get" class="search-box" action="{% url 'historial_pedidos_admin' %}">
                     {% if request.GET.estado %}<input type="hidden" name="estado" value="{{ request.GET.estado }}">{% endif %}
                     <label class="search-label" for="order-search"><span class="material-symbols-outlined" aria-hidden="true">manage_search</span> Buscar pedidos</label>
                     <div class="search-field">
                         <span class="material-symbols-outlined search-field-icon" aria-hidden="true">search</span>
-                        <input id="order-search" type="search" name="q" placeholder="Número, cliente o correo" value="{{ request.GET.q|default:'' }}" autocomplete="off">
+                        <input id="order-search" type="search" name="q" placeholder="Número, cliente o correo" value="{{ query }}" autocomplete="off">
                         <button class="search-submit" type="submit"><span>Buscar</span><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></button>
                     </div>
                 </form>
             </div>
             <div class="content-block">
-                <div class="orders-list" aria-label="Pedidos encontrados">
-                    {% for pedido in pedidos %}
-                    <article class="order-card" style="--row-index: {{ forloop.counter0 }}">
-                        <div class="order-card-heading">
-                            <a class="order-reference" href="{% url 'detalle_pedido_admin' pedido.id %}">Pedido #{{ pedido.id }}<span>Ver ficha completa <i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i></span></a>
-                            {% if pedido.estado == 'pendiente' %}
-                                <span class="badge badge-pending"><i class="fas fa-hourglass-half" aria-hidden="true"></i> Pendiente</span>
-                            {% elif pedido.estado == 'pagado' %}
-                                <span class="badge badge-approved"><i class="fas fa-check-circle" aria-hidden="true"></i> Pagado</span>
-                            {% elif pedido.estado == 'enviado' %}
-                                <span class="badge badge-approved"><i class="fas fa-truck-fast" aria-hidden="true"></i> Enviado</span>
-                            {% elif pedido.estado == 'cancelado' %}
-                                <span class="badge badge-rejected"><i class="fas fa-times-circle" aria-hidden="true"></i> Rechazado</span>
-                            {% else %}
-                                <span class="badge badge-default">{{ pedido.estado|capfirst }}</span>
-                            {% endif %}
+                <div class="order-board" aria-label="Tablero Kanban de pedidos">
+                    {% for lane in order_lanes %}
+                    <section class="order-lane order-lane-{{ lane.key }}" id="order-lane-{{ lane.key }}" aria-labelledby="order-lane-title-{{ lane.key }}">
+                        <header class="order-lane-heading">
+                            <div><span class="material-symbols-outlined" aria-hidden="true">{{ lane.icon }}</span><h2 id="order-lane-title-{{ lane.key }}">{{ lane.label }}</h2></div>
+                            <span class="order-lane-count">{{ lane.count }}</span>
+                        </header>
+                        <div class="order-lane-cards">
+                            {% for pedido in lane.orders %}
+                            <article class="order-card" style="--row-index: {{ forloop.counter0 }}">
+                                <div class="order-card-heading">
+                                    <a class="order-reference" href="{% url 'detalle_pedido_admin' pedido.id %}">Pedido #{{ pedido.id }}<span>{{ pedido.fecha_creacion|date:'d/m/Y · H:i' }}</span></a>
+                                    {% if pedido.estado == 'pendiente' %}<span class="badge badge-pending">Pendiente</span>{% elif pedido.estado == 'cancelado' %}<span class="badge badge-rejected">Rechazado</span>{% else %}<span class="badge badge-approved">{{ pedido.get_estado_display|capfirst }}</span>{% endif %}
+                                </div>
+                                <div class="customer-cell"><span class="customer-avatar">{{ pedido.cliente.first_name|default:pedido.cliente.username|slice:':1'|upper }}</span><span><strong>{{ pedido.cliente.get_full_name|default:pedido.cliente.email }}</strong><small>{{ pedido.cliente.email }}</small></span></div>
+                                <ul class="order-item-list" aria-label="Productos del pedido {{ pedido.id }}">
+                                    {% for item in pedido.items.all %}<li><span>{{ item.cantidad }} × {{ item.producto.Descripcion|default:'Producto no disponible' }}</span><strong>$ {{ item.subtotal|floatformat:2 }}</strong></li>{% empty %}<li><span>Sin productos asociados</span></li>{% endfor %}
+                                </ul>
+                                {% with payment=pedido.pagos.all|first %}
+                                <div class="order-payment-line"><span>Pago</span><strong>{{ payment.get_metodo_display|default:'Sin registro' }}</strong>{% if payment.estado %}<span class="payment-status">{{ payment.get_estado_display }}</span>{% endif %}{% if payment.banco_origen %}<small>Banco · {{ payment.banco_origen }}</small>{% endif %}{% if payment.cedula_pagador %}<small>C.I. · {{ payment.cedula_pagador }}</small>{% endif %}{% if payment.numero_referencia %}<small>Ref. · {{ payment.numero_referencia }}</small>{% endif %}{% if payment.comprobante and perms.dashboard.view_payment_evidence %}<a class="payment-proof-link" href="{% url 'admin_comprobante_pago' payment.pk %}" target="_blank" rel="noopener">Ver comprobante <i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i></a>{% endif %}</div>
+                                {% endwith %}
+                                <div class="order-card-footer"><strong class="order-total">Total · $ {{ pedido.total|floatformat:2 }}</strong>
+                                    <div class="action-group">
+                                        {% if pedido.estado == 'pendiente' and perms.dashboard.verify_order_payments %}
+                                        <form method="post" action="{% url 'aprobar_pedido' pedido.id %}">{% csrf_token %}<button type="submit" class="icon-btn approve" title="Aprobar y facturar" aria-label="Aprobar pedido {{ pedido.id }}" data-confirm="¿Aprobar el pedido #{{ pedido.id }} y generar su factura?"><i class="fas fa-check" aria-hidden="true"></i><span class="action-label">Aprobar</span></button></form>
+                                        <form method="post" action="{% url 'rechazar_pedido' pedido.id %}">{% csrf_token %}<button type="submit" class="icon-btn reject" title="Rechazar pedido" aria-label="Rechazar pedido {{ pedido.id }}" data-confirm="¿Rechazar el pedido #{{ pedido.id }}? Esta acción no se puede deshacer."><i class="fas fa-xmark" aria-hidden="true"></i><span class="action-label">Rechazar</span></button></form>
+                                        {% endif %}
+                                        <a href="{% url 'detalle_pedido_admin' pedido.id %}" class="icon-btn view" title="Ver ficha completa" aria-label="Ver ficha del pedido {{ pedido.id }}"><i class="fas fa-eye" aria-hidden="true"></i><span class="action-label">Detalle</span></a>
+                                    </div>
+                                </div>
+                            </article>
+                            {% empty %}<div class="orders-empty"><span class="material-symbols-outlined" aria-hidden="true">inbox</span><strong>No hay pedidos para mostrar</strong><span>Prueba otra búsqueda o revisa otra columna.</span></div>{% endfor %}
                         </div>
-                        <div class="customer-cell"><span class="customer-avatar">{{ pedido.cliente.first_name|default:pedido.cliente.username|slice:':1'|upper }}</span><span><strong>{{ pedido.cliente.get_full_name|default:pedido.cliente.email }}</strong><small>{{ pedido.cliente.email }}</small></span></div>
-                        <div class="order-card-meta">
-                            <div><span>Solicitado</span><time datetime="{{ pedido.fecha_creacion|date:'c' }}">{{ pedido.fecha_creacion|date:'d/m/Y · H:i' }}</time></div>
-                            <div><span>Total del pedido</span><strong class="order-total">$ {{ pedido.total|floatformat:2 }}</strong></div>
-                        </div>
-                        <div class="action-group">
-                            {% if perms.dashboard.verify_order_payments %}
-                            <form method="post" action="{% url 'aprobar_pedido' pedido.id %}">
-                                {% csrf_token %}
-                                <button type="submit" class="icon-btn approve" title="Aprobar y facturar" aria-label="Aprobar pedido {{ pedido.id }}" data-confirm="¿Aprobar el pedido #{{ pedido.id }} y generar su factura?" {% if pedido.estado != 'pendiente' %}disabled{% endif %}>
-                                    <i class="fas fa-check" aria-hidden="true"></i><span class="action-label">Aprobar y facturar</span>
-                                </button>
-                            </form>
-                            <form method="post" action="{% url 'rechazar_pedido' pedido.id %}">
-                                {% csrf_token %}
-                                <button type="submit" class="icon-btn reject" title="Rechazar pedido" aria-label="Rechazar pedido {{ pedido.id }}" data-confirm="¿Rechazar el pedido #{{ pedido.id }}? Esta acción no se puede deshacer." {% if pedido.estado != 'pendiente' %}disabled{% endif %}>
-                                    <i class="fas fa-xmark" aria-hidden="true"></i><span class="action-label">Rechazar</span>
-                                </button>
-                            </form>
-                            {% endif %}
-                            <a href="{% url 'detalle_pedido_admin' pedido.id %}" class="icon-btn view" title="Ver ficha completa" aria-label="Ver ficha del pedido {{ pedido.id }}">
-                                <i class="fas fa-eye" aria-hidden="true"></i><span class="action-label">Abrir ficha</span>
-                            </a>
-                        </div>
-                    </article>
-                    {% empty %}
-                    <div class="orders-empty"><span class="material-symbols-outlined" aria-hidden="true">inbox</span><strong>No hay pedidos para mostrar</strong><span>Prueba otro estado o ajusta la búsqueda.</span></div>
+                        {% if lane.previous_url or lane.next_url %}<nav class="lane-pagination" aria-label="Páginas de {{ lane.label }}">{% if lane.previous_url %}<a href="{{ lane.previous_url }}" aria-label="Pedidos anteriores">Anterior</a>{% else %}<span></span>{% endif %}<span>{{ lane.orders.number }} / {{ lane.orders.paginator.num_pages }}</span>{% if lane.next_url %}<a href="{{ lane.next_url }}" aria-label="Más pedidos">Siguiente</a>{% else %}<span></span>{% endif %}</nav>{% endif %}
+                    </section>
                     {% endfor %}
-                </div>
-                <div class="pagination">
-                    {% if pedidos.has_previous %}
-                        <a href="?page={{ pedidos.previous_page_number }}{% if request.GET.estado %}&estado={{ request.GET.estado }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q|urlencode }}{% endif %}">Anterior</a>
-                    {% else %}
-                        <span class="disabled">Anterior</span>
-                    {% endif %}
-                    <span class="active">{{ pedidos.number }}</span>
-                    {% if pedidos.has_next %}
-                        <a href="?page={{ pedidos.next_page_number }}{% if request.GET.estado %}&estado={{ request.GET.estado }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q|urlencode }}{% endif %}">Siguiente</a>
-                    {% else %}
-                        <span class="disabled">Siguiente</span>
-                    {% endif %}
                 </div>
             </div>
         </div>

@@ -95,6 +95,9 @@ class VentasCSRFTest(TestCase):
 		self.assertEqual(response.status_code, 200)
 		self.assertContains(response, '.ventas-actions-bar { display: grid;')
 		self.assertContains(response, '.report-buttons { display: grid; width: 100%;')
+		self.assertContains(response, '.tabla-facturas td.factura-actions { display:flex!important; flex-wrap:wrap;')
+		self.assertContains(response, '@media (max-width: 380px)')
+		self.assertContains(response, '.factura-actions { display:flex;')
 		self.assertContains(response, 'Vista previa PDF')
 
 	def test_actualizar_precio_no_permite_saltar_aprobacion_de_costo(self):

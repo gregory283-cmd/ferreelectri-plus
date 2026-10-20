@@ -8,6 +8,7 @@ import re
 import time
 import logging
 import unicodedata
+import uuid
 from pathlib import Path
 from functools import wraps
 from types import SimpleNamespace
@@ -67,6 +68,7 @@ from django.views.decorators.csrf import csrf_exempt, csrf_protect, ensure_csrf_
 from django.views.decorators.http import require_POST
 from django.views.decorators.http import require_GET
 from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_http_methods
 import urllib.request as urllib_request
 import urllib.parse as urllib_parse
 
@@ -80,7 +82,7 @@ from Ventas.models import DetalleFactura
 from .forms import ClienteRegistroForm, ClienteAuthenticationForm, EnvioAdminForm, PagoManualForm, PagoMovilCheckoutForm
 from .decorators import cliente_required, log_view_access
 from .models import AdminDashboardConfig, AuditLog, Carrito, CarritoItem, ChatMessage, ChatSession, Cliente, Customer, Envio, EnvioEvento, Pedido, PedidoItem, PerfilCliente
-from .models import AdminDeviceSession, AdminLoginApproval, AdminPasskey, AdminPushSubscription, AdminSecurityConfig, DevelopmentRequest, Pago, PedidoArchivado
+from .models import AdminDevice, AdminDeviceSession, AdminLoginApproval, AdminPasskey, AdminPushSubscription, AdminSecurityConfig, DevelopmentRequest, Pago, PedidoArchivado
 from .customer_auth import (
     get_customer_from_request,
     login_customer as login_customer_cookie,
@@ -125,7 +127,17 @@ def _request_is_security_owner(request):
     if not config or config.owner_user_id != user.pk or not config.primary_passkey_id:
         return False
     active_primary = request.session.get('admin_current_passkey_id')
-    return str(config.primary_passkey_id) == str(active_primary)
+    device_id = request.session.get('admin_device_uuid')
+    return bool(
+        str(config.primary_passkey_id) == str(active_primary)
+        and device_id
+        and AdminDevice.objects.filter(
+            user=user,
+            device_id=device_id,
+            is_active=True,
+            is_primary=True,
+        ).exists()
+    )
 
 
 def admin_security_owner_required(view_func):
@@ -198,6 +210,8 @@ def admin_pwa_manifest(request):
 
 
 def admin_pwa_launch(request):
+    if request.user.is_authenticated and request.user.is_staff:
+        return redirect(_admin_login_destination(request))
     response = render(request, 'registration/pwa_launch.html')
     response['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
     return response
@@ -234,6 +248,108 @@ def admin_app_session_lock(request):
     return JsonResponse({'ok': True})
 
 
+def _admin_login_destination(request):
+    if request.session.get('admin_device_name_required'):
+        return reverse('admin_device_name')
+    return reverse('dashboard')
+
+
+ADMIN_DEVICE_COOKIE_NAME = 'ferreelectri_admin_device'
+ADMIN_DEVICE_COOKIE_MAX_AGE = 60 * 60 * 24 * 365 * 3
+
+
+class AdminDeviceBlockedError(Exception):
+    pass
+
+
+def _admin_device_for_login(request, user, passkey=None, persist=False):
+    raw_device_id = request.session.get('admin_device_uuid') or request.COOKIES.get(ADMIN_DEVICE_COOKIE_NAME)
+    try:
+        device_id = uuid.UUID(str(raw_device_id)) if raw_device_id else uuid.uuid4()
+    except (TypeError, ValueError, AttributeError):
+        device_id = uuid.uuid4()
+
+    device = AdminDevice.objects.filter(user=user, device_id=device_id).first()
+    if device and not device.is_active:
+        raise AdminDeviceBlockedError('Este dispositivo está bloqueado por el superusuario.')
+    if device is None and AdminDevice.objects.filter(device_id=device_id).exists():
+        device_id = uuid.uuid4()
+
+    if device is None:
+        device = AdminDevice(
+            user=user,
+            device_id=device_id,
+            is_primary=False,
+            first_seen_at=timezone.now(),
+        )
+
+    if passkey:
+        device.passkey = passkey
+    device.ip_address = get_client_ip(request)
+    device.user_agent = request.META.get('HTTP_USER_AGENT', '')[:1000]
+    device.last_seen_at = timezone.now()
+    request.session['admin_device_uuid'] = str(device.device_id)
+    if persist:
+        device.save()
+    return device
+
+
+def _set_admin_device_name_requirement(request, device):
+    if device.name.strip():
+        request.session.pop('admin_device_name_required', None)
+        return False
+    request.session['admin_device_name_required'] = True
+    return True
+
+
+@require_http_methods(['GET', 'POST'])
+def admin_device_name(request):
+    if not request.user.is_authenticated or not request.user.is_staff:
+        return redirect('login_admin_custom')
+    if not request.session.get('admin_device_name_required'):
+        return redirect('dashboard')
+
+    device = get_object_or_404(
+        AdminDevice,
+        user=request.user,
+        device_id=request.session.get('admin_device_uuid'),
+        is_active=True,
+    )
+    error = ''
+    if request.method == 'POST':
+        device_name = (request.POST.get('device_name') or '').strip()
+        valid_name = (
+            2 <= len(device_name) <= 40
+            and device_name[0].isalnum()
+            and device_name[-1].isalnum()
+            and all(character.isalnum() or character in ' ._-' for character in device_name)
+            and '  ' not in device_name
+        )
+        if not valid_name:
+            error = 'Usa entre 2 y 40 caracteres: letras, números, espacios, punto, guion o guion bajo.'
+        else:
+            device.name = device_name
+            device.last_seen_at = timezone.now()
+            device.save(update_fields=['name', 'last_seen_at'])
+            AdminDeviceSession.objects.filter(
+                session_key=request.session.session_key,
+                user=request.user,
+            ).update(device=device, name=device_name)
+            request.session.pop('admin_device_name_required', None)
+            log_auth_event(
+                request,
+                'ADMIN_DEVICE_SESSION_NAMED',
+                user=request.user,
+                details=f'Dispositivo {device.pk} identificado como {device_name}.',
+            )
+            return redirect('dashboard')
+    return render(request, 'registration/admin_device_name.html', {'error': error})
+
+
+def _admin_device_is_primary(device, config):
+    return device.is_primary
+
+
 def _pending_admin_login_approval(request, user):
     now = timezone.now()
     security_config = AdminSecurityConfig.objects.filter(pk=1).only(
@@ -244,13 +360,20 @@ def _pending_admin_login_approval(request, user):
         and security_config.owner_user_id == user.pk
         and security_config.primary_passkey_id
         and str(request.session.get('admin_current_passkey_id')) == str(security_config.primary_passkey_id)
+        and AdminDevice.objects.filter(
+            user=user,
+            device_id=request.session.get('admin_device_uuid'),
+            is_active=True,
+            is_primary=True,
+        ).exists()
     ):
         return None
     primary_sessions = AdminDeviceSession.objects.none()
     if security_config and security_config.owner_user_id and security_config.primary_passkey_id:
         primary_sessions = AdminDeviceSession.objects.filter(
             user_id=security_config.owner_user_id,
-            passkey_id=security_config.primary_passkey_id,
+            device__is_primary=True,
+            device__is_active=True,
             user__is_active=True,
             user__is_staff=True,
             is_active=True,
@@ -313,15 +436,21 @@ def _start_admin_session(request, user, login_method):
         AdminSecurityConfig.objects.select_for_update().get_or_create(pk=1)
         user = User.objects.select_for_update().get(pk=user.pk)
         user.backend = authentication_backend
+        passkey = AdminPasskey.objects.filter(pk=request.session.get('admin_current_passkey_id')).first()
+        _admin_device_for_login(request, user, passkey)
         approval = _pending_admin_login_approval(request, user)
         if approval:
             return approval
         login(request, user)
+        device = _admin_device_for_login(request, user, passkey, persist=True)
+        _set_admin_device_name_requirement(request, device)
         AdminDeviceSession.objects.update_or_create(
             session_key=request.session.session_key,
             defaults={
                 'user': user,
+                'device': device,
                 'passkey_id': request.session.get('admin_current_passkey_id'),
+                'name': device.name,
                 'ip_address': get_client_ip(request),
                 'user_agent': request.META.get('HTTP_USER_AGENT', '')[:1000],
                 'last_seen_at': timezone.now(),
@@ -353,13 +482,25 @@ def admin_login_approval_status(request, approval_id):
                     approval.save(update_fields=['status', 'responded_at'])
                     return JsonResponse({'ok': False, 'status': approval.status, 'error': 'La cuenta administrativa ya no está activa.'})
                 user.backend = settings.AUTHENTICATION_BACKENDS[0]
+                passkey = AdminPasskey.objects.filter(pk=request.session.get('admin_current_passkey_id')).first()
+                try:
+                    _admin_device_for_login(request, user, passkey)
+                except AdminDeviceBlockedError as error:
+                    approval.status = AdminLoginApproval.Status.DENIED
+                    approval.responded_at = timezone.now()
+                    approval.save(update_fields=['status', 'responded_at'])
+                    return JsonResponse({'ok': False, 'status': approval.status, 'error': str(error)}, status=403)
                 login(request, user)
                 request.session.pop('admin_login_approval_id', None)
+                device = _admin_device_for_login(request, user, passkey, persist=True)
+                _set_admin_device_name_requirement(request, device)
                 AdminDeviceSession.objects.update_or_create(
                     session_key=request.session.session_key,
                     defaults={
                         'user': user,
+                        'device': device,
                         'passkey_id': request.session.get('admin_current_passkey_id'),
+                        'name': device.name,
                         'ip_address': get_client_ip(request),
                         'user_agent': request.META.get('HTTP_USER_AGENT', '')[:1000],
                         'last_seen_at': timezone.now(),
@@ -370,7 +511,7 @@ def admin_login_approval_status(request, approval_id):
                 approval.responded_at = timezone.now()
                 approval.save(update_fields=['status', 'responded_at'])
                 log_auth_event(request, 'ADMIN_SESSION_APPROVED', user=user, details='Acceso aprobado desde el dispositivo principal; la sesión aprobadora permanece activa.')
-                return JsonResponse({'ok': True, 'complete': True, 'next': reverse('dashboard')})
+                return JsonResponse({'ok': True, 'complete': True, 'next': _admin_login_destination(request)})
     if approval.status == AdminLoginApproval.Status.PENDING:
         return JsonResponse({'ok': True, 'status': 'pending'})
     message = 'El inicio fue rechazado desde la sesión activa.' if approval.status == AdminLoginApproval.Status.DENIED else 'La solicitud de acceso venció. Inicia sesión nuevamente.'
@@ -452,7 +593,18 @@ def admin_security_devices(request):
                 return HttpResponseForbidden('Inicia sesión con la llave que vas a designar como teléfono principal.')
             config.primary_passkey = passkey
             config.save(update_fields=['primary_passkey', 'updated_at'])
+            AdminDevice.objects.filter(user=request.user).update(is_primary=False)
+            device = _admin_device_for_login(request, request.user, passkey, persist=True)
+            device.is_primary = True
+            device.save(update_fields=['passkey', 'is_primary', 'ip_address', 'user_agent', 'last_seen_at'])
+            AdminDeviceSession.objects.filter(
+                user=request.user,
+                session_key=request.session.session_key,
+            ).update(device=device, passkey=passkey, name=device.name)
             log_auth_event(request, 'ADMIN_PRIMARY_DEVICE_SET', user=request.user, details=f'Llave principal configurada: {passkey.name}.')
+            if _set_admin_device_name_requirement(request, device):
+                messages.success(request, 'La passkey quedó designada. Asigna un nombre a este dispositivo para completar el registro.')
+                return redirect('admin_device_name')
             messages.success(request, 'Llave principal actualizada. Inicia de nuevo con esa llave desde el teléfono elegido.')
         elif action == 'revoke_passkey':
             if not _request_is_security_owner(request):
@@ -494,49 +646,80 @@ def admin_security_devices(request):
                 details=f'Llave {passkey.name} restaurada para {passkey.user.get_username()}.',
             )
             messages.success(request, 'Llave restaurada. El dispositivo puede iniciar sesión nuevamente con su verificación biométrica.')
-        elif action == 'revoke_session':
+        elif action in {'rename_device', 'block_device', 'activate_device', 'delete_device'}:
             if not _request_is_security_owner(request):
-                return HttpResponseForbidden('Solo el teléfono principal puede cerrar sesiones secundarias.')
-            device_session = get_object_or_404(
-                AdminDeviceSession.objects.select_related('user', 'passkey'),
-                pk=request.POST.get('session_id'),
-                is_active=True,
+                return HttpResponseForbidden('Solo el dispositivo principal puede gestionar los dispositivos afiliados.')
+            device = get_object_or_404(
+                AdminDevice.objects.select_related('user', 'passkey'),
+                pk=request.POST.get('device_id'),
+                user_id=config.owner_user_id,
             )
-            if device_session.session_key == request.session.session_key:
-                messages.error(request, 'No puedes revocar la sesión del teléfono principal desde ese mismo teléfono.')
-            elif (
-                device_session.passkey_id == config.primary_passkey_id
-                and device_session.user_id == config.owner_user_id
-            ):
-                messages.error(request, 'Esta es otra sesión del teléfono principal; ciérrala desde ese dispositivo.')
-            else:
-                Session.objects.filter(session_key=device_session.session_key).delete()
-                device_session.is_active = False
-                device_session.save(update_fields=['is_active'])
+            is_primary_device = _admin_device_is_primary(device, config)
+            if action == 'rename_device':
+                device_name = (request.POST.get('device_name') or '').strip()[:80]
+                valid_name = (
+                    2 <= len(device_name) <= 40
+                    and device_name[0].isalnum()
+                    and device_name[-1].isalnum()
+                    and all(character.isalnum() or character in ' ._-' for character in device_name)
+                    and '  ' not in device_name
+                )
+                if not valid_name:
+                    messages.error(request, 'Usa entre 2 y 40 caracteres: letras, números, espacios, punto, guion o guion bajo.')
+                else:
+                    device.name = device_name
+                    device.save(update_fields=['name'])
+                    AdminDeviceSession.objects.filter(device=device).update(name=device_name)
+                    log_auth_event(
+                        request,
+                        'ADMIN_DEVICE_NAMED',
+                        user=request.user,
+                        details=f'Dispositivo {device.pk} actualizado como {device_name}.',
+                    )
+                    messages.success(request, 'Nombre del dispositivo actualizado.')
+            elif is_primary_device:
+                messages.error(request, 'El dispositivo principal está protegido y no se puede bloquear ni eliminar.')
+            elif action == 'block_device' and device.is_active:
+                session_keys = list(
+                    AdminDeviceSession.objects.filter(device=device).values_list('session_key', flat=True)
+                )
+                Session.objects.filter(session_key__in=session_keys).delete()
+                AdminDeviceSession.objects.filter(device=device).update(is_active=False)
+                device.is_active = False
+                device.save(update_fields=['is_active'])
                 log_auth_event(
                     request,
-                    'ADMIN_DEVICE_SESSION_REVOKED',
+                    'ADMIN_DEVICE_BLOCKED',
                     user=request.user,
-                    details=f'Sesión de {device_session.user.get_username()} revocada por el teléfono principal.',
+                    details=f'Se bloqueó el dispositivo {device.name} (ID {device.pk}) y se cerraron {len(session_keys)} sesiones.',
                 )
-                messages.success(request, 'Sesión secundaria cerrada.')
-        elif action == 'rename_session':
-            if not _request_is_security_owner(request):
-                return HttpResponseForbidden('Solo el teléfono principal puede identificar dispositivos.')
-            device_session = get_object_or_404(AdminDeviceSession, pk=request.POST.get('session_id'))
-            device_name = (request.POST.get('device_name') or '').strip()[:80]
-            if not device_name:
-                messages.error(request, 'Escribe un nombre para identificar el dispositivo.')
-            else:
-                device_session.name = device_name
-                device_session.save(update_fields=['name'])
+                messages.success(request, f'Dispositivo {device.name} bloqueado; la cuenta sigue activa.')
+            elif action == 'activate_device' and not device.is_active:
+                device.is_active = True
+                device.save(update_fields=['is_active'])
                 log_auth_event(
                     request,
-                    'ADMIN_DEVICE_SESSION_NAMED',
+                    'ADMIN_DEVICE_ACTIVATED',
                     user=request.user,
-                    details=f'Dispositivo {device_session.pk} identificado como {device_name}.',
+                    details=f'Se reactivó el dispositivo {device.name} (ID {device.pk}).',
                 )
-                messages.success(request, 'Nombre del dispositivo actualizado.')
+                messages.success(request, 'Dispositivo reactivado. Tendrá que iniciar sesión de nuevo.')
+            elif action == 'delete_device':
+                session_keys = list(
+                    AdminDeviceSession.objects.filter(device=device).values_list('session_key', flat=True)
+                )
+                Session.objects.filter(session_key__in=session_keys).delete()
+                AdminDeviceSession.objects.filter(device=device).delete()
+                log_auth_event(
+                    request,
+                    'ADMIN_DEVICE_DELETED',
+                    user=request.user,
+                    details=f'Se eliminó el dispositivo {device.name} (ID {device.pk}) y {len(session_keys)} sesiones.',
+                )
+                device.delete()
+                messages.success(request, 'Dispositivo eliminado del registro.')
+            else:
+                messages.info(request, 'El dispositivo ya estaba en ese estado.')
         elif action == 'transfer_owner':
             if not _request_is_security_owner(request):
                 return HttpResponseForbidden('Designa primero el teléfono principal de seguridad.')
@@ -581,41 +764,29 @@ def admin_security_devices(request):
             output_field=models.BooleanField(),
         )
     ).order_by('-is_primary', 'user__username', '-created_at')
-    active_session_cutoff = timezone.now() - timedelta(minutes=3)
-    device_sessions = list(
-        AdminDeviceSession.objects.select_related('user', 'passkey').annotate(
-            is_primary=models.Case(
-                models.When(
-                    user_id=config.owner_user_id,
-                    passkey_id=config.primary_passkey_id,
-                    then=models.Value(True),
-                ),
-                default=models.Value(False),
-                output_field=models.BooleanField(),
-            )
-        ).order_by('-is_primary', '-is_active', '-last_seen_at')
+    admin_devices = list(
+        AdminDevice.objects.filter(user_id=config.owner_user_id)
+        .select_related('user', 'passkey')
+        .annotate(session_count=Count('sessions'))
+        .order_by('-is_primary', '-last_seen_at', 'name')
     )
-    pending_session_keys = set(AdminLoginApproval.objects.filter(
-        status=AdminLoginApproval.Status.APPROVED,
-        expires_at__gt=timezone.now(),
-    ).values_list('requester_session_key', flat=True))
-    for device_session in device_sessions:
-        device_session.is_primary_device = device_session.is_primary
-        device_session.is_recent = device_session.last_seen_at >= active_session_cutoff
-        device_session.awaiting_completion = device_session.session_key in pending_session_keys
-        device_session.can_revoke = bool(
-            device_session.is_active
-            and device_session.session_key != request.session.session_key
-            and not device_session.is_primary_device
+    current_device_id = request.session.get('admin_device_uuid')
+    for device in admin_devices:
+        device.is_primary_device = _admin_device_is_primary(device, config)
+        device.is_current_device = str(device.device_id) == str(current_device_id)
+        device.can_manage = bool(
+            _request_is_security_owner(request)
+            and not device.is_primary_device
+            and not device.is_current_device
         )
     administrators = User.objects.filter(is_staff=True, is_active=True).order_by('username')
     return render(request, 'dashboard/security_devices.html', {
         'security_config': config,
         'admin_passkeys': passkeys,
-        'device_sessions': device_sessions,
+        'admin_devices': admin_devices,
         'administrators': administrators,
         'current_session_key': request.session.session_key,
-        'active_session_cutoff': active_session_cutoff,
+        'current_device_id': current_device_id,
     })
 
 
@@ -821,14 +992,17 @@ def admin_passkey_login_verify(request):
     user = passkey.user
     request.session['admin_current_passkey_id'] = passkey.pk
     user.backend = settings.AUTHENTICATION_BACKENDS[0]
-    approval = _start_admin_session(request, user, 'PASSKEY')
+    try:
+        approval = _start_admin_session(request, user, 'PASSKEY')
+    except AdminDeviceBlockedError as error:
+        return JsonResponse({'ok': False, 'error': str(error)}, status=403)
     if approval:
         return JsonResponse({
             'ok': True,
             'approval_required': True,
             'approval_id': str(approval.pk),
         }, status=202)
-    return JsonResponse({'ok': True, 'next': reverse('dashboard')})
+    return JsonResponse({'ok': True, 'next': _admin_login_destination(request)})
 
 
 @ratelimit(key='ip', rate='5/m', method='POST', block=True)
@@ -2825,7 +2999,14 @@ def login_view(request):
 
             if user.is_staff or user.is_superuser:
                 request.session.pop('admin_login_unlocked_until', None)
-                approval = _start_admin_session(request, user, 'PASSWORD')
+                try:
+                    approval = _start_admin_session(request, user, 'PASSWORD')
+                except AdminDeviceBlockedError as error:
+                    error_message = str(error)
+                    if is_ajax:
+                        return JsonResponse({'ok': False, 'errors': {'__all__': [error_message]}}, status=403)
+                    messages.error(request, error_message)
+                    return render(request, 'registration/login.html', {'form': form, 'next': next_value}, status=403)
                 if approval:
                     return JsonResponse({
                         'ok': True,
@@ -2836,7 +3017,7 @@ def login_view(request):
                     request.session['admin_passkey_enrollment_prompt'] = True
                 else:
                     request.session.pop('admin_passkey_enrollment_prompt', None)
-                redirect_url = reverse('dashboard')
+                redirect_url = _admin_login_destination(request)
                 if is_ajax:
                     return JsonResponse({'ok': True, 'next': redirect_url})
                 return redirect(redirect_url)
@@ -4247,43 +4428,51 @@ def checkout(request):
         }
 
         try:
-            pedido, total, pago = create_order_with_locked_stock(
-                user_obj,
-                items,
-                metodo=metodo,
-                referencia=referencia,
-                gateway_payload=gateway_payload,
-                datos_envio={
-                    'nombre_destinatario': (
-                        user_obj.get_full_name().strip()
-                        or getattr(cliente, 'nombre', '')
-                        or user_obj.username
-                    ),
-                    'telefono': telefono,
-                    'direccion': direccion,
-                },
-            )
+            with transaction.atomic():
+                pedido, total, pago = create_order_with_locked_stock(
+                    user_obj,
+                    items,
+                    metodo=metodo,
+                    referencia=referencia,
+                    gateway_payload=gateway_payload,
+                    datos_envio={
+                        'nombre_destinatario': (
+                            user_obj.get_full_name().strip()
+                            or getattr(cliente, 'nombre', '')
+                            or user_obj.username
+                        ),
+                        'telefono': telefono,
+                        'direccion': direccion,
+                    },
+                )
+                payment_reference = referencia[:200]
+                pago.referencia = payment_reference
+                pago.numero_referencia = referencia[:100]
+                pago.banco_origen = banco
+                pago.cedula_pagador = cedula_pagador
+                pago.estado = 'en_revision' if capture else 'pendiente'
+                pago.gateway_reference = pago.gateway_reference or payment_reference
+                pago.gateway_payload = json.dumps(gateway_payload, ensure_ascii=False, default=str)[:4000]
+                if capture:
+                    pago.comprobante = capture
+                payment_update_fields = [
+                    'referencia', 'numero_referencia', 'banco_origen', 'cedula_pagador', 'estado',
+                    'gateway_reference', 'gateway_payload', 'gateway_status',
+                ]
+                if capture:
+                    payment_update_fields.append('comprobante')
+                pago.save(update_fields=payment_update_fields)
         except ValueError as stock_error:
             messages.error(request, str(stock_error))
             return redirect('carrito')
-
-        payment_reference = referencia[:200]
-        pago.referencia = payment_reference
-        pago.numero_referencia = referencia[:100]
-        pago.banco_origen = banco
-        pago.cedula_pagador = cedula_pagador
-        pago.estado = 'en_revision' if capture else 'pendiente'
-        pago.gateway_reference = pago.gateway_reference or payment_reference
-        pago.gateway_payload = json.dumps(gateway_payload, ensure_ascii=False, default=str)[:4000]
-        if capture:
-            pago.comprobante = capture
-        payment_update_fields = [
-            'referencia', 'numero_referencia', 'banco_origen', 'cedula_pagador', 'estado',
-            'gateway_reference', 'gateway_payload', 'gateway_status',
-        ]
-        if capture:
-            payment_update_fields.append('comprobante')
-        pago.save(update_fields=payment_update_fields)
+        except Exception:
+            logging.getLogger(__name__).exception(
+                'No se pudo guardar el pedido o el comprobante de Pago Móvil para el cliente %s.',
+                cliente.pk,
+            )
+            return render_checkout_errors([
+                'No se pudo registrar el pago en este momento. Verifica el comprobante e inténtalo de nuevo.',
+            ])
 
         if metodo in {'PAGO_MOVIL', 'TRANSFERENCIA'}:
             send_telegram_order_alert(
@@ -4982,56 +5171,87 @@ def _admin_pedido_summary():
     }
 
 
+def _admin_order_kanban_context(request):
+    query = request.GET.get('q', '').strip()[:80]
+    estado = request.GET.get('estado', '').strip().lower()
+    orders = Pedido.objects.select_related('cliente').prefetch_related(
+        'items__producto', 'pagos',
+    ).order_by('-fecha_creacion', '-pk')
+    if query:
+        search_filter = (
+            Q(cliente__email__icontains=query)
+            | Q(cliente__first_name__icontains=query)
+            | Q(cliente__last_name__icontains=query)
+            | Q(cliente__username__icontains=query)
+        )
+        if query.isdigit():
+            search_filter |= Q(pk=int(query))
+        orders = orders.filter(search_filter)
+
+    legacy_orders = orders
+    if estado == 'aprobado':
+        legacy_orders = legacy_orders.filter(estado__in=('pagado', 'enviado'))
+    elif estado in {'pendiente', 'pagado', 'cancelado'}:
+        legacy_orders = legacy_orders.filter(estado=estado)
+    legacy_page = Paginator(legacy_orders, 20).get_page(request.GET.get('page'))
+
+    lane_specs = [
+        ('pending', 'Pendientes de revisión', 'hourglass_top', Q(estado='pendiente')),
+        ('approved', 'Aprobados', 'task_alt', Q(estado__in=('pagado', 'enviado'))),
+        ('rejected', 'Rechazados', 'do_not_disturb_on', Q(estado='cancelado')),
+    ]
+    selected_lane = {
+        'pendiente': 'pending',
+        'aprobado': 'approved',
+        'pagado': 'approved',
+        'enviado': 'approved',
+        'cancelado': 'rejected',
+    }.get(estado)
+    order_lanes = []
+    for key, label, icon, lane_filter in lane_specs:
+        if selected_lane and selected_lane != key:
+            continue
+        lane_orders = orders.filter(lane_filter)
+        if estado in {'pagado', 'enviado'} and key == 'approved':
+            lane_orders = lane_orders.filter(estado=estado)
+        page_param = f'page_{key}'
+        page = Paginator(lane_orders, 20).get_page(request.GET.get(page_param))
+
+        def page_url(page_number):
+            params = request.GET.copy()
+            params.pop('page', None)
+            params[page_param] = page_number
+            return f'?{params.urlencode()}#order-lane-{key}'
+
+        order_lanes.append({
+            'key': key,
+            'label': label,
+            'icon': icon,
+            'orders': page,
+            'count': page.paginator.count,
+            'previous_url': page_url(page.previous_page_number()) if page.has_previous() else '',
+            'next_url': page_url(page.next_page_number()) if page.has_next() else '',
+        })
+    return {
+        'pedidos': legacy_page,
+        'order_lanes': order_lanes,
+        'query': query,
+        **_admin_pedido_summary(),
+    }
+
+
 @redirect_staff_to_admin_view
 @login_required(login_url='login_cliente')
 @permission_required('dashboard.view_operational_orders', raise_exception=True)
 def historial_pedidos_global(request):
-    # Vista solo para staff/admin: muestra todos los pedidos
-    pedidos_qs = Pedido.objects.select_related('cliente').order_by('-fecha_creacion')
-    estado = request.GET.get('estado', '').strip().lower()
-    query = request.GET.get('q', '').strip()
-    if estado == 'aprobado':
-        pedidos_qs = pedidos_qs.filter(estado__in=('pagado', 'enviado'))
-    elif estado in ['pendiente', 'pagado', 'cancelado']:
-        pedidos_qs = pedidos_qs.filter(estado=estado)
-    if query:
-        pedidos_qs = pedidos_qs.filter(
-            models.Q(id__icontains=query) |
-            models.Q(cliente__email__icontains=query) |
-            models.Q(cliente__first_name__icontains=query) |
-            models.Q(cliente__last_name__icontains=query)
-        )
-    paginator = Paginator(pedidos_qs, 20)
-    page_number = request.GET.get('page')
-    pedidos = paginator.get_page(page_number)
-    context = {'pedidos': pedidos, **_admin_pedido_summary()}
-    return render(request, 'historial_pedidos_global.html', context)
+    return render(request, 'historial_pedidos_global.html', _admin_order_kanban_context(request))
 
 
 # Versión para el panel administrativo custom: no redirige fuera de la UI custom.
 @user_passes_test(lambda u: u.is_staff, login_url='login_admin_custom')
 @permission_required('dashboard.view_operational_orders', raise_exception=True)
 def admin_historial_pedidos(request):
-    # Misma lógica que `historial_pedidos_global` pero accesible directamente desde el panel admin.
-    pedidos_qs = Pedido.objects.select_related('cliente').order_by('-fecha_creacion')
-    estado = request.GET.get('estado', '').strip().lower()
-    query = request.GET.get('q', '').strip()
-    if estado == 'aprobado':
-        pedidos_qs = pedidos_qs.filter(estado__in=('pagado', 'enviado'))
-    elif estado in ['pendiente', 'pagado', 'cancelado']:
-        pedidos_qs = pedidos_qs.filter(estado=estado)
-    if query:
-        pedidos_qs = pedidos_qs.filter(
-            models.Q(id__icontains=query) |
-            models.Q(cliente__email__icontains=query) |
-            models.Q(cliente__first_name__icontains=query) |
-            models.Q(cliente__last_name__icontains=query)
-        )
-    paginator = Paginator(pedidos_qs, 20)
-    page_number = request.GET.get('page')
-    pedidos = paginator.get_page(page_number)
-    context = {'pedidos': pedidos, **_admin_pedido_summary()}
-    return render(request, 'historial_pedidos_global.html', context)
+    return render(request, 'historial_pedidos_global.html', _admin_order_kanban_context(request))
 
 
 @user_passes_test(lambda u: u.is_staff, login_url='login_admin_custom')

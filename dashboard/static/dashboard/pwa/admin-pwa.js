@@ -82,7 +82,7 @@
       const approval = result.approvals?.[0];
       if (!approval) return;
       currentApprovalId = approval.id;
-      approvalDetails.textContent = `${approval.username} intenta iniciar sesión. IP: ${approval.ip_address}. Dispositivo: ${approval.user_agent}. Si apruebas, esta sesión se cerrará y el acceso se transferirá al nuevo dispositivo.`;
+      approvalDetails.textContent = `${approval.username} intenta registrar un dispositivo. IP: ${approval.ip_address}. Navegador: ${approval.user_agent}. Si apruebas, el nuevo equipo se agregará a la cuenta; esta sesión permanecerá abierta.`;
       approvalStatus.textContent = 'La solicitud vence en dos minutos.';
       approveLoginButton.disabled = false;
       denyLoginButton.disabled = false;
@@ -139,55 +139,71 @@
     try {
       sessionStorage.setItem(internalNavigationKey, String(Date.now()));
     } catch (error) {
-      // Internal navigation still follows its normal browser history path.
+      // Navigation can still continue if storage is unavailable.
     }
   }
 
-  function isInternalNavigationPending() {
+  function clearAppExitMarkers() {
+    appExitPending = false;
     try {
-      const timestamp = Number(sessionStorage.getItem(internalNavigationKey));
-      if (timestamp && Date.now() - timestamp < 15000) return true;
+      sessionStorage.removeItem(appExitPendingKey);
       sessionStorage.removeItem(internalNavigationKey);
     } catch (error) {
-      return false;
+      // In-memory exit state is enough for the current page.
     }
-    return false;
   }
 
   function startStandaloneExit() {
-    if (!isStandalone || appExitLockStarted || isInternalNavigationPending()) return;
-    appExitLockStarted = true;
+    if (!isStandalone || appExitLockStarted) return;
     appExitPending = true;
     try {
       sessionStorage.setItem(appExitPendingKey, '1');
     } catch (error) {
-      // The live-page flag still redirects to the fresh login when the app resumes.
+      // Defer logout until the current document resumes.
     }
-    lockAdminSession();
   }
 
-  function returnToFreshLogin() {
-    if (!isStandalone) return false;
-    let shouldRestart = appExitPending;
+  function finishStandaloneExit() {
+    if (!isStandalone || appExitLockStarted) return;
+    appExitLockStarted = true;
+    lockAdminSession().then((locked) => {
+      if (locked) {
+        clearAppExitMarkers();
+        window.location.replace('/admin-panel/app-launch/');
+        return;
+      }
+      appExitLockStarted = false;
+      appExitPending = true;
+      try {
+        sessionStorage.setItem(appExitPendingKey, '1');
+      } catch (error) {
+        // A later visibility change can retry from the in-memory flag.
+      }
+    });
+  }
+
+  function resolveStandaloneExit(sameDocumentResume = false) {
+    if (!isStandalone) return;
+    let pending = appExitPending;
+    let internalNavigation = false;
     try {
-      shouldRestart = shouldRestart || sessionStorage.getItem(appExitPendingKey) === '1';
-      if (shouldRestart) sessionStorage.removeItem(appExitPendingKey);
-      sessionStorage.removeItem(internalNavigationKey);
+      pending = pending || sessionStorage.getItem(appExitPendingKey) === '1';
+      const timestamp = Number(sessionStorage.getItem(internalNavigationKey));
+      internalNavigation = Boolean(timestamp && Date.now() - timestamp < 15000);
     } catch (error) {
-      // The in-memory exit flag covers a suspended page without browser storage.
+      // The in-memory flag still handles a background/foreground cycle.
     }
-    if (!shouldRestart) return false;
-    window.location.replace('/admin-panel/app-launch/');
-    return true;
+    if (!pending) return;
+
+    const navigationType = performance.getEntriesByType('navigation')[0]?.type;
+    if (navigationType === 'reload' || internalNavigation) {
+      clearAppExitMarkers();
+      return;
+    }
+    finishStandaloneExit();
   }
 
   if (isStandalone) {
-    try {
-      sessionStorage.removeItem(internalNavigationKey);
-    } catch (error) {
-      // Internal navigation detection is an enhancement; idle logout remains active.
-    }
-
     document.addEventListener('click', (event) => {
       const link = event.target.closest('a[href]');
       if (!link || link.target === '_blank' || event.defaultPrevented || event.button !== 0) return;
@@ -197,25 +213,17 @@
         markInternalNavigation();
       }
     }, true);
-
     document.addEventListener('submit', (event) => {
       const form = event.target;
       const destination = new URL(form.action || window.location.href, window.location.href);
       if (destination.origin === window.location.origin) markInternalNavigation();
     }, true);
-
     document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'hidden') {
-        startStandaloneExit();
-        return;
-      }
-      if (returnToFreshLogin()) return;
+      if (document.visibilityState === 'hidden') startStandaloneExit();
+      else resolveStandaloneExit(true);
     });
-
     window.addEventListener('pagehide', startStandaloneExit);
-    window.addEventListener('pageshow', () => {
-      if (document.visibilityState === 'visible') returnToFreshLogin();
-    });
+    window.addEventListener('pageshow', () => resolveStandaloneExit());
   }
 
   const sessionDialog = document.getElementById('admin-session-dialog');
