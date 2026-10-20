@@ -8,6 +8,7 @@
   const lastActivityKey = 'ferreelectri_admin_last_activity';
   const internalNavigationKey = 'ferreelectri_admin_internal_navigation_at';
   const appExitPendingKey = 'ferreelectri_admin_exit_pending';
+  const appSessionReturnAllowedKey = 'ferreelectri_admin_return_allowed';
   let installPrompt = null;
   let serviceWorkerRegistration = null;
 
@@ -148,6 +149,7 @@
     try {
       sessionStorage.removeItem(appExitPendingKey);
       sessionStorage.removeItem(internalNavigationKey);
+      sessionStorage.removeItem(appSessionReturnAllowedKey);
     } catch (error) {
       // In-memory exit state is enough for the current page.
     }
@@ -186,17 +188,19 @@
     if (!isStandalone) return;
     let pending = appExitPending;
     let internalNavigation = false;
+    let appReturnAllowed = false;
     try {
       pending = pending || sessionStorage.getItem(appExitPendingKey) === '1';
       const timestamp = Number(sessionStorage.getItem(internalNavigationKey));
       internalNavigation = Boolean(timestamp && Date.now() - timestamp < 15000);
+      appReturnAllowed = sessionStorage.getItem(appSessionReturnAllowedKey) === '1';
     } catch (error) {
       // The in-memory flag still handles a background/foreground cycle.
     }
     if (!pending) return;
 
     const navigationType = performance.getEntriesByType('navigation')[0]?.type;
-    if (navigationType === 'reload' || internalNavigation) {
+    if (navigationType === 'reload' || internalNavigation || appReturnAllowed) {
       clearAppExitMarkers();
       return;
     }
@@ -211,6 +215,13 @@
       const destination = new URL(link.href, window.location.href);
       if (destination.origin === window.location.origin && destination.href !== window.location.href) {
         markInternalNavigation();
+        if (link.hasAttribute('data-admin-session-continue')) {
+          try {
+            sessionStorage.setItem(appSessionReturnAllowedKey, '1');
+          } catch (error) {
+            // The immediate internal-navigation marker remains the fallback.
+          }
+        }
       }
     }, true);
     document.addEventListener('submit', (event) => {

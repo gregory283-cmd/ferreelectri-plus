@@ -2549,9 +2549,11 @@ class AdminPWASecurityTest(TestCase):
         self.assertIn("navigationType === 'reload'", script)
         self.assertIn('resolveStandaloneExit(true)', script)
         self.assertIn("window.addEventListener('pagehide', startStandaloneExit)", script)
-        self.assertIn("if (navigationType === 'reload' || internalNavigation)", script)
+        self.assertIn("if (navigationType === 'reload' || internalNavigation || appReturnAllowed)", script)
         self.assertIn('appExitLockStarted = false', script)
         self.assertIn("sessionStorage.setItem(appExitPendingKey, '1')", script)
+        self.assertIn('appSessionReturnAllowedKey', script)
+        self.assertIn("link.hasAttribute('data-admin-session-continue')", script)
 
     def test_blocked_device_cannot_login_and_the_shared_account_remains_active(self):
         cache.clear()
